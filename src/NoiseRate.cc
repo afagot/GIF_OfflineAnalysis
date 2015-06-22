@@ -1,5 +1,4 @@
 #include "../include/NoiseRate.h"
-#include "../include/IniFile.h"
 #include "../include/MsgSvc.h"
 
 #include "TFile.h"
@@ -23,11 +22,14 @@ string GetBaseName(string fileName){
 
 //*******************************************************************************
 
-void SetBranchAddresses(TTree* mytree, RAWData mydata){
-    mytree->SetBranchAddress("iEvent",    &mydata.iEvent);
-    mytree->SetBranchAddress("TDCNHits",  &mydata.TDCNHits);
-    mytree->SetBranchAddress("TDCCh",     &mydata.TDCCh);
-    mytree->SetBranchAddress("TDCTS",     &mydata.TDCTS);
+float GetStripSurface(string chamberType,char partLabel,IniFile* GeoFile){
+    string groupname = chamberType+"-"+partLabel;
+    float stripMinor = GeoFile->GetValue(groupname,"Minor",1.);
+    float stripMajor = GeoFile->GetValue(groupname,"Major",1.);
+    float stripHeight = GeoFile->GetValue(groupname,"Height",1.);
+
+    float stripSurface = (stripMinor+stripMajor)*stripHeight/2.;
+    return stripSurface;
 }
 
 //*******************************************************************************
@@ -54,10 +56,6 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     // strip off .root from filename
     string baseName = GetBaseName(fName);
 
-    //Get the chamber geometry
-    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
-    DimensionsRE->Read();
-
 //****************** HISTOGRAMS **************************************
 
     TH1F *RPCNoiseRates[NRPCTROLLEY][NPARTITIONS];
@@ -71,13 +69,13 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
         for (unsigned int p = 0; p < NPARTITIONS; p++){
             //Noise rate for each strip
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Noise","RPC noise rates");
-            RPCNoiseRates[rpc][p] = new TH1F( hisid, hisname, 96, 0.5, 96.5);
+            RPCNoiseRates[rpc][p] = new TH1F( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
             RPCNoiseRates[rpc][p]->SetXTitle("# Strip");
             RPCNoiseRates[rpc][p]->SetYTitle("Noise rate (Hz/cm^{2})");
 
             //Mean noise rate
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-            RPCMeanNoiseRate[rpc][p] = new TH1F( hisid, hisname, 200, 0., 100.);
+            RPCMeanNoiseRate[rpc][p] = new TH1F( hisid, hisname, 100, 0., 1e4);
             RPCMeanNoiseRate[rpc][p]->SetXTitle("Noise rate (Hz/cm^{2})");
             RPCMeanNoiseRate[rpc][p]->SetYTitle("# events");
         }
@@ -85,7 +83,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
 //****************** MAPPING *****************************************
 
-    map<int,int> RPCChMap = TDCMapping("ChannelsMapping");
+    map<int,int> RPCChMap = TDCMapping("ChannelsMapping.csv");
 
 //****************** ROOT FILE ***************************************
 
@@ -93,11 +91,30 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
     RAWData data;
 
-    SetBranchAddresses(dataTree,data);
+    data.TDCCh = new vector<int>;
+    data.TDCTS = new vector<float>;
+    data.TDCCh->clear();
+    data.TDCTS->clear();
+
+    dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+    dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+    dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+    dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+
+//****************** GEOMETRY ****************************************
+
+    //Get the chamber geometry
+    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
+    DimensionsRE->Read();
+    float stripSurface[NPARTITIONS] = {0.};
+
+    for(int p=0; p<NPARTITIONS; p++)
+        stripSurface[p] = GetStripSurface(chamberType,part[p],DimensionsRE);
 
 //****************** MACRO *******************************************
 
     float NoiseRates[NRPCTROLLEY][NSTRIPSRPC] = { {0.} };   //Noise rates
+    int NHitsPerPart[NRPCTROLLEY][NPARTITIONS] = { {0} };
 
     unsigned int nEntries = dataTree->GetEntries();
 
@@ -107,9 +124,20 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
         //Loop over the TDC hits
         for ( unsigned int h = 0; h < data.TDCNHits; h++ ) {
             RPCHit temprpchit;
-            SetRPCHit(temprpchit, RPCChMap[ data.TDCCh->at(h) ], data.TDCTS->at(h));
+            SetRPCHit(temprpchit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
 
             NoiseRates[temprpchit.Station][temprpchit.Strip]++;
+            NHitsPerPart[temprpchit.Station][temprpchit.Partition]++;
+        }
+
+        for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
+            for(unsigned int p=0; p<NPARTITIONS; p++){
+                //Normalise to the time window length in seconds
+                //and to the strip surface
+                float eventNoise = NHitsPerPart[rpc][p]/(TDCWINDOW*1e-9*stripSurface[p]);
+                RPCMeanNoiseRate[rpc][p]->Fill(eventNoise);
+                NHitsPerPart[rpc][p]=0;
+            }
         }
     }
 
@@ -121,21 +149,11 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     for ( unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++ ) {
         //Loop over strips
         for ( unsigned int s = 0; s < NSTRIPSRPC; s++ ) {
-            int p = s/NSTRIPSPART;  //Partition from 0 to 2
-
             //Normalise to the time window length in seconds,
             //to the number of trigger and to the strip surface
-            string groupname = chamberType+"-"+part[p];
-            float stripMinor = DimensionsRE->GetValue(groupname,"Minor",1.);
-            float stripMajor = DimensionsRE->GetValue(groupname,"Major",1.);
-            float stripHeight = DimensionsRE->GetValue(groupname,"Height",1.);
+            int p = s/NSTRIPSPART;  //Partition from 0 to 2
+            NoiseRates[rpc][s] /= TDCWINDOW * 1e-9 * nEntries * stripSurface[p];
 
-            float stripSurface = (stripMinor+stripMajor)*stripHeight/2.;
-
-            NoiseRates[rpc][s] /= TDCWINDOW * nEntries * stripSurface;
-
-            //Partitions Level
-            RPCMeanNoiseRate[rpc][p]->Fill(NoiseRates[rpc][s]);
             RPCNoiseRates[rpc][p]->Fill(s, NoiseRates[rpc][s]);
         }
     }
