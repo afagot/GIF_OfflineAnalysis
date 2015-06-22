@@ -90,7 +90,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 //****************** ROOT FILE ***************************************
 
     TFile   dataFile(fName.c_str());
-    TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
+    TTree*  dataTree = (TTree*)dataFilec.Get("RAWData");
     RAWData data;
 
     SetBranchAddresses(dataTree,data);
