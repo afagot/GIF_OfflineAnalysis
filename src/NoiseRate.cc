@@ -75,7 +75,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
             //Mean noise rate
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-            RPCMeanNoiseRate[rpc][p] = new TH1F( hisid, hisname, 100, 0., 1e4);
+            RPCMeanNoiseRate[rpc][p] = new TH1F( hisid, hisname, 100, 0., 5e3);
             RPCMeanNoiseRate[rpc][p]->SetXTitle("Noise rate (Hz/cm^{2})");
             RPCMeanNoiseRate[rpc][p]->SetYTitle("# events");
         }
@@ -130,11 +130,16 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
             NHitsPerPart[temprpchit.Station][temprpchit.Partition]++;
         }
 
+        //** INSTANTANEOUS NOISE RATE ********************************
+
+        //Get the noise rate for each event - this is related to the number
+        //of hits in each partition
         for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
             for(unsigned int p=0; p<NPARTITIONS; p++){
                 //Normalise to the time window length in seconds
-                //and to the strip surface
-                float eventNoise = NHitsPerPart[rpc][p]/(TDCWINDOW*1e-9*stripSurface[p]);
+                //and to the 32 strip surface (now only 16 are
+		//connected...)
+                float eventNoise = NHitsPerPart[rpc][p]/(TDCWINDOW*1e-9*16*stripSurface[p]);
                 RPCMeanNoiseRate[rpc][p]->Fill(eventNoise);
                 NHitsPerPart[rpc][p]=0;
             }
@@ -169,3 +174,4 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     }
     outputfile.Close();
 }
+
