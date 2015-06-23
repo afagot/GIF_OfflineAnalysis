@@ -162,7 +162,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     string fNameCSV = GetPath(fName) + "Summary_runs.csv";
     ofstream outputCSV(fNameCSV.c_str(),ios::app);
 
-    outputCSV << baseName << '\t';
+    outputCSV << fileName.substr(fileName.find_last_of("/")+1) << '\t';
 
     //Loop over stations
     for ( unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++ ) {

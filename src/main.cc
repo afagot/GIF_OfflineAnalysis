@@ -19,7 +19,9 @@ int main(int argc ,char *argv[]){
         converter >> chamberType;
 
         string fNameCSV = GetPath(fName)+"Summary_runs.csv";
-        MakeHeader(fNameCSV);
+
+        ifstream checkifexists(fNameCSV.c_str(), ios::in);
+        if(!checkifexists) MakeHeader(fNameCSV);
         GetNoiseRate(fName,chamberType);
 
         return 0;
