@@ -19,6 +19,8 @@
 
 using namespace std;
 
+void MakeHeader(string filename);
+
 //Data in the root file
 struct RAWData {
     int             iEvent;     //Event i
