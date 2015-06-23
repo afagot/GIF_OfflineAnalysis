@@ -1,4 +1,5 @@
 #include "../include/NoiseRate.h"
+#include "../include/Header_logfiles.h"
 
 #include <sstream>
 
@@ -18,6 +19,7 @@ int main(int argc ,char *argv[]){
         string chamberType;
         converter >> chamberType;
 
+        Header_logfiles(GetPath(fName)+"Summary_runs.csv");
         GetNoiseRate(fName,chamberType);
 
         return 0;

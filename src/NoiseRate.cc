@@ -185,10 +185,10 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
             RPCNoiseRates[rpc][p]->Fill(s, NoiseRates[rpc][s]);
             outputCSV << NoiseRates[rpc][s];
-            if(s == NSTRIPSRPC-1) outputCSV << '\n';
-            else outputCSV << '\t';
         }
     }
+
+    outputCSV << '\n';
 
     //****** Root output file ****************************************
     TFile outputfile((baseName + "_Offline_Noise_Rate.root").c_str(), "recreate");
