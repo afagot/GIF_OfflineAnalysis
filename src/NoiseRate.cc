@@ -5,7 +5,6 @@
 #include "TBranch.h"
 #include "TH1F.h"
 
-#include <fstream>
 #include <cmath>
 
 string GetPath(string fileName){
@@ -184,7 +183,6 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
             NoiseRates[rpc][s] /= TDCWINDOW * 1e-9 * nEntries * stripSurface[p];
 
             RPCNoiseRates[rpc][p]->Fill(s, NoiseRates[rpc][s]);
-            outputCSV << NoiseRates[rpc][s];
         }
     }
 

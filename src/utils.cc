@@ -5,7 +5,7 @@ using namespace std;
 void MakeHeader(string filename){
     char part[4] = "ABC";               //Names of the partitions
 
-    ofstream outputCSV((filename+".csv").c_str(), ios::out | ios::app);
+    ofstream outputCSV(filename.c_str(), ios::out | ios::app);
 
     outputCSV	<< "File Name" << '\t';
 
