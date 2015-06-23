@@ -6,6 +6,15 @@
 #include "TH1F.h"
 
 #include <fstream>
+#include <cmath>
+
+string GetPath(string fileName){
+    string path;
+    path = fileName.substr(0,fileName.find_last_of("/")+1);
+    return path;
+}
+
+//*******************************************************************************
 
 string GetBaseName(string fileName){
     if(fileName.substr(fileName.find_last_of(".")) == ".root"){
@@ -138,7 +147,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
             for(unsigned int p=0; p<NPARTITIONS; p++){
                 //Normalise to the time window length in seconds
                 //and to the 32 strip surface (now only 16 are
-		//connected...)
+        //connected...)
                 float eventNoise = NHitsPerPart[rpc][p]/(TDCWINDOW*1e-9*16*stripSurface[p]);
                 RPCMeanNoiseRate[rpc][p]->Fill(eventNoise);
                 NHitsPerPart[rpc][p]=0;
@@ -150,16 +159,34 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
     //************** RESULTS *****************************************
 
+    //output csv file
+    string fNameCSV = GetPath(fName) + "Summary_runs.csv";
+    ofstream outputCSV(fNameCSV.c_str(),ios::app);
+
+    outputCSV << baseName << '\t';
+
     //Loop over stations
     for ( unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++ ) {
         //Loop over strips
         for ( unsigned int s = 0; s < NSTRIPSRPC; s++ ) {
+            int p = s/NSTRIPSPART;  //Partition from 0 to 2
+
+            //Write in the output file the mean noise rate per partition
+            //only once
+            if(s%32 == 0){
+                float MeanNoiseRate = RPCMeanNoiseRate[rpc][p]->GetMean();
+                float ErrorMean = 2*RPCMeanNoiseRate[rpc][p]->GetMean()/sqrt(nEntries);
+                outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
+            }
+
             //Normalise to the time window length in seconds,
             //to the number of trigger and to the strip surface
-            int p = s/NSTRIPSPART;  //Partition from 0 to 2
             NoiseRates[rpc][s] /= TDCWINDOW * 1e-9 * nEntries * stripSurface[p];
 
             RPCNoiseRates[rpc][p]->Fill(s, NoiseRates[rpc][s]);
+            outputCSV << NoiseRates[rpc][s];
+            if(s == NSTRIPSRPC-1) outputCSV << '\n';
+            else outputCSV << '\t';
         }
     }
 

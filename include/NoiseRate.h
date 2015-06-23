@@ -5,6 +5,7 @@
 #include "TTree.h"
 #include "IniFile.h"
 
+string          GetPath(string fileName);
 string          GetBaseName(string fileName);
 float           GetStripSurface(string chamberType,char partLabel,IniFile* GeoFile);
 map<int,int>    TDCMapping(string mappingfName);
