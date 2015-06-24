@@ -19,14 +19,19 @@ Null.
 
 ##Cluster Size
 
-####Author:
-####email :
-####Tel.:
-####Mobile:
+####Author: Cristina Oropeza Barrera
+####email : cbarrera@cern.ch
+####Tel.: +52 55 5950 4000 ext. 4675
+####Mobile: +52 55 5412 0122
 
 ###Usage
 
-Null.
+The ClusterSize code is currently only available in the clustersize branch.
+
+To run the ClusterSize tool: 
+> cd clustersize
+> make
+> ./ClusterSize inputFile.root outputFile.root
 
 ##Noise Rate
 
