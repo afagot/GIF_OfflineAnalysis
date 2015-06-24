@@ -29,9 +29,11 @@ Null.
 The ClusterSize code is currently only available in the clustersize branch.
 
 To run the ClusterSize tool: 
-> cd clustersize
-> make
-> ./ClusterSize inputFile.root outputFile.root
+```
+cd clustersize
+make
+./ClusterSize inputFile.root outputFile.root
+```
 
 ##Noise Rate
 
