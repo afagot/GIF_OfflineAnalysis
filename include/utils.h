@@ -11,7 +11,7 @@
 #define TDCWINDOW   5000.
 #define TDCOFFSET  -5025.
 
-#define NRPCTROLLEY 4
+#define NRPCTROLLEY 1
 #define NPARTITIONS 3
 
 #define NSTRIPSRPC  96

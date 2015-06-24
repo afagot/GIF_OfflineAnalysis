@@ -2,6 +2,7 @@
 
 
 DAQ_HOME_DIR = /home/pccmsrpcgif2/GIF_OfflineAnalysis
+#DAQ_HOME_DIR = /home/alex/Desktop/RPCs/GIF_OfflineAnalysis
 DAQ_BIN_DIR = $(DAQ_HOME_DIR)/bin
 DAQ_INC_DIR = $(DAQ_HOME_DIR)/include
 DAQ_SRC_DIR = $(DAQ_HOME_DIR)/src
