@@ -86,7 +86,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
             //Mean noise rate profile
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-            RPCMeanNoiseProfile[rpc][p] = new TH2F( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
+            RPCMeanNoiseProfile[rpc][p] = new TProfile( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
             RPCMeanNoiseProfile[rpc][p]->SetXTitle("Strip");
             RPCMeanNoiseProfile[rpc][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
         }
@@ -179,7 +179,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
         for ( unsigned int p = 0; p < NSTRIPSPART; p++ ) {
             //Project the histograms along the X-axis to get the
             //mean noise profile on the strips
-            RPCMeanNoiseProfile->Add(RPCInstantNoiseRate[rpc][p]->ProfileX());
+            RPCMeanNoiseProfile[rpc][p]=RPCInstantNoiseRate[rpc][p]->ProfileX();
 
             //Write in the output file the mean noise rate per
             //partition and its error defined as twice the RMS
