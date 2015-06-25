@@ -49,8 +49,10 @@ public :
   TH1F* h_nHits;
   TH1F* h_TDCChannel;
   TH1F* h_TDCTimeStamp;
-  TH1F* h_nClusters;
-  TH1F* h_ClusterSize;
+  TH1F* h_nClusters[3];
+  TH1F* h_ClusterSize[3];
+  TH1F* h_nClustersChamber;
+  TH1F* h_ClusterSizeChamber;
 
 };
 
