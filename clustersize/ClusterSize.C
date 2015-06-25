@@ -6,6 +6,9 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
+#include <map>
 
 #include <TH2.h>
 #include <TStyle.h>
@@ -43,11 +46,36 @@ int main(int argc, char *argv[]) {
     //TChain* c = new TChain("CollectionTree");  // For Isabel's ROOT files 
     TChain* c = new TChain("RAWData");  // For DAQ's ROOT files
     c->Add(argv[1]); 
+
+    // Load Channel=>Strip mapping file and build map.
+    map<int,int> ChannelMap;
+    ifstream mappingFile("ChannelsMapping.csv",ios::in);
+    if (mappingFile.is_open()) {
+      cout << "Channel-to-strip mapping file successfully loaded!" << endl;
+      while (mappingFile.good()) {
+        int stripNumber;
+        int channelNumber;
+        mappingFile >> stripNumber >> channelNumber;
+        ChannelMap[channelNumber] = stripNumber;
+      }
+    } else {
+      cout << "STOPPING..." << endl;
+      cout << "Could not open channel-to-strip mapping file!" << endl;
+      return 1;
+    }
+    mappingFile.close();
+
+    cout << "**********************************************" << endl;
+    cout << "*** Strip Number => TDC Channel Number Map ***" << endl;
+    for (map<int,int>::const_iterator it = ChannelMap.begin(); it != ChannelMap.end(); ++it) {
+      cout << it->first << " " << it->second << endl;
+    }
+    cout << "**********************************************" << endl;
  
     // Run analysis.
     ClusterSize t(c);
     t.Initialize();
-    t.Loop();
+    t.Loop(ChannelMap);
     t.Finalize(outputFile);
 
     return 0;
@@ -89,7 +117,7 @@ void ClusterSize::Finalize(string outputFile) {
 }
 
 
-void ClusterSize::Loop() {
+void ClusterSize::Loop(map<int,int> ChannelMap) {
 
   if (fChain == 0) return;
 
@@ -128,18 +156,23 @@ void ClusterSize::Loop() {
       cout << "-----> Number of Hits: " << number_of_hits << endl;
     }    
 
-    // Create a vector of pairs with TDC information (time stamp and channel) and sort it by time stamp.
-    vector<pair<float,int>> TDCInfo;
-    TDCInfo.reserve(TDC_TimeStamp->size());
+    // Create a vector of pairs with TDC time stamp and strip number and sort it by time stamp.
+    vector<pair<float,int>> HitInfo;
+    HitInfo.reserve(TDC_TimeStamp->size());
     for (int i=0; i<number_of_hits; i++) {
-      TDCInfo.push_back(make_pair(TDC_TimeStamp->at(i),TDC_channel->at(i)));
+      HitInfo.push_back(make_pair(TDC_TimeStamp->at(i),ChannelMap[TDC_channel->at(i)]));
     }
-    sort(TDCInfo.begin(), TDCInfo.end(), sort_pair);
+    sort(HitInfo.begin(), HitInfo.end(), sort_pair);
 
     if (debug) {
+      cout << "*** Hits in event (before sorting) ***" << endl;
+      for (int j=0; j<number_of_hits; j++) {
+        cout << "Hit: " << j << " TimeStamp: " << TDC_TimeStamp->at(j) << " Channel: " << TDC_channel->at(j) << " Strip: " << 
+        ChannelMap[TDC_channel->at(j)] << endl;
+      }
       cout << "*** Hits sorted by time stamp ***" << endl;
       for (int j=0; j<number_of_hits; j++) {
-        cout << "TDCInfo Vector => Hit: " << j << " TimeStamp: " << TDCInfo[j].first << " Channel: " << TDCInfo[j].second << endl;
+        cout << "HitInfo Vector => Hit: " << j << " TimeStamp: " << HitInfo[j].first << " Strip: " << HitInfo[j].second << endl;
       }
     }
 
@@ -157,14 +190,14 @@ void ClusterSize::Loop() {
       float timeWindow = 30.0;
       if (newCandidate) {
         if (i!=(lastHitInWindow+1)) continue;
-        timeWindow = TDCInfo[lastHitInWindow+1].first + 30.0;
+        timeWindow = HitInfo[lastHitInWindow+1].first + 30.0;
         lastHitInWindow = lastHitInWindow + 1; 
       } else {
         lastHitInWindow = i;
-        timeWindow = TDCInfo[lastHitInWindow].first + 30.0;
+        timeWindow = HitInfo[lastHitInWindow].first + 30.0;
       }
       for (int j=lastHitInWindow+1; j<number_of_hits; j++) {
-        if (TDCInfo[j].first < timeWindow) {
+        if (HitInfo[j].first < timeWindow) {
           lastHitInWindow = j;
         } else {
           break;
@@ -190,106 +223,107 @@ void ClusterSize::Loop() {
       }
     }
 
-    // Fill vectors with cluster candidate number, TDC channel and TDC time stamp.
+    // Fill vectors with cluster candidate number, strip number and TDC time stamp.
     vector<int> candidateNumber;
-    vector<int> channelsInCandidate;
+    vector<int> stripsInCandidate;
     vector<float> timeStampsInCandidate;
     candidateNumber.clear();
-    channelsInCandidate.clear();
+    stripsInCandidate.clear();
     timeStampsInCandidate.clear();
     for (int n=0; n<nCandidates; n++) {
       for (int i=0; i<number_of_hits; i++) {
         if ( i>=firstHitsInCandidates.at(n) && i<=lastHitsInCandidates.at(n) ) {
           candidateNumber.push_back(n);
-          channelsInCandidate.push_back(TDCInfo[i].second);
-          timeStampsInCandidate.push_back(TDCInfo[i].first);
+          stripsInCandidate.push_back(HitInfo[i].second);
+          timeStampsInCandidate.push_back(HitInfo[i].first);
         }
       }
     } 
     
-    // Loop over cluster candidates. For each candidate create a vector pair with TDC information (channel and time stamp) and sort it by channel number.
+    // Loop over cluster candidates. For each candidate create a vector pair with strip number and time stamp and sort it by strip number.
     // Count the number of clusters with size >=2.
-    // Count the number of channels inside clusters of size >=2.
+    // Count the number of strips inside clusters of size >=2.
     // If size of candidate is 2: 
-    // => If channels are not consecutive, discard the cluster candidate.
-    // => If channels are consecutive, fill cluster size histogram and increase counter for number of channels inside clusters of size >=2.
+    // => If strips are not consecutive, discard the cluster candidate.
+    // => If strips are consecutive, fill cluster size histogram and increase counter for number of strips inside clusters of size >=2.
     // If size of candidate is >2:
-    // => Store in a vector the channel numbers of consecutive channels (making sure not to double-count). The size of this vector is the cluster size.
-    // => If there are at least two consecutive channels, we have a cluster. Fill cluster size histogram with size of vector and increase counter.
-    // => If there are no consecutive channels, we discard the cluster candidate.
+    // => Store in a vector the strip numbers of consecutive strips (making sure not to double-count). The size of this vector is the cluster size.
+    // => If there are at least two consecutive strips, we have a cluster (single hits are taken into account later). 
+    //    Fill cluster size histogram with size of vector and increase counter.
+    // => If there are no consecutive strips, we discard the cluster candidate.
     int tmp = 0;
     int nClusters = nCandidates;
-    int channelsInClusters = 0;
+    int stripsInClusters = 0;
     for (int n=0; n<nCandidates; n++) {
       int isize = count(candidateNumber.begin(), candidateNumber.end(), n);
-      vector<pair<int,float>> candidateByChannel;
-      candidateByChannel.reserve(candidateNumber.size());
-      candidateByChannel.clear();
+      vector<pair<int,float>> candidateByStrip;
+      candidateByStrip.reserve(candidateNumber.size());
+      candidateByStrip.clear();
       for (int i=0; i<isize; i++) {
-        candidateByChannel.push_back(make_pair(channelsInCandidate.at(tmp+i),timeStampsInCandidate.at(tmp+i)));
+        candidateByStrip.push_back(make_pair(stripsInCandidate.at(tmp+i),timeStampsInCandidate.at(tmp+i)));
       }
-      sort(candidateByChannel.begin(), candidateByChannel.end(), sort_pair);
+      sort(candidateByStrip.begin(), candidateByStrip.end(), sort_pair);
       if (debug) {
-        cout << "*** Candidate cluster " << n << " sorted by channel number ***" << endl;
-        cout << "Size of candidate: " << candidateByChannel.size() << endl;
-        for (int i=0; i<candidateByChannel.size(); i++) {
-          cout << "Channel: " << candidateByChannel[i].first << " Time Stamp: " << candidateByChannel[i].second << endl;
+        cout << "*** Candidate cluster " << n << " sorted by strip number ***" << endl;
+        cout << "Size of candidate: " << candidateByStrip.size() << endl;
+        for (int i=0; i<candidateByStrip.size(); i++) {
+          cout << "Strip Number: " << candidateByStrip[i].first << " Time Stamp: " << candidateByStrip[i].second << endl;
         }
       } 
       if (isize==2) {
-        if ( (candidateByChannel[1].first - candidateByChannel[0].first) != 1 ) {
+        if ( (candidateByStrip[1].first - candidateByStrip[0].first) != 1 ) {
           if (debug) {
-            cout << "Bad cluster. Only two channels and none consecutive." << endl;
+            cout << "Bad cluster. Only two strips and none consecutive." << endl;
           }
           nClusters = nClusters - 1;
         } else {
           h_ClusterSize->Fill(2);
-          channelsInClusters = channelsInClusters + 2;
+          stripsInClusters = stripsInClusters + 2;
         } 
       } else {
         bool goodCluster = false;
-        int nConsecutiveChannels = 0;
-        vector<int> consecutiveChannels;
-        consecutiveChannels.clear();
+        int nConsecutiveStrips = 0;
+        vector<int> consecutiveStrips;
+        consecutiveStrips.clear();
         for (int j=0; j<(isize-1); j++) {
-          if ( (candidateByChannel[j+1].first - candidateByChannel[j].first) != 1 ) {
+          if ( (candidateByStrip[j+1].first - candidateByStrip[j].first) != 1 ) {
             // Do nothing.
             if (debug) {
-              cout << "Channels " << candidateByChannel[j+1].first << " and " << candidateByChannel[j].first << " are not consecutive!" << endl;
+              cout << "Strips " << candidateByStrip[j+1].first << " and " << candidateByStrip[j].first << " are not consecutive!" << endl;
             }
           } else {
-            if (consecutiveChannels.empty()) {
-              consecutiveChannels.push_back(candidateByChannel[j].first);
-              consecutiveChannels.push_back(candidateByChannel[j+1].first);
+            if (consecutiveStrips.empty()) {
+              consecutiveStrips.push_back(candidateByStrip[j].first);
+              consecutiveStrips.push_back(candidateByStrip[j+1].first);
             } else {
-              if ( find(consecutiveChannels.begin(), consecutiveChannels.end(), candidateByChannel[j].first) != consecutiveChannels.end() ) {
+              if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j].first) != consecutiveStrips.end() ) {
                 // Do nothing.
               } else {
-                consecutiveChannels.push_back(candidateByChannel[j].first);
+                consecutiveStrips.push_back(candidateByStrip[j].first);
               }
-              if ( find(consecutiveChannels.begin(), consecutiveChannels.end(), candidateByChannel[j+1].first) != consecutiveChannels.end() ) {
+              if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j+1].first) != consecutiveStrips.end() ) {
                 // Do nothing.
               } else {
-                consecutiveChannels.push_back(candidateByChannel[j+1].first);
+                consecutiveStrips.push_back(candidateByStrip[j+1].first);
               }
             }
-            nConsecutiveChannels++;
+            nConsecutiveStrips++;
           }
         }
-        if (nConsecutiveChannels >= 1) {
+        if (nConsecutiveStrips >= 1) {
           goodCluster = true;
         }
         if (goodCluster) {
           if (debug) {
-            cout << "Good cluster with at least 2 consecutive channels!" << endl;
-            cout << "Cluster size: " << consecutiveChannels.size() << endl;
+            cout << "Good cluster with at least 2 consecutive strips!" << endl;
+            cout << "Cluster size: " << consecutiveStrips.size() << endl;
           }
-          h_ClusterSize->Fill(consecutiveChannels.size());
-          channelsInClusters = channelsInClusters + consecutiveChannels.size();
+          h_ClusterSize->Fill(consecutiveStrips.size());
+          stripsInClusters = stripsInClusters + consecutiveStrips.size();
         } else {
           nClusters = nClusters - 1;
           if (debug) {
-            cout << "Bad cluster. No consecutive channels found." << endl;
+            cout << "Bad cluster. No consecutive strips found." << endl;
           }
         }
       } 
@@ -298,23 +332,23 @@ void ClusterSize::Loop() {
     if (debug) {
       cout << "*** Event statistics ***" << endl;
       cout << "Number of clusters with size >=2: " << nClusters << endl;
-      cout << "Number of channels in clusters: " << channelsInClusters << endl;
+      cout << "Number of strips in clusters: " << stripsInClusters << endl;
     }
 
-    // Count the number of single-channel clusters. Fill the cluster size histogram.
-    int singleChannels = number_of_hits - channelsInClusters;
-    for (int j=1; j<=singleChannels; j++) {
+    // Count the number of single-strip clusters. Fill the cluster size histogram.
+    int singleStrips = number_of_hits - stripsInClusters;
+    for (int j=1; j<=singleStrips; j++) {
       h_ClusterSize->Fill(1);
     }
     if (debug) {
-      cout << "Number of single channels: " << singleChannels << endl;
+      cout << "Number of single strips: " << singleStrips << endl;
     }    
 
     // Count the total number of clusters in the event. Fill the number of clusters histogram.
-    int totalClusters = singleChannels + nClusters;
+    int totalClusters = singleStrips + nClusters;
     h_nClusters->Fill(totalClusters);
     if (debug) {
-      cout << "Total number of clusters: " << totalClusters << endl;
+      cout << "=> Total number of clusters: " << totalClusters << endl;
     }
 
   }
