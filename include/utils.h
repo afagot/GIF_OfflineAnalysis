@@ -30,7 +30,7 @@ struct RAWData {
     vector<float>  *TDCTS;      //List of the corresponding time stamps
 };
 
-void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, char* IDroot, char* Nameroot);
+void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, const char* IDroot, const char* Nameroot);
 
 //Hit in the RPC
 struct RPCHit {

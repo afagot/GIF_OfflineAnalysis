@@ -3,7 +3,8 @@
 
 #include "TFile.h"
 #include "TBranch.h"
-#include "TH2F.h"
+#include "TH1.h"
+#include "TH2.h"
 #include "TProfile.h"
 
 #include <cmath>
@@ -66,27 +67,42 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     //output file name
     string baseName = GetBaseName(fName);
 
+    //****************** GEOMETRY ************************************
+
+    //Get the chamber geometry
+    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
+    DimensionsRE->Read();
+
+    //Save it into a table
+    float stripSurface[NPARTITIONS] = {0.};
+    char part[4] = "ABC";               //Names of the partitions
+
+    for(int p=0; p<NPARTITIONS; p++)
+        stripSurface[p] = GetStripSurface(chamberType,part[p],DimensionsRE);
+
     //****************** HISTOGRAMS **********************************
 
     TH2F *RPCInstantNoiseRate[NRPCTROLLEY][NPARTITIONS];
     TProfile *RPCMeanNoiseProfile[NRPCTROLLEY][NPARTITIONS];
 
-    char part[4] = "ABC";               //Names of the partitions
     char hisid[50];                     //ID of the histogram
     char hisname[50];                   //Name of the histogram
 
     for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
         for (unsigned int p = 0; p < NPARTITIONS; p++){
+	    //Noise rate bin size depending on the strip surface
+	    float binWidth = 1./(TDCWINDOW*1e-9*stripSurface[p]);
+
             //Instantaneous noise rate 2D map
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
-            RPCInstantNoiseRate[rpc][p] = new TH2F( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5, 100, 0., 5e3);
+            RPCInstantNoiseRate[rpc][p] = new TH2F( hisid, hisname, 32, 32*p-0.5, 32*(p+1)-0.5, 11, -0.5*binWidth, 10.5*binWidth);
             RPCInstantNoiseRate[rpc][p]->SetXTitle("Strip");
             RPCInstantNoiseRate[rpc][p]->SetYTitle("Noise rate (Hz/cm^{2})");
             RPCInstantNoiseRate[rpc][p]->SetZTitle("# events");
 
             //Mean noise rate profile
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-            RPCMeanNoiseProfile[rpc][p] = new TProfile( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
+            RPCMeanNoiseProfile[rpc][p] = new TProfile( hisid, hisname, 32, 32*p-0.5, 32*(p+1)-0.5);
             RPCMeanNoiseProfile[rpc][p]->SetXTitle("Strip");
             RPCMeanNoiseProfile[rpc][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
         }
@@ -114,18 +130,6 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
     dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
-    //****************** GEOMETRY ************************************
-
-    //Get the chamber geometry
-    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
-    DimensionsRE->Read();
-
-    //Save it into a table
-    float stripSurface[NPARTITIONS] = {0.};
-
-    for(int p=0; p<NPARTITIONS; p++)
-        stripSurface[p] = GetStripSurface(chamberType,part[p],DimensionsRE);
-
     //****************** MACRO ***************************************
 
     //Tabel to count the hits in every chamber partitions - used to
@@ -138,7 +142,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
         dataTree->GetEntry(i);
 
         //Loop over the TDC hits
-        for ( unsigned int h = 0; h < data.TDCNHits; h++ ) {
+        for ( int h = 0; h < data.TDCNHits; h++ ) {
             RPCHit temprpchit;
             SetRPCHit(temprpchit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
 
@@ -154,7 +158,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
                 //Get the instaneous noise by normalise the hit count to the
                 //time window length in seconds and to the strip surface
-                float InstantNoise = NHitsPerStrip[rpc][s]/(TDCWINDOW*1e-9*stripSurface[s]);
+		float InstantNoise = (float)NHitsPerStrip[rpc][s]/(TDCWINDOW*1e-9*stripSurface[p]);
                 RPCInstantNoiseRate[rpc][p]->Fill(s,InstantNoise);
 
                 //Reinitialise the hit count for strip s
@@ -165,9 +169,12 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     dataFile.Close();
 
     //************** MEAN NOISE RATE *********************************
+    //create a ROOT output file to save the histograms
+    string fNameROOT = "AnalysedData/" + baseName.substr(baseName.find_last_of("/")+1) + "Offline_Noise_Rate.root";
+    TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
-    string fNameCSV = GetPath(fName) + "Summary_runs.csv";
+    string fNameCSV = "AnalysedData/Summary_runs.csv";
     ofstream outputCSV(fNameCSV.c_str(),ios::app);
 
     //Print the file name as first column
@@ -176,10 +183,10 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     //Loop over stations
     for ( unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++ ) {
         //Loop over strips
-        for ( unsigned int p = 0; p < NSTRIPSPART; p++ ) {
+        for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
             //Project the histograms along the X-axis to get the
             //mean noise profile on the strips
-            RPCMeanNoiseProfile[rpc][p]=RPCInstantNoiseRate[rpc][p]->ProfileX();
+            RPCMeanNoiseProfile[rpc][p] = RPCInstantNoiseRate[rpc][p]->ProfileX();
 
             //Write in the output file the mean noise rate per
             //partition and its error defined as twice the RMS
@@ -187,17 +194,13 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
             float MeanNoiseRate = RPCInstantNoiseRate[rpc][p]->ProjectionY()->GetMean();
             float ErrorMean = 2*RPCInstantNoiseRate[rpc][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
             outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
+
+	    //Write the histograms and profiles into the ROOTfile
+            RPCInstantNoiseRate[rpc][p]->Write();
+	    RPCMeanNoiseProfile[rpc][p]->Write();
         }
     }
     outputCSV << '\n';
-
-    //****** ROOT OUTPUT FILE ****************************************
-    //create a ROOT output file to save the histograms
-    TFile outputfile((baseName + "_Offline_Noise_Rate.root").c_str(), "recreate");
-
-    for ( unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++ )
-        for (unsigned int p = 0; p < NPARTITIONS; p++ )
-            RPCInstantNoiseRate[rpc][p]->Write();
 
     outputfile.Close();
 }

@@ -56,9 +56,9 @@ bool IniFile::CheckIfGroup(string line,string& group){
 // *************************************************************************************************************
 
 bool IniFile::CheckIfToken(string line,string& key,string& value){
-    unsigned int p0 = 0;
+    size_t p0 = 0;
 
-    unsigned int p1 = string::npos;
+    size_t p1 = string::npos;
     p1 = line.find_first_of('=',p0);
 
     if(p1 != p0){

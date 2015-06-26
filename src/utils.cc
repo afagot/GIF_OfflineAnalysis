@@ -23,7 +23,7 @@ void MakeHeader(string filename){
 }
 
 //Name of histograms
-void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, char* IDroot, char* Nameroot){
+void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, const char* IDroot, const char* Nameroot){
     sprintf(ID,"%s_%i%c",IDroot,station,partLabel[partition]);
     sprintf(Name,"%s %i, Partition %c",Nameroot,station,partLabel[partition]);
 }
