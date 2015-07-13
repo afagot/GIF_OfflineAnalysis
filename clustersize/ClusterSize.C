@@ -197,214 +197,219 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
     if (debug) {
       cout << "=== New Event ===" << endl;
       cout << "-----> Number of Hits: " << number_of_hits << endl;
-      cout << "---> NUmber of Hits in Partition A: " << nhits[0] << endl;
-      cout << "---> NUmber of Hits in Partition B: " << nhits[1] << endl;
-      cout << "---> NUmber of Hits in Partition C: " << nhits[2] << endl;
+      cout << "---> Number of Hits in Partition A: " << nhits[0] << endl;
+      cout << "---> Number of Hits in Partition B: " << nhits[1] << endl;
+      cout << "---> Number of Hits in Partition C: " << nhits[2] << endl;
     }    
 
-    // Loop over partitions.
-    for (int p=0; p<3; p++) {
+    // Loop over chambers.
+    for (int c=0; c<1; c++) {
 
-      // Create a vector of pairs with TDC time stamp and strip number and sort it by time stamp.
-      vector<pair<float,int>> HitInfo;
-      HitInfo.clear();
-      HitInfo.reserve(timestamp[p].size());
-      for (int i=0; i<nhits[p]; i++) {
-        HitInfo.push_back(make_pair(timestamp[p].at(i),ChannelMap[channel[p].at(i)]));
-      }
-      sort(HitInfo.begin(), HitInfo.end(), sort_pair);
+      // Loop over partitions.
+      for (int p=0; p<3; p++) {
 
-      if (debug) {
-        cout << "*** Hits in event (before sorting) ***" << endl;
-        for (int j=0; j<nhits[p]; j++) {
-          cout << "Hit: " << j << " TimeStamp: " << timestamp[p].at(j) << " Channel: " << channel[p].at(j) 
-               << " Strip: " << ChannelMap[channel[p].at(j)] << endl;
-        }
-        cout << "*** Hits sorted by time stamp ***" << endl;
-        for (int j=0; j<nhits[p]; j++) {
-          cout << "HitInfo Vector => Hit: " << j << " TimeStamp: " << HitInfo[j].first << " Strip: " << HitInfo[j].second << endl;
-        }
-      }
-
-      // Loop over hits sorted by time stamp. Build cluster candidates with all hits found within a 30ns time window.
-      // Store the first and last hits inside this time window. 
-      int nCandidates = 0;
-      int lastHitInWindow = 0;
-      bool newCandidate = false;
-      bool singleHit = false;
-      vector<int> firstHitsInCandidates;
-      vector<int> lastHitsInCandidates;
-      firstHitsInCandidates.clear();
-      lastHitsInCandidates.clear();
-      for (int i=0; i<(nhits[p]-1); i++) {
-        float timeWindow = 30.0;
-        if (newCandidate) {
-          if (i!=(lastHitInWindow+1)) continue;
-          timeWindow = HitInfo[lastHitInWindow+1].first + 30.0;
-          lastHitInWindow = lastHitInWindow + 1; 
-        } else {
-          lastHitInWindow = i;
-          timeWindow = HitInfo[lastHitInWindow].first + 30.0;
-        }
-        for (int j=lastHitInWindow+1; j<nhits[p]; j++) {
-          if (HitInfo[j].first < timeWindow) {
-            lastHitInWindow = j;
-          } else {
-            break;
-          }
-        }
-        if (lastHitInWindow != i) {
-          newCandidate = true;
-          nCandidates++;
-        } else {
-          newCandidate = false;
-          singleHit = true;
-        }
-        if (newCandidate) {
-          firstHitsInCandidates.push_back(i);
-          lastHitsInCandidates.push_back(lastHitInWindow);  
-        }
-      }
-
-      if (debug) {
-        cout << "*** Candidate Clusters ***" << endl;
-        for (int i=0; i<firstHitsInCandidates.size(); i++) {
-          cout << "Candidate " << i << " => First Hit: " << firstHitsInCandidates.at(i) << ". Last Hit: " << lastHitsInCandidates.at(i) << endl;      
-        }
-      }
-
-      // Fill vectors with cluster candidate number, strip number and TDC time stamp.
-      vector<int> candidateNumber;
-      vector<int> stripsInCandidate;
-      vector<float> timeStampsInCandidate;
-      candidateNumber.clear();
-      stripsInCandidate.clear();
-      timeStampsInCandidate.clear();
-      for (int n=0; n<nCandidates; n++) {
+        // Create a vector of pairs with TDC time stamp and strip number and sort it by time stamp.
+        vector<pair<float,int>> HitInfo;
+        HitInfo.clear();
+        HitInfo.reserve(timestamp[p].size());
         for (int i=0; i<nhits[p]; i++) {
-          if ( i>=firstHitsInCandidates.at(n) && i<=lastHitsInCandidates.at(n) ) {
-            candidateNumber.push_back(n);
-            stripsInCandidate.push_back(HitInfo[i].second);
-            timeStampsInCandidate.push_back(HitInfo[i].first);
-          }
+          HitInfo.push_back(make_pair(timestamp[p].at(i),ChannelMap[channel[p].at(i)]));
         }
-      } 
-    
-      // Loop over cluster candidates. For each candidate create a vector pair with strip number and time stamp and sort it by strip number.
-      // Count the number of clusters with size >=2.
-      // Count the number of strips inside clusters of size >=2.
-      // If size of candidate is 2: 
-      // => If strips are not consecutive, discard the cluster candidate.
-      // => If strips are consecutive, fill cluster size histogram and increase counter for number of strips inside clusters of size >=2.
-      // If size of candidate is >2:
-      // => Store in a vector the strip numbers of consecutive strips (making sure not to double-count). The size of this vector is the cluster size.
-      // => If there are at least two consecutive strips, we have a cluster (single hits are taken into account later). 
-      //    Fill cluster size histogram with size of vector and increase counter.
-      // => If there are no consecutive strips, we discard the cluster candidate.
-      int tmp = 0;
-      int nClusters = nCandidates;
-      int stripsInClusters = 0;
-      for (int n=0; n<nCandidates; n++) {
-        int isize = count(candidateNumber.begin(), candidateNumber.end(), n);
-        vector<pair<int,float>> candidateByStrip;
-        candidateByStrip.reserve(candidateNumber.size());
-        candidateByStrip.clear();
-        for (int i=0; i<isize; i++) {
-          candidateByStrip.push_back(make_pair(stripsInCandidate.at(tmp+i),timeStampsInCandidate.at(tmp+i)));
-        }
-        sort(candidateByStrip.begin(), candidateByStrip.end(), sort_pair);
+        sort(HitInfo.begin(), HitInfo.end(), sort_pair);
+
         if (debug) {
-          cout << "*** Candidate cluster " << n << " sorted by strip number ***" << endl;
-          cout << "Size of candidate: " << candidateByStrip.size() << endl;
-          for (int i=0; i<candidateByStrip.size(); i++) {
-            cout << "Strip Number: " << candidateByStrip[i].first << " Time Stamp: " << candidateByStrip[i].second << endl;
-          }
-        } 
-        if (isize==2) {
-          if ( (candidateByStrip[1].first - candidateByStrip[0].first) != 1 ) {
-            if (debug) {
-              cout << "Bad cluster. Only two strips and none consecutive." << endl;
-            }
-            nClusters = nClusters - 1;
-          } else {
-            h_ClusterSize[p]->Fill(2);
-            h_ClusterSizeChamber->Fill(2);
-            stripsInClusters = stripsInClusters + 2;
+          cout << "*** Hits in event (before sorting) ***" << endl;
+          for (int j=0; j<nhits[p]; j++) {
+            cout << "Hit: " << j << " TimeStamp: " << timestamp[p].at(j) << " Channel: " << channel[p].at(j) 
+                 << " Strip: " << ChannelMap[channel[p].at(j)] << endl;
           } 
-        } else {
-          bool goodCluster = false;
-          int nConsecutiveStrips = 0;
-          vector<int> consecutiveStrips;
-          consecutiveStrips.clear();
-          for (int j=0; j<(isize-1); j++) {
-            if ( (candidateByStrip[j+1].first - candidateByStrip[j].first) != 1 ) {
-              // Do nothing.
-              if (debug) {
-                cout << "Strips " << candidateByStrip[j+1].first << " and " << candidateByStrip[j].first << " are not consecutive!" << endl;
-              }
-            } else {
-              if (consecutiveStrips.empty()) {
-                consecutiveStrips.push_back(candidateByStrip[j].first);
-                consecutiveStrips.push_back(candidateByStrip[j+1].first);
-              } else {
-                if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j].first) != consecutiveStrips.end() ) {
-                  // Do nothing.
-                } else {
-                  consecutiveStrips.push_back(candidateByStrip[j].first);
-                }
-                if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j+1].first) != consecutiveStrips.end() ) {
-                  // Do nothing.
-                } else {
-                  consecutiveStrips.push_back(candidateByStrip[j+1].first);
-                }
-              }
-              nConsecutiveStrips++;
-            }
+          cout << "*** Hits sorted by time stamp ***" << endl;
+          for (int j=0; j<nhits[p]; j++) {
+            cout << "HitInfo Vector => Hit: " << j << " TimeStamp: " << HitInfo[j].first << " Strip: " << HitInfo[j].second << endl;
           }
-          if (nConsecutiveStrips >= 1) {
-            goodCluster = true;
-          }
-          if (goodCluster) {
-            if (debug) {
-              cout << "Good cluster with at least 2 consecutive strips!" << endl;
-              cout << "Cluster size: " << consecutiveStrips.size() << endl;
-            }
-            h_ClusterSize[p]->Fill(consecutiveStrips.size());
-            h_ClusterSizeChamber->Fill(consecutiveStrips.size());
-            stripsInClusters = stripsInClusters + consecutiveStrips.size();
+        }
+
+        // Loop over hits sorted by time stamp. Build cluster candidates with all hits found within a 30ns time window.
+        // Store the first and last hits inside this time window. 
+        int nCandidates = 0;
+        int lastHitInWindow = 0;
+        bool newCandidate = false;
+        bool singleHit = false;
+        vector<int> firstHitsInCandidates;
+        vector<int> lastHitsInCandidates;
+        firstHitsInCandidates.clear();
+        lastHitsInCandidates.clear();
+        for (int i=0; i<(nhits[p]-1); i++) {
+          float timeWindow = 30.0;
+          if (newCandidate) {
+            if (i!=(lastHitInWindow+1)) continue;
+            timeWindow = HitInfo[lastHitInWindow+1].first + 30.0;
+            lastHitInWindow = lastHitInWindow + 1; 
           } else {
-            nClusters = nClusters - 1;
-            if (debug) {
-              cout << "Bad cluster. No consecutive strips found." << endl;
+            lastHitInWindow = i;
+            timeWindow = HitInfo[lastHitInWindow].first + 30.0;
+          }
+          for (int j=lastHitInWindow+1; j<nhits[p]; j++) {
+            if (HitInfo[j].first < timeWindow) {
+              lastHitInWindow = j;
+            } else {
+              break;
+            }
+          }
+          if (lastHitInWindow != i) {
+            newCandidate = true;
+            nCandidates++;
+          } else {
+            newCandidate = false;
+            singleHit = true;
+          }
+          if (newCandidate) {
+            firstHitsInCandidates.push_back(i);
+            lastHitsInCandidates.push_back(lastHitInWindow);  
+          }
+        }
+
+        if (debug) {
+          cout << "*** Candidate Clusters ***" << endl;
+          for (int i=0; i<firstHitsInCandidates.size(); i++) {
+            cout << "Candidate " << i << " => First Hit: " << firstHitsInCandidates.at(i) << ". Last Hit: " << lastHitsInCandidates.at(i) << endl;      
+          }
+        }
+
+        // Fill vectors with cluster candidate number, strip number and TDC time stamp.
+        vector<int> candidateNumber;
+        vector<int> stripsInCandidate;
+        vector<float> timeStampsInCandidate;
+        candidateNumber.clear();
+        stripsInCandidate.clear();
+        timeStampsInCandidate.clear();
+        for (int n=0; n<nCandidates; n++) {
+          for (int i=0; i<nhits[p]; i++) {
+            if ( i>=firstHitsInCandidates.at(n) && i<=lastHitsInCandidates.at(n) ) {
+              candidateNumber.push_back(n);
+              stripsInCandidate.push_back(HitInfo[i].second);
+              timeStampsInCandidate.push_back(HitInfo[i].first);
             }
           }
         } 
-        tmp += isize;
-      }
-      if (debug) {
-        cout << "*** Event statistics ***" << endl;
-        cout << "Number of clusters with size >=2: " << nClusters << endl;
-        cout << "Number of strips in clusters: " << stripsInClusters << endl;
-      }
+    
+        // Loop over cluster candidates. For each candidate create a vector pair with strip number and time stamp and sort it by strip number.
+        // Count the number of clusters with size >=2.
+        // Count the number of strips inside clusters of size >=2.
+        // If size of candidate is 2: 
+        // => If strips are not consecutive, discard the cluster candidate.
+        // => If strips are consecutive, fill cluster size histogram and increase counter for number of strips inside clusters of size >=2.
+        // If size of candidate is >2:
+        // => Store in a vector the strip numbers of consecutive strips (making sure not to double-count). The size of this vector is the cluster size.
+        // => If there are at least two consecutive strips, we have a cluster (single hits are taken into account later). 
+        //    Fill cluster size histogram with size of vector and increase counter.
+        // => If there are no consecutive strips, we discard the cluster candidate.
+        int tmp = 0;
+        int nClusters = nCandidates;
+        int stripsInClusters = 0;
+        for (int n=0; n<nCandidates; n++) {
+          int isize = count(candidateNumber.begin(), candidateNumber.end(), n);
+          vector<pair<int,float>> candidateByStrip;
+          candidateByStrip.reserve(candidateNumber.size());
+          candidateByStrip.clear();
+          for (int i=0; i<isize; i++) {
+            candidateByStrip.push_back(make_pair(stripsInCandidate.at(tmp+i),timeStampsInCandidate.at(tmp+i)));
+          }
+          sort(candidateByStrip.begin(), candidateByStrip.end(), sort_pair);
+          if (debug) {
+            cout << "*** Candidate cluster " << n << " sorted by strip number ***" << endl;
+            cout << "Size of candidate: " << candidateByStrip.size() << endl;
+            for (int i=0; i<candidateByStrip.size(); i++) {
+              cout << "Strip Number: " << candidateByStrip[i].first << " Time Stamp: " << candidateByStrip[i].second << endl;
+            }
+          } 
+          if (isize==2) {
+            if ( (candidateByStrip[1].first - candidateByStrip[0].first) != 1 ) {
+              if (debug) {
+                cout << "Bad cluster. Only two strips and none consecutive." << endl;
+              }
+              nClusters = nClusters - 1;
+            } else {
+              h_ClusterSize[p]->Fill(2);
+              h_ClusterSizeChamber->Fill(2);
+              stripsInClusters = stripsInClusters + 2;
+            } 
+          } else {
+            bool goodCluster = false;
+            int nConsecutiveStrips = 0;
+            vector<int> consecutiveStrips;
+            consecutiveStrips.clear();
+            for (int j=0; j<(isize-1); j++) {
+              if ( (candidateByStrip[j+1].first - candidateByStrip[j].first) != 1 ) {
+                // Do nothing.
+                if (debug) {
+                  cout << "Strips " << candidateByStrip[j+1].first << " and " << candidateByStrip[j].first << " are not consecutive!" << endl;
+                }
+              } else {
+                if (consecutiveStrips.empty()) {
+                  consecutiveStrips.push_back(candidateByStrip[j].first);
+                  consecutiveStrips.push_back(candidateByStrip[j+1].first);
+                } else {
+                  if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j].first) != consecutiveStrips.end() ) {
+                    // Do nothing.
+                  } else {
+                    consecutiveStrips.push_back(candidateByStrip[j].first);
+                  }
+                  if ( find(consecutiveStrips.begin(), consecutiveStrips.end(), candidateByStrip[j+1].first) != consecutiveStrips.end() ) {
+                    // Do nothing.
+                  } else {
+                    consecutiveStrips.push_back(candidateByStrip[j+1].first);
+                  }
+                }
+                nConsecutiveStrips++;
+              }
+            }
+            if (nConsecutiveStrips >= 1) {
+              goodCluster = true;
+            }
+            if (goodCluster) {
+              if (debug) {
+                cout << "Good cluster with at least 2 consecutive strips!" << endl;
+                cout << "Cluster size: " << consecutiveStrips.size() << endl;
+              }
+              h_ClusterSize[p]->Fill(consecutiveStrips.size());
+              h_ClusterSizeChamber->Fill(consecutiveStrips.size());
+              stripsInClusters = stripsInClusters + consecutiveStrips.size();
+            } else {
+              nClusters = nClusters - 1;
+              if (debug) {
+                cout << "Bad cluster. No consecutive strips found." << endl;
+              }
+            }
+          } 
+          tmp += isize;
+        }
+        if (debug) {
+          cout << "*** Event statistics ***" << endl;
+          cout << "Number of clusters with size >=2: " << nClusters << endl;
+          cout << "Number of strips in clusters: " << stripsInClusters << endl;
+        }
 
-      // Count the number of single-strip clusters. Fill the cluster size histogram.
-      int singleStrips = nhits[p] - stripsInClusters;
-      for (int j=1; j<=singleStrips; j++) {
-        h_ClusterSize[p]->Fill(1);
-        h_ClusterSizeChamber->Fill(1);
-      }
-      if (debug) {
-        cout << "Number of single strips: " << singleStrips << endl;
-      }      
+        // Count the number of single-strip clusters. Fill the cluster size histogram.
+        int singleStrips = nhits[p] - stripsInClusters;
+        for (int j=1; j<=singleStrips; j++) {
+          h_ClusterSize[p]->Fill(1);
+          h_ClusterSizeChamber->Fill(1);
+        }
+        if (debug) {
+          cout << "Number of single strips: " << singleStrips << endl;
+        }      
 
-      // Count the total number of clusters in the event. Fill the number of clusters histogram.
-      int totalClusters = singleStrips + nClusters;
-      if(p == 0) {  // Temporary hack while we read data from more than one partition.
-        h_nClusters[p]->Fill(totalClusters);
-        h_nClustersChamber->Fill(totalClusters);
-      }
-      if (debug) {
-        cout << "=> Total number of clusters: " << totalClusters << endl;
+        // Count the total number of clusters in the event. Fill the number of clusters histogram.
+        int totalClusters = singleStrips + nClusters;
+        if (p == 0) {  // Temporary hack while we read data from more than one partition.
+          h_nClusters[p]->Fill(totalClusters);
+          h_nClustersChamber->Fill(totalClusters);
+        }
+        if (debug) {
+          cout << "=> Total number of clusters: " << totalClusters << endl;
+        }
+
       }
 
     }

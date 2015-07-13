@@ -1,5 +1,5 @@
 ROOTCFLAGS = $(shell root-config --cflags)
-ROOTLIBS = $(shell root-config --libs) -lCintex -lMinuit -lTreePlayer
+ROOTLIBS = $(shell root-config --libs) -lMinuit -lTreePlayer
 
 CXX = g++
 CXXFLAGS = -I$(ROOTSYS)/include
