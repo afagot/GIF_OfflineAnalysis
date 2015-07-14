@@ -87,8 +87,8 @@ bool sort_pair(const pair<float,int>& a, const pair<float,int>& b) {
 void ClusterSize::Initialize() {
 
   // Initialize histograms.
-  h_nHits = new TH1F("h_nHits", "Number of hits per event", 51, -0.5, 50.5);
-  h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 18, -1.5, 16.5);
+  h_nHits = new TH1F("h_nHits", "Number of hits per event", 101, -0.5, 100.5);
+  h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 96, -0.5, 95.5);
   h_TDCTimeStamp = new TH1F("h_TDCTimeStamp", "TDC time stamp", 300, 0.0, 6000.0);
   h_nClusters[0] = new TH1F("h_A_nClusters", "Number of clusters per event in partition A", 51, -0.5, 50.5);
   h_ClusterSize[0] = new TH1F("h_A_ClusterSize", "Cluster size distribution per event in partition A", 5, 0.5, 5.5);
@@ -402,10 +402,10 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
 
         // Count the total number of clusters in the event. Fill the number of clusters histogram.
         int totalClusters = singleStrips + nClusters;
-        if (p == 0) {  // Temporary hack while we read data from more than one partition.
-          h_nClusters[p]->Fill(totalClusters);
-          h_nClustersChamber->Fill(totalClusters);
-        }
+        //if (p == 0) {  // Temporary hack for when we read data from only one partition.
+        h_nClusters[p]->Fill(totalClusters);
+        h_nClustersChamber->Fill(totalClusters);
+        //}
         if (debug) {
           cout << "=> Total number of clusters: " << totalClusters << endl;
         }
