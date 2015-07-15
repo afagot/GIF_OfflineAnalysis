@@ -32,7 +32,7 @@ To run the ClusterSize tool:
 ```
 cd clustersize
 make
-./ClusterSize inputFile.root outputFile.root
+./ClusterSize inputFile.root
 ```
 
 ##Noise Rate
