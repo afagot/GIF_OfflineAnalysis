@@ -54,6 +54,9 @@ public :
   TH1F* h_nClustersChamber;
   TH1F* h_ClusterSizeChamber;
 
+  // Declaration of global variables
+  float clustering_timeWindow;
+
 };
 
 #endif

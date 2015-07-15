@@ -86,6 +86,9 @@ bool sort_pair(const pair<float,int>& a, const pair<float,int>& b) {
 
 void ClusterSize::Initialize() {
 
+  // Set values of global variables.
+  clustering_timeWindow = 30.0;  // Time window used to build candidadte clusters [ns].
+
   // Initialize histograms.
   h_nHits = new TH1F("h_nHits", "Number of hits per event", 101, -0.5, 100.5);
   h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 96, -0.5, 95.5);
@@ -240,14 +243,14 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         firstHitsInCandidates.clear();
         lastHitsInCandidates.clear();
         for (int i=0; i<(nhits[p]-1); i++) {
-          float timeWindow = 30.0;
+          float timeWindow = clustering_timeWindow;
           if (newCandidate) {
             if (i!=(lastHitInWindow+1)) continue;
-            timeWindow = HitInfo[lastHitInWindow+1].first + 30.0;
+            timeWindow = HitInfo[lastHitInWindow+1].first + clustering_timeWindow;
             lastHitInWindow = lastHitInWindow + 1; 
           } else {
             lastHitInWindow = i;
-            timeWindow = HitInfo[lastHitInWindow].first + 30.0;
+            timeWindow = HitInfo[lastHitInWindow].first + clustering_timeWindow;
           }
           for (int j=lastHitInWindow+1; j<nhits[p]; j++) {
             if (HitInfo[j].first < timeWindow) {
