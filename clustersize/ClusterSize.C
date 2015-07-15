@@ -86,21 +86,34 @@ bool sort_pair(const pair<float,int>& a, const pair<float,int>& b) {
 
 void ClusterSize::Initialize() {
 
-  // Set values of global variables.
-  clustering_timeWindow = 30.0;  // Time window used to build candidadte clusters [ns].
-
   // Initialize histograms.
   h_nHits = new TH1F("h_nHits", "Number of hits per event", 101, -0.5, 100.5);
   h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 96, -0.5, 95.5);
   h_TDCTimeStamp = new TH1F("h_TDCTimeStamp", "TDC time stamp", 300, 0.0, 6000.0);
-  h_nClusters[0] = new TH1F("h_A_nClusters", "Number of clusters per event in partition A", 51, -0.5, 50.5);
-  h_ClusterSize[0] = new TH1F("h_A_ClusterSize", "Cluster size distribution per event in partition A", 5, 0.5, 5.5);
-  h_nClusters[1] = new TH1F("h_B_nClusters", "Number of clusters per event in partition B", 51, -0.5, 50.5);
-  h_ClusterSize[1] = new TH1F("h_B_ClusterSize", "Cluster size distribution per event in partition B", 5, 0.5, 5.5);
-  h_nClusters[2] = new TH1F("h_C_nClusters", "Number of clusters per event in partition C", 51, -0.5, 50.5);
-  h_ClusterSize[2] = new TH1F("h_C_ClusterSize", "Cluster size distribution per event in partition C", 5, 0.5, 5.5);
-  h_nClustersChamber = new TH1F("h_nClustersChamber", "Number of clusters per event in chamber", 51, -0.5, 50.5);
-  h_ClusterSizeChamber = new TH1F("h_ClusterSizeChamber", "Cluster size distribution per event in chamber", 5, 0.5, 5.5);
+  for (int c=0; c<nc; c++) {
+    string pname;
+    for (int p=0; p<np; p++) {
+      if (p==0) {
+        pname = "A";
+      } else if (p==1) {
+        pname = "B";
+      } else if (p==2) {
+        pname = "C";
+      }
+      string nClusters_part_hname = "h_nClusters_"+to_string(c)+pname;
+      string ClusterSize_part_hname = "h_ClusterSize_"+to_string(c)+pname;
+      string nClusters_part_htitle = "Number of clusters per event in partition "+to_string(c)+pname;
+      string ClusterSize_part_htitle = "Cluster size distribution per event in partition "+to_string(c)+pname; 
+      h_nClusters[c][p] = new TH1F(nClusters_part_hname.c_str(), nClusters_part_htitle.c_str(), 51, -0.5, 50.5);
+      h_ClusterSize[c][p] = new TH1F(ClusterSize_part_hname.c_str(), ClusterSize_part_htitle.c_str(), 5, 0.5, 5.5);
+    }
+    string nClusters_hname = "h_nClusters_"+to_string(c);
+    string ClusterSize_hname = "h_ClusterSize_"+to_string(c);
+    string nClusters_htitle = "Number of clusters per event in chamber "+to_string(c);
+    string ClusterSize_htitle = "Cluster size distribution per event in chamber "+to_string(c);
+    h_nClustersChamber[c] = new TH1F(nClusters_hname.c_str(), nClusters_htitle.c_str(), 51, -0.5, 50.5);
+    h_ClusterSizeChamber[c] = new TH1F(ClusterSize_hname.c_str(), ClusterSize_htitle.c_str(), 5, 0.5, 5.5);
+  }
 
 }
 
@@ -112,14 +125,26 @@ void ClusterSize::Finalize(string outputFile) {
   h_nHits->Write("nHits");
   h_TDCChannel->Write("TDCChannel");
   h_TDCTimeStamp->Write("TDCTimeStamp");
-  h_nClusters[0]->Write("nClusters_partA");
-  h_ClusterSize[0]->Write("ClusterSize_partA");
-  h_nClusters[1]->Write("nClusters_partB");
-  h_ClusterSize[1]->Write("ClusterSize_partB");
-  h_nClusters[2]->Write("nClusters_partC");
-  h_ClusterSize[2]->Write("ClusterSize_partC");
-  h_nClustersChamber->Write("nClusters_chamber");
-  h_ClusterSizeChamber->Write("ClusterSize_chamber"); 
+  for (int c=0; c<nc; c++) {
+    string pname;
+    for (int p=0; p<np; p++) {
+      if (p==0) {
+        pname = "A";
+      } else if (p==1) {
+        pname = "B";
+      } else if (p==2) {
+        pname = "C";
+      }
+      string nClusters_part_hname = "nClusters_"+to_string(c)+pname;
+      string ClusterSize_part_hname = "ClusterSize_"+to_string(c)+pname;
+      h_nClusters[c][p]->Write(nClusters_part_hname.c_str());
+      h_ClusterSize[c][p]->Write(ClusterSize_part_hname.c_str());
+    }
+    string nClusters_hname = "nClusters_"+to_string(c);
+    string ClusterSize_hname = "ClusterSize_"+to_string(c);
+    h_nClustersChamber[c]->Write(nClusters_hname.c_str());
+    h_ClusterSizeChamber[c]->Write(ClusterSize_hname.c_str()); 
+  }
   f.Close();
 
 }
@@ -168,48 +193,48 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
       h_TDCTimeStamp->Fill(TDC_TimeStamp->at(i));
     }
 
-    // Separate hits into partitions.
-    int nhits[3] = {0, 0, 0};
-    vector<int> channel[3];
-    channel[0].clear();
-    channel[1].clear();
-    channel[2].clear();
-    vector<int> timestamp[3];
-    timestamp[0].clear();
-    timestamp[1].clear();
-    timestamp[2].clear();
-    for (int i=0; i<number_of_hits; i++) {
-      if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
-        // Partition A.
-        nhits[0]++;
-        channel[0].push_back(TDC_channel->at(i));
-        timestamp[0].push_back(TDC_TimeStamp->at(i));
-      } else if (TDC_channel->at(i)>=32 && TDC_channel->at(i)<64) {
-        // Partition B.
-        nhits[1]++;
-        channel[1].push_back(TDC_channel->at(i));
-        timestamp[1].push_back(TDC_TimeStamp->at(i));
-      } else if (TDC_channel->at(i)>=64 && TDC_channel->at(i)<96) {
-        // Partition C.
-        nhits[2]++;
-        channel[2].push_back(TDC_channel->at(i));
-        timestamp[2].push_back(TDC_TimeStamp->at(i));
-      }
-    }
-
-    if (debug) {
-      cout << "=== New Event ===" << endl;
-      cout << "-----> Number of Hits: " << number_of_hits << endl;
-      cout << "---> Number of Hits in Partition A: " << nhits[0] << endl;
-      cout << "---> Number of Hits in Partition B: " << nhits[1] << endl;
-      cout << "---> Number of Hits in Partition C: " << nhits[2] << endl;
-    }    
-
     // Loop over chambers.
-    for (int c=0; c<1; c++) {
+    for (int c=0; c<nc; c++) {
+
+      // Separate hits into partitions.
+      int nhits[3] = {0, 0, 0};
+      vector<int> channel[3];
+      channel[0].clear();
+      channel[1].clear();
+      channel[2].clear();
+      vector<int> timestamp[3];
+      timestamp[0].clear();
+      timestamp[1].clear();
+      timestamp[2].clear();
+      for (int i=0; i<number_of_hits; i++) {
+        if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
+          // Partition A.
+          nhits[0]++;
+          channel[0].push_back(TDC_channel->at(i));
+          timestamp[0].push_back(TDC_TimeStamp->at(i));
+        } else if (TDC_channel->at(i)>=32 && TDC_channel->at(i)<64) {
+          // Partition B.
+          nhits[1]++;
+          channel[1].push_back(TDC_channel->at(i));
+          timestamp[1].push_back(TDC_TimeStamp->at(i));
+        } else if (TDC_channel->at(i)>=64 && TDC_channel->at(i)<96) {
+          // Partition C.
+          nhits[2]++;
+          channel[2].push_back(TDC_channel->at(i));
+          timestamp[2].push_back(TDC_TimeStamp->at(i));
+        }
+      }
+
+      if (debug) {
+        cout << "=== New Event ===" << endl;
+        cout << "-----> Number of Hits: " << number_of_hits << endl;
+        cout << "---> Number of Hits in Partition A: " << nhits[0] << endl;
+        cout << "---> Number of Hits in Partition B: " << nhits[1] << endl;
+        cout << "---> Number of Hits in Partition C: " << nhits[2] << endl;
+      }    
 
       // Loop over partitions.
-      for (int p=0; p<3; p++) {
+      for (int p=0; p<np; p++) {
 
         // Create a vector of pairs with TDC time stamp and strip number and sort it by time stamp.
         vector<pair<float,int>> HitInfo;
@@ -333,8 +358,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
               }
               nClusters = nClusters - 1;
             } else {
-              h_ClusterSize[p]->Fill(2);
-              h_ClusterSizeChamber->Fill(2);
+              h_ClusterSize[c][p]->Fill(2);
+              h_ClusterSizeChamber[c]->Fill(2);
               stripsInClusters = stripsInClusters + 2;
             } 
           } else {
@@ -375,8 +400,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
                 cout << "Good cluster with at least 2 consecutive strips!" << endl;
                 cout << "Cluster size: " << consecutiveStrips.size() << endl;
               }
-              h_ClusterSize[p]->Fill(consecutiveStrips.size());
-              h_ClusterSizeChamber->Fill(consecutiveStrips.size());
+              h_ClusterSize[c][p]->Fill(consecutiveStrips.size());
+              h_ClusterSizeChamber[c]->Fill(consecutiveStrips.size());
               stripsInClusters = stripsInClusters + consecutiveStrips.size();
             } else {
               nClusters = nClusters - 1;
@@ -396,8 +421,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         // Count the number of single-strip clusters. Fill the cluster size histogram.
         int singleStrips = nhits[p] - stripsInClusters;
         for (int j=1; j<=singleStrips; j++) {
-          h_ClusterSize[p]->Fill(1);
-          h_ClusterSizeChamber->Fill(1);
+          h_ClusterSize[c][p]->Fill(1);
+          h_ClusterSizeChamber[c]->Fill(1);
         }
         if (debug) {
           cout << "Number of single strips: " << singleStrips << endl;
@@ -406,8 +431,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         // Count the total number of clusters in the event. Fill the number of clusters histogram.
         int totalClusters = singleStrips + nClusters;
         //if (p == 0) {  // Temporary hack for when we read data from only one partition.
-        h_nClusters[p]->Fill(totalClusters);
-        h_nClustersChamber->Fill(totalClusters);
+        h_nClusters[c][p]->Fill(totalClusters);
+        h_nClustersChamber[c]->Fill(totalClusters);
         //}
         if (debug) {
           cout << "=> Total number of clusters: " << totalClusters << endl;

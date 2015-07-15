@@ -45,17 +45,19 @@ public :
   void Initialize();
   void Finalize(string outputFile);
 
-  // Declaration of histograms
+  // Declaration and initialization of global variables.
+  float clustering_timeWindow = 30.0;  // Time window used to build candidadte clusters [ns].
+  static const int nc = 1;
+  static const int np = 3;
+
+  // Declaration of histograms.
   TH1F* h_nHits;
   TH1F* h_TDCChannel;
   TH1F* h_TDCTimeStamp;
-  TH1F* h_nClusters[3];
-  TH1F* h_ClusterSize[3];
-  TH1F* h_nClustersChamber;
-  TH1F* h_ClusterSizeChamber;
-
-  // Declaration of global variables
-  float clustering_timeWindow;
+  TH1F* h_nClusters[nc][np];
+  TH1F* h_ClusterSize[nc][np];
+  TH1F* h_nClustersChamber[nc];
+  TH1F* h_ClusterSizeChamber[nc];
 
 };
 
