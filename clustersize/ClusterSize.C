@@ -20,18 +20,18 @@ using namespace std;
 int main(int argc, char *argv[]) {
 
   // Check if correct number of arguments have been given in the command line.
-  if (argc != 3) {
+  if (argc != 2) {
     cout << "*******************************************************" << endl;
     cout << "STOPPING..." << endl;
     cout << "To run this code do: " << endl;
-    cout << argv[0] << " inputFile.root outputFile.root" << endl;
+    cout << argv[0] << " inputFile.root" << endl;
     cout << "*******************************************************" << endl;
     return 1;
   } else {
 
-    // Store input and output file names from command line into variables.
+    // Store input file name from command line into variable.
     string inputFile = argv[1];
-    string outputFile = argv[2];
+    //string outputFile = argv[2];
 
     // Open input file.
     ifstream file(inputFile.c_str());
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     ClusterSize t(c);
     t.Initialize();
     t.Loop(ChannelMap);
-    t.Finalize(outputFile);
+    t.Finalize(inputFile);
 
     return 0;
  
@@ -104,23 +104,26 @@ void ClusterSize::Initialize() {
       string ClusterSize_part_hname = "h_ClusterSize_"+to_string(c)+pname;
       string nClusters_part_htitle = "Number of clusters per event in partition "+to_string(c)+pname;
       string ClusterSize_part_htitle = "Cluster size distribution per event in partition "+to_string(c)+pname; 
-      h_nClusters[c][p] = new TH1F(nClusters_part_hname.c_str(), nClusters_part_htitle.c_str(), 51, -0.5, 50.5);
-      h_ClusterSize[c][p] = new TH1F(ClusterSize_part_hname.c_str(), ClusterSize_part_htitle.c_str(), 5, 0.5, 5.5);
+      h_nClusters[c][p] = new TH1F(nClusters_part_hname.c_str(), nClusters_part_htitle.c_str(), 101, -0.5, 100.5);
+      h_ClusterSize[c][p] = new TH1F(ClusterSize_part_hname.c_str(), ClusterSize_part_htitle.c_str(), 50, 0.5, 50.5);
     }
     string nClusters_hname = "h_nClusters_"+to_string(c);
     string ClusterSize_hname = "h_ClusterSize_"+to_string(c);
     string nClusters_htitle = "Number of clusters per event in chamber "+to_string(c);
     string ClusterSize_htitle = "Cluster size distribution per event in chamber "+to_string(c);
-    h_nClustersChamber[c] = new TH1F(nClusters_hname.c_str(), nClusters_htitle.c_str(), 51, -0.5, 50.5);
-    h_ClusterSizeChamber[c] = new TH1F(ClusterSize_hname.c_str(), ClusterSize_htitle.c_str(), 5, 0.5, 5.5);
+    h_nClustersChamber[c] = new TH1F(nClusters_hname.c_str(), nClusters_htitle.c_str(), 101, -0.5, 100.5);
+    h_ClusterSizeChamber[c] = new TH1F(ClusterSize_hname.c_str(), ClusterSize_htitle.c_str(), 50, 0.5, 50.5);
   }
 
 }
 
 
-void ClusterSize::Finalize(string outputFile) {
+void ClusterSize::Finalize(string fileName) {
 
   // Write output file with histograms.
+  string baseName;
+  baseName = fileName.erase(fileName.find_last_of("."));
+  string outputFile = "AnalysedData/"+baseName.substr(baseName.find_last_of("/")+1)+"-Offline_Cluster_Size.root";;
   TFile f(outputFile.c_str(), "RECREATE");
   h_nHits->Write("nHits");
   h_TDCChannel->Write("TDCChannel");
@@ -430,10 +433,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
 
         // Count the total number of clusters in the event. Fill the number of clusters histogram.
         int totalClusters = singleStrips + nClusters;
-        //if (p == 0) {  // Temporary hack for when we read data from only one partition.
         h_nClusters[c][p]->Fill(totalClusters);
         h_nClustersChamber[c]->Fill(totalClusters);
-        //}
         if (debug) {
           cout << "=> Total number of clusters: " << totalClusters << endl;
         }
