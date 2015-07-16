@@ -31,7 +31,6 @@ int main(int argc, char *argv[]) {
 
     // Store input file name from command line into variable.
     string inputFile = argv[1];
-    //string outputFile = argv[2];
 
     // Open input file.
     ifstream file(inputFile.c_str());
@@ -67,7 +66,7 @@ int main(int argc, char *argv[]) {
 
     // Run analysis.
     ClusterSize t(c);
-    t.Initialize();
+    t.Initialize(inputFile);
     t.Loop(ChannelMap);
     t.Finalize(inputFile);
 
@@ -84,7 +83,18 @@ bool sort_pair(const pair<float,int>& a, const pair<float,int>& b) {
 }
 
 
-void ClusterSize::Initialize() {
+void ClusterSize::Initialize(string inputFile) {
+
+  // Use input file name to determine whether the data was collected using a muon or a random trigger.
+  string fileName = inputFile.substr(inputFile.find_last_of("/")+1);
+  size_t pos = fileName.find("Muon");
+  if (pos != string::npos) {
+    muonTrigger = true;
+    cout << "Trigger: MUON" << endl;
+  } else {
+    muonTrigger = false;
+    cout << "Trigger: RANDOM" << endl;
+  }
 
   // Initialize histograms.
   h_nHits = new TH1F("h_nHits", "Number of hits per event", 101, -0.5, 100.5);
@@ -190,11 +200,15 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
     nevents++;
 
     // Fill histograms for tree variables.
-    h_nHits->Fill(number_of_hits);
+    int nhits_all = 0;
     for (int i=0; i<number_of_hits; i++) {
+      // Applying trigger requirement.
+      if (muonTrigger==true && TDC_TimeStamp->at(i) < trigger_cut) continue;
+      nhits_all++;
       h_TDCChannel->Fill(TDC_channel->at(i));
       h_TDCTimeStamp->Fill(TDC_TimeStamp->at(i));
     }
+    h_nHits->Fill(nhits_all);
 
     // Loop over chambers.
     for (int c=0; c<nc; c++) {
@@ -210,6 +224,8 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
       timestamp[1].clear();
       timestamp[2].clear();
       for (int i=0; i<number_of_hits; i++) {
+        // Applying trigger requirement.
+        if (muonTrigger==true && TDC_TimeStamp->at(i) < trigger_cut) continue;
         if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
           // Partition A.
           nhits[0]++;

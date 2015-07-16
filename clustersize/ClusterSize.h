@@ -42,13 +42,15 @@ public :
   virtual void     Loop(map<int,int> ChannelMap);
   virtual Bool_t   Notify();
   virtual void     Show(Long64_t entry = -1);
-  void Initialize();
-  void Finalize(string outputFile);
+  void Initialize(string inputFile);
+  void Finalize(string fileName);
 
   // Declaration and initialization of global variables.
   float clustering_timeWindow = 30.0;  // Time window used to build candidadte clusters [ns].
   static const int nc = 1;
   static const int np = 3;
+  bool muonTrigger = true;
+  float trigger_cut = 4700.0;
 
   // Declaration of histograms.
   TH1F* h_nHits;
