@@ -47,10 +47,11 @@ public :
 
   // Declaration and initialization of global variables.
   float clustering_timeWindow = 30.0;  // Time window used to build candidadte clusters [ns].
-  static const int nc = 1;
-  static const int np = 3;
-  bool muonTrigger = true;
-  float trigger_cut = 4700.0;
+  static const int nc = 1;  // Number of RPC chambers.
+  static const int np = 3;  // Number of partitions in each chamber.
+  bool muonTrigger = true;  // Is the muon trigger being used?
+  float trigger_cut_min = 180.0;  // Lower cut to select hits in time with the muon trigger [ns].
+  float trigger_cut_max = 240.0;  // Upper cut to select hits in time with the muon trigger [ns].
 
   // Declaration of histograms.
   TH1F* h_nHits;

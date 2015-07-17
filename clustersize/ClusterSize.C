@@ -203,7 +203,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
     int nhits_all = 0;
     for (int i=0; i<number_of_hits; i++) {
       // Applying trigger requirement.
-      if (muonTrigger==true && TDC_TimeStamp->at(i) < trigger_cut) continue;
+      if (muonTrigger==true && (TDC_TimeStamp->at(i) < trigger_cut_min || TDC_TimeStamp->at(i) > trigger_cut_max)) continue;
       nhits_all++;
       h_TDCChannel->Fill(TDC_channel->at(i));
       h_TDCTimeStamp->Fill(TDC_TimeStamp->at(i));
@@ -225,7 +225,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
       timestamp[2].clear();
       for (int i=0; i<number_of_hits; i++) {
         // Applying trigger requirement.
-        if (muonTrigger==true && TDC_TimeStamp->at(i) < trigger_cut) continue;
+        if (muonTrigger==true && (TDC_TimeStamp->at(i) < trigger_cut_min || TDC_TimeStamp->at(i) > trigger_cut_max)) continue;
         if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
           // Partition A.
           nhits[0]++;
