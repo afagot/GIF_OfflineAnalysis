@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
 
     // Load Channel=>Strip mapping file and build map.
     map<int,int> ChannelMap;
-    ifstream mappingFile("ChannelsMapping.csv",ios::in);
+    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);
     if (mappingFile.is_open()) {
       cout << "Channel-to-strip mapping file successfully loaded!" << endl;
       while (mappingFile.good()) {
@@ -87,7 +87,8 @@ void ClusterSize::Initialize(string inputFile) {
 
   // Use input file name to determine whether the data was collected using a muon or a random trigger.
   string fileName = inputFile.substr(inputFile.find_last_of("/")+1);
-  size_t pos = fileName.find("Muon");
+  //size_t pos = fileName.find("Muon");
+  size_t pos = fileName.find("Beam");
   if (pos != string::npos) {
     muonTrigger = true;
     cout << "Trigger: MUON" << endl;
@@ -226,21 +227,82 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
       for (int i=0; i<number_of_hits; i++) {
         // Applying trigger requirement.
         if (muonTrigger==true && (TDC_TimeStamp->at(i) < trigger_cut_min || TDC_TimeStamp->at(i) > trigger_cut_max)) continue;
-        if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
-          // Partition A.
-          nhits[0]++;
-          channel[0].push_back(TDC_channel->at(i));
-          timestamp[0].push_back(TDC_TimeStamp->at(i));
-        } else if (TDC_channel->at(i)>=32 && TDC_channel->at(i)<64) {
-          // Partition B.
-          nhits[1]++;
-          channel[1].push_back(TDC_channel->at(i));
-          timestamp[1].push_back(TDC_TimeStamp->at(i));
-        } else if (TDC_channel->at(i)>=64 && TDC_channel->at(i)<96) {
-          // Partition C.
-          nhits[2]++;
-          channel[2].push_back(TDC_channel->at(i));
-          timestamp[2].push_back(TDC_TimeStamp->at(i));
+        if (c==0) {
+          // Chamber S1.
+          if (TDC_channel->at(i)<1000 || TDC_channel->at(i)>1031) continue;
+          if (TDC_channel->at(i)>=1000 && TDC_channel->at(i)<1032) {
+            // Partition A.
+            nhits[0]++;
+            channel[0].push_back(TDC_channel->at(i));
+            timestamp[0].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=1032 && TDC_channel->at(i)<1064) {
+            // Partition B.
+            nhits[1]++;
+            channel[1].push_back(TDC_channel->at(i));
+            timestamp[1].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=1064 && TDC_channel->at(i)<1096) {
+            // Partition C.
+            nhits[2]++;
+            channel[2].push_back(TDC_channel->at(i));
+            timestamp[2].push_back(TDC_TimeStamp->at(i));
+          }
+        } else if (c==1) {
+          // Chamber S2.
+          if (TDC_channel->at(i)<1096 || TDC_channel->at(i)>2063) continue;
+          if (TDC_channel->at(i)>=1096 && TDC_channel->at(i)<1128) {
+            // Partition A.
+            nhits[0]++;
+            channel[0].push_back(TDC_channel->at(i));
+            timestamp[0].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=2000 && TDC_channel->at(i)<2032) {
+            // Partition B.
+            nhits[1]++;
+            channel[1].push_back(TDC_channel->at(i));
+            timestamp[1].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=2032 && TDC_channel->at(i)<2064) {
+            // Partition C.
+            nhits[2]++;
+            channel[2].push_back(TDC_channel->at(i));
+            timestamp[2].push_back(TDC_TimeStamp->at(i));
+          }
+        } else if (c==2) {
+          // Chamber S3.
+          if (TDC_channel->at(i)<2064 || TDC_channel->at(i)>3031) continue;
+          if (TDC_channel->at(i)>=2064 && TDC_channel->at(i)<2096) {
+            // Partition A.
+            nhits[0]++;
+            channel[0].push_back(TDC_channel->at(i));
+            timestamp[0].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=2096 && TDC_channel->at(i)<2128) {
+            // Partition B.
+            nhits[1]++;
+            channel[1].push_back(TDC_channel->at(i));
+            timestamp[1].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=3000 && TDC_channel->at(i)<3032) {
+            // Partition C.
+            nhits[2]++;
+            channel[2].push_back(TDC_channel->at(i));
+            timestamp[2].push_back(TDC_TimeStamp->at(i));
+          }
+        } else if (c==3) {
+          // Chamber S4.
+          if (TDC_channel->at(i)<3032 || TDC_channel->at(i)>3127) continue;
+          if (TDC_channel->at(i)>=3032 && TDC_channel->at(i)<3064) {
+            // Partition A.
+            nhits[0]++;
+            channel[0].push_back(TDC_channel->at(i));
+            timestamp[0].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=3064 && TDC_channel->at(i)<3096) {
+            // Partition B.
+            nhits[1]++;
+            channel[1].push_back(TDC_channel->at(i));
+            timestamp[1].push_back(TDC_TimeStamp->at(i));
+          } else if (TDC_channel->at(i)>=3096 && TDC_channel->at(i)<3128) {
+            // Partition C.
+            nhits[2]++;
+            channel[2].push_back(TDC_channel->at(i));
+            timestamp[2].push_back(TDC_TimeStamp->at(i));
+          }
         }
       }
 
