@@ -48,7 +48,9 @@ int main(int argc, char *argv[]) {
 
     // Load Channel=>Strip mapping file and build map.
     map<int,int> ChannelMap;
-    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);
+    //ifstream mappingFile("ChannelsMapping.csv",ios::in);  // Mapping file for Trolley 0.
+    //ifstream mappingFile("ChannelsMapping_Trolley1_4TDCs.csv",ios::in);  // Old Mapping file for Trolley 1 - 4 TDCs (Runs: 20150718000329-20150719180236).
+    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);  // New Mapping file for Trolley 1 - 3 TDCs (Run 20150719184203 onwards).
     if (mappingFile.is_open()) {
       cout << "Channel-to-strip mapping file successfully loaded!" << endl;
       while (mappingFile.good()) {
@@ -87,7 +89,6 @@ void ClusterSize::Initialize(string inputFile) {
 
   // Use input file name to determine whether the data was collected using a muon or a random trigger.
   string fileName = inputFile.substr(inputFile.find_last_of("/")+1);
-  //size_t pos = fileName.find("Muon");
   size_t pos = fileName.find("Beam");
   if (pos != string::npos) {
     muonTrigger = true;
@@ -99,7 +100,7 @@ void ClusterSize::Initialize(string inputFile) {
 
   // Initialize histograms.
   h_nHits = new TH1F("h_nHits", "Number of hits per event", 101, -0.5, 100.5);
-  h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 96, -0.5, 95.5);
+  h_TDCChannel = new TH1F("h_TDCChannel", "TDC channels", 2128, -0.5, 2127.5);
   h_TDCTimeStamp = new TH1F("h_TDCTimeStamp", "TDC time stamp", 300, 0.0, 6000.0);
   for (int c=0; c<nc; c++) {
     string pname;
@@ -229,18 +230,19 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         if (muonTrigger==true && (TDC_TimeStamp->at(i) < trigger_cut_min || TDC_TimeStamp->at(i) > trigger_cut_max)) continue;
         if (c==0) {
           // Chamber S1.
-          if (TDC_channel->at(i)<1000 || TDC_channel->at(i)>1031) continue;
-          if (TDC_channel->at(i)>=1000 && TDC_channel->at(i)<1032) {
+          // For old mapping of Trolley 1, add 1000 to each of the numbers below. 
+          if (TDC_channel->at(i)<0 || TDC_channel->at(i)>31) continue;
+          if (TDC_channel->at(i)>=0 && TDC_channel->at(i)<32) {
             // Partition A.
             nhits[0]++;
             channel[0].push_back(TDC_channel->at(i));
             timestamp[0].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=1032 && TDC_channel->at(i)<1064) {
+          } else if (TDC_channel->at(i)>=32 && TDC_channel->at(i)<64) {
             // Partition B.
             nhits[1]++;
             channel[1].push_back(TDC_channel->at(i));
             timestamp[1].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=1064 && TDC_channel->at(i)<1096) {
+          } else if (TDC_channel->at(i)>=64 && TDC_channel->at(i)<96) {
             // Partition C.
             nhits[2]++;
             channel[2].push_back(TDC_channel->at(i));
@@ -248,18 +250,19 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==1) {
           // Chamber S2.
-          if (TDC_channel->at(i)<1096 || TDC_channel->at(i)>2063) continue;
-          if (TDC_channel->at(i)>=1096 && TDC_channel->at(i)<1128) {
+          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
+          if (TDC_channel->at(i)<96 || TDC_channel->at(i)>1063) continue;
+          if (TDC_channel->at(i)>=96 && TDC_channel->at(i)<128) {
             // Partition A.
             nhits[0]++;
             channel[0].push_back(TDC_channel->at(i));
             timestamp[0].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=2000 && TDC_channel->at(i)<2032) {
+          } else if (TDC_channel->at(i)>=1000 && TDC_channel->at(i)<1032) {
             // Partition B.
             nhits[1]++;
             channel[1].push_back(TDC_channel->at(i));
             timestamp[1].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=2032 && TDC_channel->at(i)<2064) {
+          } else if (TDC_channel->at(i)>=1032 && TDC_channel->at(i)<1064) {
             // Partition C.
             nhits[2]++;
             channel[2].push_back(TDC_channel->at(i));
@@ -267,18 +270,19 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==2) {
           // Chamber S3.
-          if (TDC_channel->at(i)<2064 || TDC_channel->at(i)>3031) continue;
-          if (TDC_channel->at(i)>=2064 && TDC_channel->at(i)<2096) {
+          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
+          if (TDC_channel->at(i)<1064 || TDC_channel->at(i)>2031) continue;
+          if (TDC_channel->at(i)>=1064 && TDC_channel->at(i)<1096) {
             // Partition A.
             nhits[0]++;
             channel[0].push_back(TDC_channel->at(i));
             timestamp[0].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=2096 && TDC_channel->at(i)<2128) {
+          } else if (TDC_channel->at(i)>=1096 && TDC_channel->at(i)<1128) {
             // Partition B.
             nhits[1]++;
             channel[1].push_back(TDC_channel->at(i));
             timestamp[1].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=3000 && TDC_channel->at(i)<3032) {
+          } else if (TDC_channel->at(i)>=2000 && TDC_channel->at(i)<2032) {
             // Partition C.
             nhits[2]++;
             channel[2].push_back(TDC_channel->at(i));
@@ -286,18 +290,19 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==3) {
           // Chamber S4.
-          if (TDC_channel->at(i)<3032 || TDC_channel->at(i)>3127) continue;
-          if (TDC_channel->at(i)>=3032 && TDC_channel->at(i)<3064) {
+          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
+          if (TDC_channel->at(i)<2032 || TDC_channel->at(i)>2127) continue;
+          if (TDC_channel->at(i)>=2032 && TDC_channel->at(i)<2064) {
             // Partition A.
             nhits[0]++;
             channel[0].push_back(TDC_channel->at(i));
             timestamp[0].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=3064 && TDC_channel->at(i)<3096) {
+          } else if (TDC_channel->at(i)>=2064 && TDC_channel->at(i)<2096) {
             // Partition B.
             nhits[1]++;
             channel[1].push_back(TDC_channel->at(i));
             timestamp[1].push_back(TDC_TimeStamp->at(i));
-          } else if (TDC_channel->at(i)>=3096 && TDC_channel->at(i)<3128) {
+          } else if (TDC_channel->at(i)>=2096 && TDC_channel->at(i)<2128) {
             // Partition C.
             nhits[2]++;
             channel[2].push_back(TDC_channel->at(i));
