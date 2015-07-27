@@ -1,3 +1,5 @@
+
+
 #include "../include/NoiseRate.h"
 #include "../include/MsgSvc.h"
 
@@ -96,8 +98,7 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
     for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
         for (unsigned int p = 0; p < NPARTITIONS; p++){
 	    //Noise rate bin size depending on the strip surface
-//	    float binWidth = 1./(TDCWINDOW*1e-9*stripSurface[p]);
-	    float binWidth = 1./((600.-400.)*1e-9*stripSurface[p]);
+	    float binWidth = 1./(TDCWINDOW*1e-9*stripSurface[p]);
 
             //Instantaneous noise rate 2D map
             SetIDName(rpc,p,part,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
@@ -128,9 +129,9 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
     //****************** MAPPING *************************************
 
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_Trolley1.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_Trolley1_NightShift20150722.csv");
+//    map<int,int> RPCChMap = TDCMapping("ChannelsMapping.csv");
+//    map<int,int> RPCChMap = TDCMapping("ChannelsMapping_Trolley1.csv");
+    map<int,int> RPCChMap = TDCMapping("ChannelsMapping_Trolley1.csv");
 
     //****************** ROOT FILE ***********************************
 
@@ -167,13 +168,9 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
             RPCHit temprpchit;
             SetRPCHit(temprpchit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
 
-            //Count the number of hits outside the peak but only
-            //consider the ones before the peak since the muons can
-            //generate after pulses
-            if(temprpchit.TimeStamp >= 400. && temprpchit.TimeStamp < 600.)
-                NHitsPerStrip[temprpchit.Station][temprpchit.Strip]++;
+            NHitsPerStrip[temprpchit.Station][temprpchit.Strip]++;
 
-            //Fill the RPC profiles
+            //Fille the RPC profiles
             RPCHitProfile[temprpchit.Station][temprpchit.Partition]->Fill(temprpchit.Strip);
 
             Multiplicity[temprpchit.Station][temprpchit.Partition]++;
@@ -188,18 +185,15 @@ void GetNoiseRate(string fName,string chamberType){ //raw root file name
 
                 //Get the instaneous noise by normalise the hit count to the
                 //time window length in seconds and to the strip surface
-//		float InstantNoise = (float)NHitsPerStrip[rpc][s]/(TDCWINDOW*1e-9*stripSurface[p]);
-		float InstantNoise = (float)NHitsPerStrip[rpc][s]/((600.-400.)*1e-9*stripSurface[p]);
+		float InstantNoise = (float)NHitsPerStrip[rpc][s]/(TDCWINDOW*1e-9*stripSurface[p]);
                 RPCInstantNoiseRate[rpc][p]->Fill(s,InstantNoise);
 
                 //Reinitialise the hit count for strip s
                 NHitsPerStrip[rpc][s]=0;
 
                 //Fill the multiplicity for this event
-                if(s == 0 || s == 32 || s == 64){
-                    RPCHitMultiplicity[rpc][p]->Fill(Multiplicity[rpc][p]);
-                    Multiplicity[rpc][p] = 0;
-                }
+                RPCHitMultiplicity[rpc][p]->Fill(Multiplicity[rpc][p]);
+                Multiplicity[rpc][p] = 0;
             }
         }
     }

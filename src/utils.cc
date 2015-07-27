@@ -4,6 +4,7 @@ using namespace std;
 
 void MakeHeader(string filename){
     char part[4] = "ABC";               //Names of the partitions
+    string position[4] = {"S4","S3","S2","S1"};
 
     ofstream outputCSV(filename.c_str(), ios::out | ios::app);
 
@@ -13,8 +14,8 @@ void MakeHeader(string filename){
         for(unsigned int p=0; p<NPARTITIONS; p++){
             char columnLabel[100];
             char errorLabel[100];
-            sprintf(columnLabel,"Mean Rate%u%c (Hz/cm2)",rpc,part[p]);
-            sprintf(errorLabel,"Error %u%c (Hz/cm2)",rpc,part[p]);
+            sprintf(columnLabel,"Mean Rate%s%c (Hz/cm2)",position[rpc].c_str(),part[p]);
+            sprintf(errorLabel,"Error %s%c (Hz/cm2)",position[rpc].c_str(),part[p]);
             outputCSV << columnLabel << '\t' << errorLabel << '\t';
         }
     }
@@ -24,8 +25,9 @@ void MakeHeader(string filename){
 
 //Name of histograms
 void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, const char* IDroot, const char* Nameroot){
-    sprintf(ID,"%s_%i%c",IDroot,station,partLabel[partition]);
-    sprintf(Name,"%s %i, Partition %c",Nameroot,station,partLabel[partition]);
+    string position[4] = {"S4","S3","S2","S1"};
+    sprintf(ID,"%s_%s%c",IDroot,position[station].c_str(),partLabel[partition]);
+    sprintf(Name,"%s %s, Partition %c",Nameroot,position[station].c_str(),partLabel[partition]);
 }
 
 //Set the RPCHit variables

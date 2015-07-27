@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 
-#define TDCWINDOW   5000.
-#define TDCOFFSET  -5025.
+#define TDCWINDOW   24.*25.
+#define TDCOFFSET  -29.*25.
 
-#define NRPCTROLLEY 1
+#define NRPCTROLLEY 4
 #define NPARTITIONS 3
 
 #define NSTRIPSRPC  96

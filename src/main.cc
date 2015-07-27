@@ -18,7 +18,7 @@ int main(int argc ,char *argv[]){
         string chamberType;
         converter >> chamberType;
 
-        string fNameCSV = GetPath(fName)+"Summary_runs.csv";
+        string fNameCSV = "AnalysedData/Summary_runs.csv";
 
         ifstream checkifexists(fNameCSV.c_str(), ios::in);
         if(!checkifexists) MakeHeader(fNameCSV);
