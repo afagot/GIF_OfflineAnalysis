@@ -49,8 +49,7 @@ int main(int argc, char *argv[]) {
     // Load Channel=>Strip mapping file and build map.
     map<int,int> ChannelMap;
     //ifstream mappingFile("ChannelsMapping.csv",ios::in);  // Mapping file for Trolley 0.
-    //ifstream mappingFile("ChannelsMapping_Trolley1_4TDCs.csv",ios::in);  // Old Mapping file for Trolley 1 - 4 TDCs (Runs: 20150718000329-20150719180236).
-    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);  // New Mapping file for Trolley 1 - 3 TDCs (Run 20150719184203 onwards).
+    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);  // Mapping file for Trolley 1.
     if (mappingFile.is_open()) {
       cout << "Channel-to-strip mapping file successfully loaded!" << endl;
       while (mappingFile.good()) {
@@ -245,7 +244,6 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         if (muonTrigger==true && (TDC_TimeStamp->at(i) < trigger_cut_min || TDC_TimeStamp->at(i) > trigger_cut_max)) continue;
         if (c==0) {
           // Chamber S4: Strips 000 to 095.
-          // For old mapping of Trolley 1, add 1000 to each of the numbers below. 
           if (ChannelMap[TDC_channel->at(i)]<0 || ChannelMap[TDC_channel->at(i)]>95) continue;
           if (ChannelMap[TDC_channel->at(i)]>=0 && ChannelMap[TDC_channel->at(i)]<32) {
             // Partition A.
@@ -265,7 +263,6 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==1) {
           // Chamber S3: Strips 100 to 195.
-          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
           if (ChannelMap[TDC_channel->at(i)]<100 || ChannelMap[TDC_channel->at(i)]>195) continue;
           if (ChannelMap[TDC_channel->at(i)]>=100 && ChannelMap[TDC_channel->at(i)]<132) {
             // Partition A.
@@ -285,7 +282,6 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==2) {
           // Chamber S2: Strips 200 to 295.
-          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
           if (ChannelMap[TDC_channel->at(i)]<200 || ChannelMap[TDC_channel->at(i)]>295) continue;
           if (ChannelMap[TDC_channel->at(i)]>=200 && ChannelMap[TDC_channel->at(i)]<232) {
             // Partition A.
@@ -305,7 +301,6 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
         } else if (c==3) {
           // Chamber S1: Strips 300 to 395.
-          // For old mapping of Trolley 1, add 1000 to each of the numbers below.
           if (ChannelMap[TDC_channel->at(i)]<300 || ChannelMap[TDC_channel->at(i)]>395) continue;
           if (ChannelMap[TDC_channel->at(i)]>=300 && ChannelMap[TDC_channel->at(i)]<332) {
             // Partition A.
