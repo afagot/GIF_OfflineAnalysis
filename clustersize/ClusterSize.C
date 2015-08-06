@@ -92,6 +92,12 @@ void ClusterSize::Initialize(string inputFile) {
   if (pos != string::npos) {
     muonTrigger = true;
     cout << "Trigger: MUON" << endl;
+    size_t pos_trig = fileName.find("Near");
+    if (pos_trig != string::npos) {
+      trigger_cut_min = 240.0;
+      trigger_cut_max = 340.0;
+    }
+    cout << "Window: [" << trigger_cut_min << " ns , " << trigger_cut_max << " ns]" << endl; 
   } else {
     muonTrigger = false;
     cout << "Trigger: RANDOM" << endl;
@@ -171,6 +177,10 @@ void ClusterSize::Finalize(string fileName) {
   string attDOWN;
   size_t pos_S1S2 = fName.find("S1S2-");
   size_t pos_S3S4 = fName.find("S3S4-");
+  size_t pos_S1 = fName.find("S1-");
+  size_t pos_S2 = fName.find("S2-");
+  size_t pos_S3 = fName.find("S3-");
+  size_t pos_S4 = fName.find("S4-");
   size_t pos_UP = fName.find("UP");
   size_t pos_DOWN = fName.find("DOWN");
   if (pos_S1S2 != string::npos) {
@@ -181,6 +191,18 @@ void ClusterSize::Finalize(string fileName) {
     voltageS3 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
     voltageS4 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
   } 
+  if (pos_S1 != string::npos) {
+    voltageS1 = fName.substr(pos_S1+3,fName.find("_",pos_S1)-(pos_S1+3));
+  }
+  if (pos_S2 != string::npos) {
+    voltageS2 = fName.substr(pos_S2+3,fName.find("_",pos_S2)-(pos_S2+3));
+  }
+  if (pos_S3 != string::npos) {
+    voltageS3 = fName.substr(pos_S3+3,fName.find("_",pos_S3)-(pos_S3+3));
+  }
+  if (pos_S4 != string::npos) {
+    voltageS4 = fName.substr(pos_S4+3,fName.find("V_",pos_S4)-(pos_S4+3));
+  }
   if (pos_UP != string::npos) {
     attUP = fName.substr(pos_UP+2,fName.find("-",pos_UP)-(pos_UP+2));
     attDOWN = fName.substr(pos_DOWN+4,fName.find("_",pos_DOWN)-(pos_DOWN+4));
