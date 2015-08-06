@@ -161,17 +161,68 @@ void ClusterSize::Finalize(string fileName) {
   }
   f.Close();
 
-
   // Write output csv file with mean values.
+  string fName = baseName.substr(baseName.find_last_of("/")+1);
+  string voltageS1;
+  string voltageS2;
+  string voltageS3;
+  string voltageS4;
+  string attUP;
+  string attDOWN;
+  size_t pos_S1S2 = fName.find("S1S2-");
+  size_t pos_S3S4 = fName.find("S3S4-");
+  size_t pos_UP = fName.find("UP");
+  size_t pos_DOWN = fName.find("DOWN");
+  if (pos_S1S2 != string::npos) {
+    voltageS1 = fName.substr(pos_S1S2+5,fName.find("_",pos_S1S2)-(pos_S1S2+5));
+    voltageS2 = fName.substr(pos_S1S2+5,fName.find("_",pos_S1S2)-(pos_S1S2+5));
+  }
+  if (pos_S3S4 != string::npos) {
+    voltageS3 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
+    voltageS4 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
+  } 
+  if (pos_UP != string::npos) {
+    attUP = fName.substr(pos_UP+2,fName.find("-",pos_UP)-(pos_UP+2));
+    attDOWN = fName.substr(pos_DOWN+4,fName.find("_",pos_DOWN)-(pos_DOWN+4));
+  } else {
+    attUP = "None";
+    attDOWN = "None";
+  }
   string outputCsvFile = "AnalysedData/"+baseName.substr(baseName.find_last_of("/")+1)+"-Offline_Cluster_Size.csv";
   ofstream outputCSV(outputCsvFile.c_str(), ofstream::out);
+  outputCSV << "INFO " << baseName.substr(baseName.find_last_of("/")+1) << '\n';
+  outputCSV << "INFO Voltage  AttUP  AttDOWN  Chamber  Partition  <nClusters>  <nClusters>_err  <ClusterSize>  <ClusterSize>_err" << '\n';
+  string cname;
+  string voltage;
   for (int c=0; c<nc; c++) {
-    outputCSV << "===> Chamber " << c << '\n';
-    outputCSV << "Partition " << "<nClusters> " << "<nClusters>_err " << "<ClusterSize> " << "<ClusterSize>_err" <<  '\n';
-    for (int p=0; p<np; p++) {
-      outputCSV << p << " " << h_nClusters[c][p]->GetMean() << " " << h_nClusters[c][p]->GetMeanError() << " "
-                << h_ClusterSize[c][p]->GetMean() << " " << h_ClusterSize[c][p]->GetMeanError() << '\n';
+    string pname;
+    if (c==0) {
+      cname = "S4";
+      voltage = voltageS4;
+    } else if (c==1) {
+      cname = "S3";
+      voltage = voltageS3;
+    } else if (c==2) {
+      cname = "S2";
+      voltage = voltageS2;
+    } else if (c==3) {
+      cname = "S1";
+      voltage = voltageS1;
     }
+    for (int p=0; p<np; p++) {
+      if (p==0) {
+        pname = "A";
+      } else if (p==1) {
+        pname = "B";
+      } else if (p==2) {
+        pname = "C";
+      }
+      outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << pname << " " << h_nClusters[c][p]->GetMean() 
+                << " " << h_nClusters[c][p]->GetMeanError() << " " << h_ClusterSize[c][p]->GetMean() << " " << h_ClusterSize[c][p]->GetMeanError() << '\n';
+    }
+    outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << "all" << " " << h_nClustersChamber[c]->GetMean() 
+              << " " << h_nClustersChamber[c]->GetMeanError() << " " << h_ClusterSizeChamber[c]->GetMean() << " " 
+              << h_ClusterSizeChamber[c]->GetMeanError() << '\n';
   }
   outputCSV << '\n';
   outputCSV.close();
