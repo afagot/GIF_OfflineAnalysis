@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <sstream>
 #include <map>
+#include <cstdlib>
 
 #include <TH2.h>
 #include <TStyle.h>
@@ -47,11 +48,24 @@ int main(int argc, char *argv[]) {
     c->Add(argv[1]); 
 
     // Load Channel=>Strip mapping file and build map.
+    string fileName = inputFile.substr(inputFile.find_last_of("/")+1);
+    size_t pos = fileName.find("run");
+    string runNumber;
+    if (pos != string::npos) {
+      runNumber = fileName.substr(pos+3,fileName.find(".root",pos)-(pos+3));
+    }
     map<int,int> ChannelMap;
+    string mappingFileName;
+    long int run = strtol(runNumber.c_str(),NULL,10);
     //ifstream mappingFile("ChannelsMapping.csv",ios::in);  // Mapping file for Trolley 0.
-    ifstream mappingFile("ChannelsMapping_Trolley1.csv",ios::in);  // Mapping file for Trolley 1.
+    if (run >= 20150718000329 && run <= 20150719180236) {  // Old mapping file for Trolley 1.
+      mappingFileName = "ChannelsMapping_Trolley1_4TDCs.csv";
+    } else if (run >= 20150719184203) {  // New mapping file for Trolley 1.
+      mappingFileName = "ChannelsMapping_Trolley1.csv";
+    }
+    ifstream mappingFile(mappingFileName.c_str(),ios::in);
     if (mappingFile.is_open()) {
-      cout << "Channel-to-strip mapping file successfully loaded!" << endl;
+      cout << "Channel-to-strip mapping file " << mappingFileName << " successfully loaded!" << endl;
       while (mappingFile.good()) {
         int stripNumber;
         int channelNumber;
