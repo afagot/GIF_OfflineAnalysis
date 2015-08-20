@@ -131,17 +131,23 @@ void ClusterSize::Initialize(string inputFile) {
       } else if (p==2) {
         pname = "C";
       }
+      string nClusters_w0bin_part_hname = "h_nClusters_w0bin_"+to_string(c)+pname;
       string nClusters_part_hname = "h_nClusters_"+to_string(c)+pname;
       string ClusterSize_part_hname = "h_ClusterSize_"+to_string(c)+pname;
+      string nClusters_w0bin_part_htitle = "Number of clusters (inc. 0bin) per event in partition "+to_string(c)+pname;
       string nClusters_part_htitle = "Number of clusters per event in partition "+to_string(c)+pname;
       string ClusterSize_part_htitle = "Cluster size distribution per event in partition "+to_string(c)+pname; 
+      h_nClusters_w0bin[c][p] = new TH1F(nClusters_w0bin_part_hname.c_str(), nClusters_w0bin_part_htitle.c_str(), 101, -0.5, 100.5);
       h_nClusters[c][p] = new TH1F(nClusters_part_hname.c_str(), nClusters_part_htitle.c_str(), 101, -0.5, 100.5);
       h_ClusterSize[c][p] = new TH1F(ClusterSize_part_hname.c_str(), ClusterSize_part_htitle.c_str(), 50, 0.5, 50.5);
     }
-    string nClusters_hname = "h_nClusters_"+to_string(c);
+    string nClusters_w0bin_hname = "h_nClustersChamber_w0bin_"+to_string(c);
+    string nClusters_hname = "h_nClustersChamber_"+to_string(c);
     string ClusterSize_hname = "h_ClusterSize_"+to_string(c);
+    string nClusters_w0bin_htitle = "Number of clusters (inc. 0bin) per event in chamber "+to_string(c);
     string nClusters_htitle = "Number of clusters per event in chamber "+to_string(c);
     string ClusterSize_htitle = "Cluster size distribution per event in chamber "+to_string(c);
+    h_nClustersChamber_w0bin[c] = new TH1F(nClusters_w0bin_hname.c_str(), nClusters_w0bin_htitle.c_str(), 101, -0.5, 100.5);
     h_nClustersChamber[c] = new TH1F(nClusters_hname.c_str(), nClusters_htitle.c_str(), 101, -0.5, 100.5);
     h_ClusterSizeChamber[c] = new TH1F(ClusterSize_hname.c_str(), ClusterSize_htitle.c_str(), 50, 0.5, 50.5);
   }
@@ -169,19 +175,24 @@ void ClusterSize::Finalize(string fileName) {
       } else if (p==2) {
         pname = "C";
       }
+      string nClusters_w0bin_part_hname = "nClusters_w0bin_"+to_string(c)+pname;
       string nClusters_part_hname = "nClusters_"+to_string(c)+pname;
       string ClusterSize_part_hname = "ClusterSize_"+to_string(c)+pname;
+      h_nClusters_w0bin[c][p]->Write(nClusters_w0bin_part_hname.c_str());
       h_nClusters[c][p]->Write(nClusters_part_hname.c_str());
       h_ClusterSize[c][p]->Write(ClusterSize_part_hname.c_str());
     }
+    string nClusters_w0bin_hname = "nClusters_w0bin_"+to_string(c);
     string nClusters_hname = "nClusters_"+to_string(c);
     string ClusterSize_hname = "ClusterSize_"+to_string(c);
+    h_nClustersChamber_w0bin[c]->Write(nClusters_w0bin_hname.c_str());
     h_nClustersChamber[c]->Write(nClusters_hname.c_str());
     h_ClusterSizeChamber[c]->Write(ClusterSize_hname.c_str()); 
   }
   f.Close();
 
   // Write output csv file with mean values.
+  // For the nClusters histogram, print only the mean values without the 0bin.
   string fName = baseName.substr(baseName.find_last_of("/")+1);
   string voltageS1;
   string voltageS2;
@@ -613,10 +624,14 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
 
         // Count the total number of clusters in the event. Fill the number of clusters histogram.
         int totalClusters = singleStrips + nClusters;
-        h_nClusters[c][p]->Fill(totalClusters);
-        h_nClustersChamber[c]->Fill(totalClusters);
-        if (debug) {
-          cout << "=> Total number of clusters: " << totalClusters << endl;
+        h_nClusters_w0bin[c][p]->Fill(totalClusters);
+        h_nClustersChamber_w0bin[c]->Fill(totalClusters);
+        if (totalClusters > 0) {  // Removing 0-bin.
+          h_nClusters[c][p]->Fill(totalClusters);
+          h_nClustersChamber[c]->Fill(totalClusters);
+          if (debug) {
+            cout << "=> Total number of clusters: " << totalClusters << endl;
+          }
         }
 
       }

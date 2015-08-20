@@ -61,6 +61,8 @@ public :
   TH1F* h_ClusterSize[nc][np];
   TH1F* h_nClustersChamber[nc];
   TH1F* h_ClusterSizeChamber[nc];
+  TH1F* h_nClusters_w0bin[nc][np];
+  TH1F* h_nClustersChamber_w0bin[nc];
 
 };
 
