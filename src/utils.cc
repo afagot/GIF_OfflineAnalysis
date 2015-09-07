@@ -24,19 +24,20 @@ void MakeHeader(string filename){
 }
 
 //Name of histograms
-void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, const char* IDroot, const char* Nameroot){
-    string position[4] = {"S4","S3","S2","S1"};
-    sprintf(ID,"%s_%s%c",IDroot,position[station].c_str(),partLabel[partition]);
-    sprintf(Name,"%s %s, Partition %c",Nameroot,position[station].c_str(),partLabel[partition]);
+void SetIDName(unsigned int trolley, unsigned int station,unsigned int partition, char* ID, char* Name, const char* IDroot, const char* Nameroot){
+    string P[4] = {"A","B","C","D"};
+    sprintf(ID,"%s_T%u_S%u_%s",IDroot,trolley+1,station+1,P[partition].c_str());
+    sprintf(Name,"%s T%u_S%u_%s",Nameroot,trolley+1,station+1,P[partition].c_str());
 }
 
 //Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp){
-    Hit.Channel     = Channel;
-    Hit.Station     = Channel/100;              //From 0 to NRPCTROLLEY
-    Hit.Strip       = Channel%100;              //From 0 to 95
-    Hit.Partition   = Hit.Strip/NSTRIPSPART;    //From 0 to 2
-    Hit.Connector   = Hit.Strip/NSTRIPSCONN;    //From 0 to 5
+    Hit.Channel     = Channel;                      //RPC channel according to mapping (5 digits)
+    Hit.Trolley     = Channel/10000;                //1 or 3 (1st digit of the RPC channel)
+    Hit.Station     = (Channel%10000)/1000;         //From 1 to 4 (2nd digit)
+    Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
+    Hit.Partition   = (Hit.Strip-1)/NSTRIPSPART+1;  //From 1 to 4
+    Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
     Hit.TimeStamp   = TimeStamp;
 }
 

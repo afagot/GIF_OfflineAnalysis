@@ -7,8 +7,8 @@
 
 string          GetPath(string fileName);
 string          GetBaseName(string fileName);
-float           GetStripSurface(string chamberType,char partLabel,IniFile* GeoFile);
+float           GetStripSurface(int GeoID, IniFile* GeoFile);
 map<int,int>    TDCMapping(string mappingfName);
-void            GetNoiseRate(string fName, string chamberType);
+void            GetNoiseRate(string fName, string trigger);
 
 #endif // NOISERATE_H

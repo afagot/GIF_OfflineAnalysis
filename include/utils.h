@@ -8,15 +8,19 @@
 #include <string>
 #include <vector>
 
-#define TDCWINDOW   24.*25.
-#define TDCOFFSET  -29.*25.
+#define RDMTDCWINDOW   400.*25.
+#define RDMTDCOFFSET  -401.*25.
 
-#define NRPCTROLLEY 4
-#define NPARTITIONS 3
+//#define RDMTDCWINDOW  24.*25.
+//#define RDMTDCOFFSET -29.*25.
 
-#define NSTRIPSRPC  96
-#define NSTRIPSPART 32
-#define NSTRIPSCONN 16
+#define NTROLLEYS      4
+#define NRPCTROLLEY    4
+#define NPARTITIONS    4
+
+#define NSTRIPSRPC     128
+#define NSTRIPSPART    32
+#define NSTRIPSCONN    16
 
 using namespace std;
 
@@ -30,15 +34,16 @@ struct RAWData {
     vector<float>  *TDCTS;      //List of the corresponding time stamps
 };
 
-void SetIDName(unsigned int station,unsigned int partition, char* partLabel, char* ID, char* Name, const char* IDroot, const char* Nameroot);
+void SetIDName(unsigned int trolley, unsigned int station, unsigned int partition, char* ID, char* Name, const char* IDroot, const char* Nameroot);
 
 //Hit in the RPC
 struct RPCHit {
-    int             Channel;    //RPC Channel (X00 - X95)
-    int             Strip;      //Strip (0 to 95)
-    int             Station;    //Place in the trolley
-    int             Partition;  //Partition (0 to 2)
-    int             Connector;  //Connector (0 to 5)
+    int             Channel;    //RPC Channel (5 digit numbers like XX000 - XX128)
+    int             Trolley;    //1 or 3 (1st digit of the RPC channel)
+    int             Station;    //Place in the trolley (S1 to S4 - 2nd digit)
+    int             Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
+    int             Partition;  //Partition (1 to 4)
+    int             Connector;  //Connector (1 to 8)
     float           TimeStamp;  //TDC time stamp
 };
 
