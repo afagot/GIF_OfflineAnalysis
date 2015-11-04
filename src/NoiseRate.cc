@@ -44,7 +44,6 @@ float GetStripSurface(int GeoID, IniFile* GeoFile){
     //The 3 digit number "chamber" will then be used in a "switch" to select the
     //dimensions of the corresponding chamber type
     switch(GeoID){
-
         case 111: {
             stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
             stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
@@ -231,8 +230,6 @@ map<int,int> TDCMapping(string mappingfName){
 
     while (mappingfile.good()) { //Fill the map with RPC and TDC channels
         mappingfile >> RPCCh >> TDCCh;
-//        if ( TDCCh != -1 ) Map[TDCCh-3000] = RPCCh;
-//        if ( TDCCh != -1 ) Map[TDCCh-1000] = RPCCh;
         if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
     }
     mappingfile.close();
@@ -257,15 +254,18 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
     //****************** MAPPING *************************************
 
     //First test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_Trolley1.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_Trolley1_NightShift20150722.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150718-20150719.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150719-20150729.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150729-20150817.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_EveningShift20150721-NightShift20150722.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_Morning-NightShift20150719.csv");
 
     //Second test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150820.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826_ATLAS.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150817-20150826.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826-20150828.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828-20150928.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828_ATLAS.csv");
+    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-2015XXXX.csv");
 
     //****************** HISTOGRAMS & CANVAS *************************
 
@@ -288,7 +288,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
             for (unsigned int p = 0; p < NPARTITIONS; p++){
                 //Get profit of these loops to fill the strip surface map
-                int GeoID = (t+1)*100 + (rpc+1)*10 + p+1;
+                int GeoID = t*100 + (rpc+1)*10 + p+1;
                 StripSurface[GeoID] = GetStripSurface(GeoID,DimensionsRE);
 
 	        //Noise rate bin size depending on the strip surface
@@ -321,7 +321,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
                 //Hit multiplicity
                 SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
-                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 65, -0.5, 64.5);
+                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 33, -0.5, 32.5);
                 HitMultiplicity[t][rpc][p] = new TCanvas(hisid,hisname);
             }
         }
@@ -360,20 +360,24 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
         //Loop over the TDC hits
         for ( int h = 0; h < data.TDCNHits; h++ ) {
             RPCHit hit;
+
+            //Get rid of the noise hits outside of the connected channels
+            if(data.TDCCh->at(h) > 5095) continue;
+
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
 
             //Count the number of hits outside the peak but only
             //consider the ones before the peak since the muons can
             //generate after pulses
             if(trigger == "beam" && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
-                NHitsPerStrip[hit.Trolley-1][hit.Station-1][hit.Strip-1]++;
+                NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
             else if(trigger == "random")
-                NHitsPerStrip[hit.Trolley-1][hit.Station-1][hit.Strip-1]++;
+                NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
-            RPCHitProfile[hit.Trolley-1][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-            RPCTimeProfile[hit.Trolley-1][hit.Station-1][hit.Partition-1]->Fill(hit.TimeStamp);
-            Multiplicity[hit.Trolley-1][hit.Station-1][hit.Partition-1]++;
+            RPCHitProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+            RPCTimeProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.TimeStamp);
+            Multiplicity[hit.Trolley][hit.Station-1][hit.Partition-1]++;
         }
 
         //** INSTANTANEOUS NOISE RATE ********************************
@@ -385,7 +389,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
                     int p = s/NSTRIPSPART;
 
                     //Get the geometry ID
-                    int GeoID = (t+1)*100 + (rpc+1)*10 + p+1;
+                    int GeoID = t*100 + (rpc+1)*10 + p+1;
 
                     //Get the instaneous noise by normalise the hit count to the
                     //time window length in seconds and to the strip surface
@@ -425,7 +429,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
             //output csv file
             char fNameCSV[100];
-            sprintf(fNameCSV,"AnalysedData/Summary_T%u_S%u.csv",t+1,rpc+1);
+            sprintf(fNameCSV,"AnalysedData/Summary_T%u_S%u.csv",t,rpc+1);
             ofstream outputCSV(fNameCSV,ios::app);
 
             //Print the file name as first column

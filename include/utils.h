@@ -14,7 +14,7 @@
 //#define RDMTDCWINDOW  24.*25.
 //#define RDMTDCOFFSET -29.*25.
 
-#define NTROLLEYS      4
+#define NTROLLEYS      5
 #define NRPCTROLLEY    4
 #define NPARTITIONS    4
 
