@@ -24,6 +24,8 @@ Null.
 ####Tel.: +52 55 5950 4000 ext. 4675
 ####Mobile: +52 55 5412 0122
 
+###Usage
+
 *Note:* The current version of the code is suitable to analyse data taken during the July test beam. For the time being, the `ClusterSize tool` is run in a separate directory inside the main `RPC_GIF_Offline` branch:
 
     cd ClusterSize/
@@ -43,10 +45,6 @@ In the `ClusterSize` directory you will find three mapping files:
 * `ChannelsMapping_Trolley1.csv`: channel-to-strip mapping for Trolley-1, for run numbers starting from 20150719184203.
 
 The code will look at the run number from the input file name and automatically decide which mapping file to use.
-
-###Usage
-
-Null.
 
 ##Noise Rate
 
