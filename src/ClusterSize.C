@@ -1,5 +1,5 @@
 #define ClusterSize_cxx
-#include "ClusterSize.h"
+#include "../include/ClusterSize.h"
 
 #include <iostream>
 #include <fstream>
@@ -43,9 +43,9 @@ int main(int argc, char *argv[]) {
     file.close();
 
     // Load data from input file.
-    //TChain* c = new TChain("CollectionTree");  // For Isabel's ROOT files 
+    //TChain* c = new TChain("CollectionTree");  // For Isabel's ROOT files
     TChain* c = new TChain("RAWData");  // For DAQ's ROOT files
-    c->Add(argv[1]); 
+    c->Add(argv[1]);
 
     // Load Channel=>Strip mapping file and build map.
     string fileName = inputFile.substr(inputFile.find_last_of("/")+1);
@@ -59,9 +59,9 @@ int main(int argc, char *argv[]) {
     long int run = strtol(runNumber.c_str(),NULL,10);
     //ifstream mappingFile("ChannelsMapping.csv",ios::in);  // Mapping file for Trolley 0.
     if (run >= 20150718000329 && run <= 20150719180236) {  // Old mapping file for Trolley 1.
-      mappingFileName = "ChannelsMapping_Trolley1_4TDCs.csv";
+      mappingFileName = "../Mappings/ChannelsMapping_Trolley1_4TDCs.csv";
     } else if (run >= 20150719184203) {  // New mapping file for Trolley 1.
-      mappingFileName = "ChannelsMapping_Trolley1.csv";
+      mappingFileName = "../Mappings/ChannelsMapping_Trolley1.csv";
     }
     ifstream mappingFile(mappingFileName.c_str(),ios::in);
     if (mappingFile.is_open()) {
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     t.Finalize(inputFile);
 
     return 0;
- 
+
   }
 
 }
@@ -111,7 +111,7 @@ void ClusterSize::Initialize(string inputFile) {
       trigger_cut_min = 240.0;
       trigger_cut_max = 340.0;
     }
-    cout << "Window: [" << trigger_cut_min << " ns , " << trigger_cut_max << " ns]" << endl; 
+    cout << "Window: [" << trigger_cut_min << " ns , " << trigger_cut_max << " ns]" << endl;
   } else {
     muonTrigger = false;
     cout << "Trigger: RANDOM" << endl;
@@ -136,7 +136,7 @@ void ClusterSize::Initialize(string inputFile) {
       string ClusterSize_part_hname = "h_ClusterSize_"+to_string(c)+pname;
       string nClusters_w0bin_part_htitle = "Number of clusters (inc. 0bin) per event in partition "+to_string(c)+pname;
       string nClusters_part_htitle = "Number of clusters per event in partition "+to_string(c)+pname;
-      string ClusterSize_part_htitle = "Cluster size distribution per event in partition "+to_string(c)+pname; 
+      string ClusterSize_part_htitle = "Cluster size distribution per event in partition "+to_string(c)+pname;
       h_nClusters_w0bin[c][p] = new TH1F(nClusters_w0bin_part_hname.c_str(), nClusters_w0bin_part_htitle.c_str(), 101, -0.5, 100.5);
       h_nClusters[c][p] = new TH1F(nClusters_part_hname.c_str(), nClusters_part_htitle.c_str(), 101, -0.5, 100.5);
       h_ClusterSize[c][p] = new TH1F(ClusterSize_part_hname.c_str(), ClusterSize_part_htitle.c_str(), 50, 0.5, 50.5);
@@ -160,7 +160,7 @@ void ClusterSize::Finalize(string fileName) {
   // Write output file with histograms.
   string baseName;
   baseName = fileName.erase(fileName.find_last_of("."));
-  string outputFile = "AnalysedData/"+baseName.substr(baseName.find_last_of("/")+1)+"-Offline_Cluster_Size.root";
+  string outputFile = "Analysed_data/"+baseName.substr(baseName.find_last_of("/")+1)+"-Offline_Cluster_Size.root";
   TFile f(outputFile.c_str(), "RECREATE");
   h_nHits->Write("nHits");
   h_TDCChannel->Write("TDCChannel");
@@ -187,7 +187,7 @@ void ClusterSize::Finalize(string fileName) {
     string ClusterSize_hname = "ClusterSize_"+to_string(c);
     h_nClustersChamber_w0bin[c]->Write(nClusters_w0bin_hname.c_str());
     h_nClustersChamber[c]->Write(nClusters_hname.c_str());
-    h_ClusterSizeChamber[c]->Write(ClusterSize_hname.c_str()); 
+    h_ClusterSizeChamber[c]->Write(ClusterSize_hname.c_str());
   }
   f.Close();
 
@@ -215,7 +215,7 @@ void ClusterSize::Finalize(string fileName) {
   if (pos_S3S4 != string::npos) {
     voltageS3 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
     voltageS4 = fName.substr(pos_S3S4+5,fName.find("V_",pos_S3S4)-(pos_S3S4+5));
-  } 
+  }
   if (pos_S1 != string::npos) {
     voltageS1 = fName.substr(pos_S1+3,fName.find("_",pos_S1)-(pos_S1+3));
   }
@@ -264,11 +264,11 @@ void ClusterSize::Finalize(string fileName) {
       } else if (p==2) {
         pname = "C";
       }
-      outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << pname << " " << h_nClusters[c][p]->GetMean() 
+      outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << pname << " " << h_nClusters[c][p]->GetMean()
                 << " " << h_nClusters[c][p]->GetMeanError() << " " << h_ClusterSize[c][p]->GetMean() << " " << h_ClusterSize[c][p]->GetMeanError() << '\n';
     }
-    outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << "all" << " " << h_nClustersChamber[c]->GetMean() 
-              << " " << h_nClustersChamber[c]->GetMeanError() << " " << h_ClusterSizeChamber[c]->GetMean() << " " 
+    outputCSV << voltage << " " << attUP << " " << attDOWN << " " << cname << " " << "all" << " " << h_nClustersChamber[c]->GetMean()
+              << " " << h_nClustersChamber[c]->GetMeanError() << " " << h_ClusterSizeChamber[c]->GetMean() << " "
               << h_ClusterSizeChamber[c]->GetMeanError() << '\n';
   }
   outputCSV << '\n';
@@ -425,7 +425,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         cout << "---> Number of Hits in Partition A: " << nhits[0] << endl;
         cout << "---> Number of Hits in Partition B: " << nhits[1] << endl;
         cout << "---> Number of Hits in Partition C: " << nhits[2] << endl;
-      }    
+      }
 
       // Loop over partitions.
       for (int p=0; p<np; p++) {
@@ -442,9 +442,9 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         if (debug) {
           cout << "*** Hits in event (before sorting) ***" << endl;
           for (int j=0; j<nhits[p]; j++) {
-            cout << "Hit: " << j << " TimeStamp: " << timestamp[p].at(j) << " Channel: " << channel[p].at(j) 
+            cout << "Hit: " << j << " TimeStamp: " << timestamp[p].at(j) << " Channel: " << channel[p].at(j)
                  << " Strip: " << ChannelMap[channel[p].at(j)] << endl;
-          } 
+          }
           cout << "*** Hits sorted by time stamp ***" << endl;
           for (int j=0; j<nhits[p]; j++) {
             cout << "HitInfo Vector => Hit: " << j << " TimeStamp: " << HitInfo[j].first << " Strip: " << HitInfo[j].second << endl;
@@ -452,7 +452,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         }
 
         // Loop over hits sorted by time stamp. Build cluster candidates with all hits found within a 30ns time window.
-        // Store the first and last hits inside this time window. 
+        // Store the first and last hits inside this time window.
         int nCandidates = 0;
         int lastHitInWindow = 0;
         bool newCandidate = false;
@@ -466,7 +466,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           if (newCandidate) {
             if (i!=(lastHitInWindow+1)) continue;
             timeWindow = HitInfo[lastHitInWindow+1].first + clustering_timeWindow;
-            lastHitInWindow = lastHitInWindow + 1; 
+            lastHitInWindow = lastHitInWindow + 1;
           } else {
             lastHitInWindow = i;
             timeWindow = HitInfo[lastHitInWindow].first + clustering_timeWindow;
@@ -487,14 +487,14 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
           }
           if (newCandidate) {
             firstHitsInCandidates.push_back(i);
-            lastHitsInCandidates.push_back(lastHitInWindow);  
+            lastHitsInCandidates.push_back(lastHitInWindow);
           }
         }
 
         if (debug) {
           cout << "*** Candidate Clusters ***" << endl;
           for (int i=0; i<firstHitsInCandidates.size(); i++) {
-            cout << "Candidate " << i << " => First Hit: " << firstHitsInCandidates.at(i) << ". Last Hit: " << lastHitsInCandidates.at(i) << endl;      
+            cout << "Candidate " << i << " => First Hit: " << firstHitsInCandidates.at(i) << ". Last Hit: " << lastHitsInCandidates.at(i) << endl;
           }
         }
 
@@ -513,17 +513,17 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
               timeStampsInCandidate.push_back(HitInfo[i].first);
             }
           }
-        } 
-    
+        }
+
         // Loop over cluster candidates. For each candidate create a vector pair with strip number and time stamp and sort it by strip number.
         // Count the number of clusters with size >=2.
         // Count the number of strips inside clusters of size >=2.
-        // If size of candidate is 2: 
+        // If size of candidate is 2:
         // => If strips are not consecutive, discard the cluster candidate.
         // => If strips are consecutive, fill cluster size histogram and increase counter for number of strips inside clusters of size >=2.
         // If size of candidate is >2:
         // => Store in a vector the strip numbers of consecutive strips (making sure not to double-count). The size of this vector is the cluster size.
-        // => If there are at least two consecutive strips, we have a cluster (single hits are taken into account later). 
+        // => If there are at least two consecutive strips, we have a cluster (single hits are taken into account later).
         //    Fill cluster size histogram with size of vector and increase counter.
         // => If there are no consecutive strips, we discard the cluster candidate.
         int tmp = 0;
@@ -544,7 +544,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
             for (int i=0; i<candidateByStrip.size(); i++) {
               cout << "Strip Number: " << candidateByStrip[i].first << " Time Stamp: " << candidateByStrip[i].second << endl;
             }
-          } 
+          }
           if (isize==2) {
             if ( (candidateByStrip[1].first - candidateByStrip[0].first) != 1 ) {
               if (debug) {
@@ -555,7 +555,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
               h_ClusterSize[c][p]->Fill(2);
               h_ClusterSizeChamber[c]->Fill(2);
               stripsInClusters = stripsInClusters + 2;
-            } 
+            }
           } else {
             bool goodCluster = false;
             int nConsecutiveStrips = 0;
@@ -603,7 +603,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
                 cout << "Bad cluster. No consecutive strips found." << endl;
               }
             }
-          } 
+          }
           tmp += isize;
         }
         if (debug) {
@@ -620,7 +620,7 @@ void ClusterSize::Loop(map<int,int> ChannelMap) {
         }
         if (debug) {
           cout << "Number of single strips: " << singleStrips << endl;
-        }      
+        }
 
         // Count the total number of clusters in the event. Fill the number of clusters histogram.
         int totalClusters = singleStrips + nClusters;
