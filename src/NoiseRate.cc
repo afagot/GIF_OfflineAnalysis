@@ -265,7 +265,8 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826-20150828.csv");
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828-20150928.csv");
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828_ATLAS.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-2015XXXX.csv");
+//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-20151125.csv");
+    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20151125-2015XXXX.csv");
 
     //****************** HISTOGRAMS & CANVAS *************************
 
