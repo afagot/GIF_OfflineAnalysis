@@ -291,12 +291,12 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
                 int GeoID = t*100 + (rpc+1)*10 + p+1;
                 StripSurface[GeoID] = GetStripSurface(GeoID,DimensionsRE);
 
-	        //Noise rate bin size depending on the strip surface
-	        float binWidth = 1.;
+            //Noise rate bin size depending on the strip surface
+            float binWidth = 1.;
 
-	        if(trigger == "random")
+            if(trigger == "random")
                     binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-	        else if(trigger == "beam")
+            else if(trigger == "beam")
                     binWidth = 1./((600.-400.)*1e-9*StripSurface[GeoID]);
 
                 //Instantaneous noise rate 2D map
@@ -421,21 +421,18 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
     string fNameROOT = "AnalysedData/" + baseName.substr(baseName.find_last_of("/")+1) + "-Offline_Noise_Rate.root";
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
+    //output csv file
+    ofstream outputCSV("AnalysedData/Summary.csv",ios::app);
+    //Print the file name as first column
+    outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
+
     //Loop over trolleys
     for (unsigned int t = 0; t < NTROLLEYS; t++){
         //Loop over stations
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
-            //Loop over strips
-
-            //output csv file
-            char fNameCSV[100];
-            sprintf(fNameCSV,"AnalysedData/Summary_T%u_S%u.csv",t,rpc+1);
-            ofstream outputCSV(fNameCSV,ios::app);
-
-            //Print the file name as first column
-            outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
-
+            //Loop over partitions
             for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
+                if(t != 3 && rpc > 1 && p > 2) continue;
                 //Project the histograms along the X-axis to get the
                 //mean noise profile on the strips
                 RPCMeanNoiseProfile[t][rpc][p] = RPCInstantNoiseRate[t][rpc][p]->ProfileX();
@@ -492,11 +489,10 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
                     HitMultiplicity[t][rpc][p]->Write();
                 }
            }
-
-            outputCSV << '\n';
-
         }
     }
+
+    outputCSV << '\n';
 
     outputfile.Close();
 }
