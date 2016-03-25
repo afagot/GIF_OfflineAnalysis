@@ -433,6 +433,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
         //Loop over stations
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
             //Loop over partitions
+            if(t == 3 && rpc == 2) continue; //skip T3S3 that isn't here anymore
             for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
                 if((t != 3 || (t == 3 && rpc == 3)) &&  p == 3) continue; //there are only 3 partitions in type 2 chambers
                 //Project the histograms along the X-axis to get the
@@ -495,6 +496,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
     }
 
     outputCSV << '\n';
+    outputCSV.close();
 
     outputfile.Close();
 }
