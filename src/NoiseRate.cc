@@ -266,7 +266,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828-20150928.csv");
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828_ATLAS.csv");
 //    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-20151125.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20151125-2015XXXX.csv");
+    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20151125-201XXXXX.csv");
 
     //****************** HISTOGRAMS & CANVAS *************************
 
@@ -429,11 +429,12 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
     //Loop over trolleys
     for (unsigned int t = 0; t < NTROLLEYS; t++){
+	if(t == 0 || t == 2 || t == 4) continue; //since we don't use T0 anymore, T2 is gRPC and is not within our DAQ and T4 is used for ATLAS so far...
         //Loop over stations
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
             //Loop over partitions
             for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                if(t != 3 && rpc > 1 && p > 2) continue;
+                if((t != 3 || (t == 3 && rpc == 3)) &&  p == 3) continue; //there are only 3 partitions in type 2 chambers
                 //Project the histograms along the X-axis to get the
                 //mean noise profile on the strips
                 RPCMeanNoiseProfile[t][rpc][p] = RPCInstantNoiseRate[t][rpc][p]->ProfileX();
