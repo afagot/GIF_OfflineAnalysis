@@ -221,12 +221,12 @@ float GetStripSurface(int GeoID, IniFile* GeoFile){
 
 //*******************************************************************************
 
-map<int,int> TDCMapping(string mappingfName){
+map<int,int> TDCMapping(){
     int RPCCh;              //# RPC Channel (X00 to X95 : X stations [X = 0,1,...], 96 strips)
     int TDCCh;              //# TDC Channel (X000 to X127 : X modules [X = 0,1,...], 128 channels)
     map<int,int> Map;       //2D Map of the TDC Channels and their corresponding RPC strips
 
-    ifstream mappingfile(mappingfName.c_str(), ios::in);	//Mapping file
+    ifstream mappingfile(__mapping.c_str(), ios::in);	//Mapping file
 
     while (mappingfile.good()) { //Fill the map with RPC and TDC channels
         mappingfile >> RPCCh >> TDCCh;
@@ -239,10 +239,40 @@ map<int,int> TDCMapping(string mappingfName){
 
 //*******************************************************************************
 
-void GetNoiseRate(string fName, string trigger){ //raw root file name
+void GetNoiseRate(string fName){ //raw root file name
     // strip off .root from filename - usefull to contruct the
     //output file name
     string baseName = GetBaseName(fName);
+
+    //****************** ROOT FILE ***********************************
+
+    //input ROOT data file containing the RAWData TTree that we'll
+    //link to our RAWData structure
+    TFile   dataFile(fName.c_str());
+    TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
+    RAWData data;
+
+    data.TDCCh = new vector<int>;
+    data.TDCTS = new vector<float>;
+    data.TDCCh->clear();
+    data.TDCTS->clear();
+
+    dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+    dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+    dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+    dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+
+    //****************** TRIGGER TYPE ********************************
+
+    //Get the chamber geometry
+    //First open the RunParameters TTree from the dataFile
+    //Then link a string to the branch corresponding to the beam
+    //status and get the entry
+    //Convention : ON = beam trigger , OFF = Random trigger
+    TTree* RunParameters = (TTree*)dataFile->Get("RunParameters");
+    string* Beam = new string();
+    RunParameters->SetBranchAddress("Beam",&Beam);
+    RunParameters->GetEntry(0);
 
     //****************** GEOMETRY ************************************
 
@@ -253,20 +283,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
     //****************** MAPPING *************************************
 
-    //First test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150718-20150719.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150719-20150729.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150729-20150817.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_EveningShift20150721-NightShift20150722.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_Morning-NightShift20150719.csv");
-
-    //Second test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150817-20150826.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826-20150828.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828-20150928.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828_ATLAS.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-20151125.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20151125-201XXXXX.csv");
+    map<int,int> RPCChMap = TDCMapping();
 
     //****************** HISTOGRAMS & CANVAS *************************
 
@@ -295,9 +312,9 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
             //Noise rate bin size depending on the strip surface
             float binWidth = 1.;
 
-            if(trigger == "random")
+            if(Beam == "ON")
                     binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-            else if(trigger == "beam")
+            else if(Beam == "OFF")
                     binWidth = 1./((600.-400.)*1e-9*StripSurface[GeoID]);
 
                 //Instantaneous noise rate 2D map
@@ -328,24 +345,6 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
         }
     }
 
-    //****************** ROOT FILE ***********************************
-
-    //input ROOT data file containing the RAWData TTree that we'll
-    //link to our RAWData structure
-    TFile   dataFile(fName.c_str());
-    TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-    RAWData data;
-
-    data.TDCCh = new vector<int>;
-    data.TDCTS = new vector<float>;
-    data.TDCCh->clear();
-    data.TDCTS->clear();
-
-    dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-    dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-    dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-    dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
-
     //****************** MACRO ***************************************
 
     //Tabel to count the hits in every chamber partitions - used to
@@ -370,9 +369,9 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
             //Count the number of hits outside the peak but only
             //consider the ones before the peak since the muons can
             //generate after pulses
-            if(trigger == "beam" && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
+            if(Beam == "ON" && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
-            else if(trigger == "random")
+            else if(Beam == "OFF")
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
@@ -396,9 +395,9 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
                     //time window length in seconds and to the strip surface
                     float InstantNoise = 0.;
 
-                    if(trigger == "random")
+                    if(Beam == "OFF")
                         InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-                    else if (trigger == "beam")
+                    else if (tBeam == "ON")
                         InstantNoise = (float)NHitsPerStrip[t][rpc][s]/((600.-400.)*1e-9*StripSurface[GeoID]);
 
                     RPCInstantNoiseRate[t][rpc][p]->Fill(s+1,InstantNoise);
@@ -419,7 +418,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
     //************** MEAN NOISE RATE *********************************
     //create a ROOT output file to save the histograms
-    string fNameROOT = "AnalysedData/" + baseName.substr(baseName.find_last_of("/")+1) + "-Offline_Noise_Rate.root";
+    string fNameROOT = __analyseddata + baseName.substr(baseName.find_last_of("/")+1) + "-Rate.root";
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
@@ -429,7 +428,7 @@ void GetNoiseRate(string fName, string trigger){ //raw root file name
 
     //Loop over trolleys
     for (unsigned int t = 0; t < NTROLLEYS; t++){
-	if(t == 0 || t == 2 || t == 4) continue; //since we don't use T0 anymore, T2 is gRPC and is not within our DAQ and T4 is used for ATLAS so far...
+    if(t == 0 || t == 2 || t == 4) continue; //since we don't use T0 anymore, T2 is gRPC and is not within our DAQ and T4 is used for ATLAS so far...
         //Loop over stations
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
             //Loop over partitions
