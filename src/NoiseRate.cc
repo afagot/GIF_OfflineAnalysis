@@ -269,7 +269,7 @@ void GetNoiseRate(string fName){ //raw root file name
     //Then link a string to the branch corresponding to the beam
     //status and get the entry
     //Convention : ON = beam trigger , OFF = Random trigger
-    TTree* RunParameters = (TTree*)dataFile->Get("RunParameters");
+    TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
     string* Beam = new string();
     RunParameters->SetBranchAddress("Beam",&Beam);
     RunParameters->GetEntry(0);
@@ -312,9 +312,9 @@ void GetNoiseRate(string fName){ //raw root file name
             //Noise rate bin size depending on the strip surface
             float binWidth = 1.;
 
-            if(Beam == "ON")
+            if(Beam->compare("ON"))
                     binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-            else if(Beam == "OFF")
+            else if(Beam->compare("OFF"))
                     binWidth = 1./((600.-400.)*1e-9*StripSurface[GeoID]);
 
                 //Instantaneous noise rate 2D map
@@ -369,9 +369,9 @@ void GetNoiseRate(string fName){ //raw root file name
             //Count the number of hits outside the peak but only
             //consider the ones before the peak since the muons can
             //generate after pulses
-            if(Beam == "ON" && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
+            if(Beam->compare("ON") && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
-            else if(Beam == "OFF")
+            else if(Beam->compare("OFF"))
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
@@ -395,9 +395,9 @@ void GetNoiseRate(string fName){ //raw root file name
                     //time window length in seconds and to the strip surface
                     float InstantNoise = 0.;
 
-                    if(Beam == "OFF")
+                    if(Beam->compare("OFF"))
                         InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-                    else if (tBeam == "ON")
+                    else if (Beam->compare("ON"))
                         InstantNoise = (float)NHitsPerStrip[t][rpc][s]/((600.-400.)*1e-9*StripSurface[GeoID]);
 
                     RPCInstantNoiseRate[t][rpc][p]->Fill(s+1,InstantNoise);
