@@ -9,10 +9,7 @@
 #include <vector>
 
 #define RDMTDCWINDOW   400.*25.
-#define RDMTDCOFFSET  -401.*25.
-
-//#define RDMTDCWINDOW  24.*25.
-//#define RDMTDCOFFSET -29.*25.
+#define BMTDCWINDOW    300.
 
 #define NTROLLEYS      5
 #define NRPCTROLLEY    4

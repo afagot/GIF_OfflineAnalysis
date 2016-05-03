@@ -315,7 +315,7 @@ void GetNoiseRate(string fName){ //raw root file name
             if(Beam->compare("ON"))
                     binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
             else if(Beam->compare("OFF"))
-                    binWidth = 1./((600.-400.)*1e-9*StripSurface[GeoID]);
+                    binWidth = 1./(BMTDCWINDOW*1e-9*StripSurface[GeoID]);
 
                 //Instantaneous noise rate 2D map
                 SetIDName(t,rpc,p,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
@@ -360,16 +360,13 @@ void GetNoiseRate(string fName){ //raw root file name
         //Loop over the TDC hits
         for ( int h = 0; h < data.TDCNHits; h++ ) {
             RPCHit hit;
-
-            //Get rid of the noise hits outside of the connected channels
-            if(data.TDCCh->at(h) > 5095) continue;
-
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
 
-            //Count the number of hits outside the peak but only
-            //consider the ones before the peak since the muons can
-            //generate after pulses
-            if(Beam->compare("ON") && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
+            //Count the number of hits outside the peak
+            bool earlyhit = (hit.TimeStamp >= 50. && hit.TimeStamp < 200.);
+            bool latehit = (hit.TimeStamp >= 400. && hit.TimeStamp < 550.);
+
+            if(Beam->compare("ON") && (earlyhit || latehit))
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
             else if(Beam->compare("OFF"))
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
@@ -383,6 +380,8 @@ void GetNoiseRate(string fName){ //raw root file name
         //** INSTANTANEOUS NOISE RATE ********************************
 
         for(unsigned int t=0; t<NTROLLEYS; t++){
+            if(t != 1) continue; //since we only use T1
+
             for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
                 for(unsigned int s=0; s<NSTRIPSRPC; s++){
                     //Partition from 0 to 2
@@ -398,7 +397,7 @@ void GetNoiseRate(string fName){ //raw root file name
                     if(Beam->compare("OFF"))
                         InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
                     else if (Beam->compare("ON"))
-                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/((600.-400.)*1e-9*StripSurface[GeoID]);
+                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(BMTDCWINDOW*1e-9*StripSurface[GeoID]);
 
                     RPCInstantNoiseRate[t][rpc][p]->Fill(s+1,InstantNoise);
 
@@ -428,11 +427,10 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //Loop over trolleys
     for (unsigned int t = 0; t < NTROLLEYS; t++){
-    if(t == 0 || t == 2 || t == 4) continue; //since we don't use T0 anymore, T2 is gRPC and is not within our DAQ and T4 is used for ATLAS so far...
+        if(t != 1) continue; //since we only use T1
         //Loop over stations
         for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
             //Loop over partitions
-            if(t == 3 && rpc == 2) continue; //skip T3S3 that isn't here anymore
             for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
                 if((t != 3 || (t == 3 && rpc == 3)) &&  p == 3) continue; //there are only 3 partitions in type 2 chambers
                 //Project the histograms along the X-axis to get the

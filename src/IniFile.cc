@@ -124,8 +124,8 @@ int IniFile::Read(){
         }
     }
 
-    for(IniFileDataIter Iter = FileData.begin(); Iter != FileData.end(); Iter++)
-        cout << "[Inifile]: " << Iter->first << " = " << Iter->second << endl;
+//    for(IniFileDataIter Iter = FileData.begin(); Iter != FileData.end(); Iter++)
+//        cout << "[Inifile]: " << Iter->first << " = " << Iter->second << endl;
 
     return Error;
 }
