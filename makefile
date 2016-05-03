@@ -1,7 +1,7 @@
 #file: Makefile
 
 
-DAQ_HOME_DIR = /home/pccmsrpcgif2/GIF_OfflineAnalysis
+DAQ_HOME_DIR = /var/www/software/GIF_OfflineAnalysis
 #DAQ_HOME_DIR = /home/alex/Desktop/RPCs/GIF_OfflineAnalysis
 DAQ_BIN_DIR = $(DAQ_HOME_DIR)/bin
 DAQ_INC_DIR = $(DAQ_HOME_DIR)/include
@@ -27,7 +27,7 @@ offlineanalysis: 	main.o NoiseRate.o utils.o IniFile.o
 			$(DAQ_OBJ_DIR)/IniFile.o \
         		-o $(DAQ_BIN_DIR)/offlineanalysis \
         		$(LFLAGS)  \
-        		-l CAENVME -l curses
+        		 -l curses
 
 clean:
 	-rm $(DAQ_BIN_DIR)/offlineanalysis

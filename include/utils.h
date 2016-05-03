@@ -9,7 +9,8 @@
 #include <vector>
 
 #define RDMTDCWINDOW   400.*25.
-#define BMTDCWINDOW    300.
+#define BMTDCWINDOW    24.*25.
+#define BMNOISEWDW     300.
 
 #define NTROLLEYS      5
 #define NRPCTROLLEY    4
