@@ -22,7 +22,6 @@
 using namespace std;
 
 const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-2015XXXX.csv";
-const string __analyseddata = "/mnt/nfs/daq_data/DQM/";
 
 void MakeHeader(string filename);
 

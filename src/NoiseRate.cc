@@ -417,11 +417,12 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //************** MEAN NOISE RATE *********************************
     //create a ROOT output file to save the histograms
-    string fNameROOT = __analyseddata + baseName.substr(baseName.find_last_of("/")+1) + "-Rate.root";
+    string fNameROOT = baseName + "-Rate.root";
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
-    ofstream outputCSV("AnalysedData/Summary.csv",ios::app);
+    string cvsName = fName.substr(0,fName.find_last_of("/")+1) + "Offline-Rate.csv";
+    ofstream outputCSV(csvName.c_str(),ios::app);
     //Print the file name as first column
     outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
 
