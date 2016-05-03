@@ -316,10 +316,10 @@ void GetNoiseRate(string fName){ //raw root file name
 
             if(Beam->CompareTo("ON") == 0){
                     binWidth = 1./(BMNOISEWDW*1e-9*StripSurface[GeoID]);
-		    timeWidth = BMTDCWINDOW;
+            timeWidth = BMTDCWINDOW;
             } else if(Beam->CompareTo("OFF") == 0){
                     binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-		    timeWidth = RDMTDCWINDOW;
+            timeWidth = RDMTDCWINDOW;
                 }
 
                 //Instantaneous noise rate 2D map
@@ -467,30 +467,35 @@ void GetNoiseRate(string fName){ //raw root file name
                 MeanNoise[t][rpc][p]->cd(0);
                 RPCMeanNoiseProfile[t][rpc][p]->SetXTitle("Strip");
                 RPCMeanNoiseProfile[t][rpc][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
-                RPCMeanNoiseProfile[t][rpc][p]->Draw();
+                RPCMeanNoiseProfile[t][rpc][p]->SetFillColor(kBlue);
+                RPCMeanNoiseProfile[t][rpc][p]->Draw("HIST");
+                RPCMeanNoiseProfile[t][rpc][p]->Draw("E1 SAME");
                 MeanNoise[t][rpc][p]->Write();
 
                 HitProfile[t][rpc][p]->cd(0);
                 RPCHitProfile[t][rpc][p]->SetXTitle("Strip");
                 RPCHitProfile[t][rpc][p]->SetYTitle("# events");
+                RPCHitProfile[t][rpc][p]->SetFillColor(kBlue);
                 RPCHitProfile[t][rpc][p]->Draw();
                 HitProfile[t][rpc][p]->Write();
 
                 TimeProfile[t][rpc][p]->cd(0);
                 RPCTimeProfile[t][rpc][p]->SetXTitle("Time stamp (ns)");
                 RPCTimeProfile[t][rpc][p]->SetYTitle("# events");
+                RPCTimeProfile[t][rpc][p]->SetFillColor(kBlue);
                 RPCTimeProfile[t][rpc][p]->Draw();
                 TimeProfile[t][rpc][p]->Write();
 
                 HitMultiplicity[t][rpc][p]->cd(0);
                 RPCHitMultiplicity[t][rpc][p]->SetXTitle("Multiplicity");
                 RPCHitMultiplicity[t][rpc][p]->SetYTitle("# events");
+                RPCHitMultiplicity[t][rpc][p]->SetFillColor(kBlue);
                 RPCHitMultiplicity[t][rpc][p]->Draw();
                 HitMultiplicity[t][rpc][p]->Write();
            }
         }
     }
-	
+
     outputCSV << '\n';
     outputCSV.close();
 
