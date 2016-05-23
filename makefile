@@ -1,22 +1,28 @@
 #file: Makefile
+#
+# test program for CMS RPC
+#
+# 14/01/14  A.Fagot
+# from makefile created by Y.Benhammou
 
 
-DAQ_HOME_DIR = /home/pccmsrpcgif2/GIF_OfflineAnalysis
-#DAQ_HOME_DIR = /home/alex/Desktop/RPCs/GIF_OfflineAnalysis
-DAQ_BIN_DIR = $(DAQ_HOME_DIR)/bin
-DAQ_INC_DIR = $(DAQ_HOME_DIR)/include
-DAQ_SRC_DIR = $(DAQ_HOME_DIR)/src
-DAQ_OBJ_DIR = $(DAQ_HOME_DIR)/obj
+DAQ_BIN_DIR  = ./bin
+DAQ_INC_DIR  = ./include
+DAQ_SRC_DIR  = ./src
+DAQ_OBJ_DIR  = ./obj
+RUN_REGISTRY = ./RunRegistry
 
-ROOT_INC 	= $(ROOTSYS)/include
-ROOTCFLAGS   	:= $(shell root-config --cflags)
-ROOTLIBS     	:= $(shell root-config --libs)
+CC = g++ -std=c++11
 
-LFLAGS     = -L$(DAQ_HOME_DIR)/lib -L/usr/lib \
-             -Wl,--no-as-needed $(ROOTLIBS) 
+ROOT_INC        := $(ROOTSYS)/include
+ROOTCFLAGS	:= $(shell root-config --cflags)
+ROOTLIBS        := $(shell root-config --libs)
 
-CFLAGS     = -ggdb -fPIC -DLINUX -Wall -funsigned-char \
-             -I$(DAQ_INC_DIR) -I$(ROOT_INC) -I$(ROOTCFLAGS)
+LFLAGS          := -Llib -L/usr/lib \
+                $(ROOTLIBS)
+
+CFLAGS          := -ggdb -fPIC -DLINUX -Wall -funsigned-char \
+                -I$(DAQ_INC_DIR) -I$(ROOT_INC) -I$(ROOTCFLAGS)
 
 all:    offlineanalysis
 
@@ -29,19 +35,20 @@ offlineanalysis: 	main.o NoiseRate.o utils.o IniFile.o
         		$(LFLAGS)  \
         		-l CAENVME -l curses
 
+main.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/main.cc -o $(DAQ_OBJ_DIR)/main.o
+utils.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/utils.cc -o $(DAQ_OBJ_DIR)/utils.o
+NoiseRate.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/NoiseRate.cc -o $(DAQ_OBJ_DIR)/NoiseRate.o
+IniFile.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/IniFile.cc -o $(DAQ_OBJ_DIR)/IniFile.o
+
 clean:
-	-rm $(DAQ_BIN_DIR)/offlineanalysis
-	-rm $(DAQ_OBJ_DIR)/*.o
+	rm -rf $(DAQ_BIN_DIR)/offlineanalysis
+	rm -rf $(DAQ_OBJ_DIR)/*.o
 
 remove:
-	-rm $(DAQ_BIN_DIR)/offlineanalysis
-	-rm $(DAQ_OBJ_DIR)/*.o
+	rm -rf $(DAQ_BIN_DIR)/offlineanalysis
+	rm -rf $(DAQ_OBJ_DIR)/*.o
 
-main.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/main.cc -o $(DAQ_OBJ_DIR)/main.o
-utils.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/utils.cc -o $(DAQ_OBJ_DIR)/utils.o
-NoiseRate.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/NoiseRate.cc -o $(DAQ_OBJ_DIR)/NoiseRate.o
-IniFile.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/IniFile.cc -o $(DAQ_OBJ_DIR)/IniFile.o
