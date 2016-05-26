@@ -36,184 +36,19 @@ string GetBaseName(string fileName){
 
 //*******************************************************************************
 
-float GetStripSurface(int GeoID, IniFile* GeoFile){
-    float stripMinor = 1.;
-    float stripMajor = 1.;
-    float stripHeight = 1.;
+float GetStripSurface(int trolley, int slot, char partition, IniFile* GeoFile){
+    string group = "";
+    stringstream ss;
+    ss << "T" << trolley << "S" << slot;
+    ss >> group;
 
-    //The 3 digit number "chamber" will then be used in a "switch" to select the
-    //dimensions of the corresponding chamber type
-    switch(GeoID){
-        case 111: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
+    string minortoken = "Minor-" + partition;
+    string majortoken = "Major-" + partition;
+    string heighttoken = "Height-" + partition;
 
-        case 112: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 113: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 121: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 122: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 123: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 131: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 132: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 133: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 141: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 142: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 143: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 311: {
-            stripMinor = GeoFile->GetValue("Type1-1-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-A","Height",1.);
-            break;
-        }
-
-        case 312: {
-            stripMinor = GeoFile->GetValue("Type1-1-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-B","Height",1.);
-            break;
-        }
-
-        case 313: {
-            stripMinor = GeoFile->GetValue("Type1-1-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-C","Height",1.);
-            break;
-        }
-
-        case 314: {
-            stripMinor = GeoFile->GetValue("Type1-1-D","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-D","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-D","Height",1.);
-            break;
-        }
-
-        case 321: {
-            stripMinor = GeoFile->GetValue("Type1-1-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-A","Height",1.);
-            break;
-        }
-
-        case 322: {
-            stripMinor = GeoFile->GetValue("Type1-1-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-B","Height",1.);
-            break;
-        }
-
-        case 323: {
-            stripMinor = GeoFile->GetValue("Type1-1-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-C","Height",1.);
-            break;
-        }
-
-        case 324: {
-            stripMinor = GeoFile->GetValue("Type1-1-D","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-D","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-D","Height",1.);
-            break;
-        }
-
-        case 331: {
-            stripMinor = GeoFile->GetValue("China","Minor",1.);
-            stripMajor = GeoFile->GetValue("China","Major",1.);
-            stripHeight = GeoFile->GetValue("China","Height",1.);
-            break;
-        }
-
-        case 341: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 342: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 343: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-        default:
-            break;
-    }
+    float stripMinor = GeoFile->stringType(group,minortoken,"1.");
+    float stripMajor = GeoFile->stringType(group,majortoken,"1.");
+    float stripHeight = GeoFile->stringType(group,heighttoken,"1.");
 
     float stripSurface = (stripMinor+stripMajor)*stripHeight/2.;
     return stripSurface;
@@ -277,8 +112,8 @@ void GetNoiseRate(string fName){ //raw root file name
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
-    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
-    DimensionsRE->Read();
+    IniFile* Dimensions = new IniFile(__dimension.c_str());
+    Dimensions->Read();
     map<int,float> StripSurface;
 
     //****************** MAPPING *************************************
@@ -308,7 +143,7 @@ void GetNoiseRate(string fName){ //raw root file name
             for (unsigned int p = 0; p < NPARTITIONS; p++){
                 //Get profit of these loops to fill the strip surface map
                 int GeoID = t*100 + (rpc+1)*10 + p+1;
-                StripSurface[GeoID] = GetStripSurface(GeoID,DimensionsRE);
+                StripSurface[GeoID] = GetStripSurface(GeoID,Dimensions);
 
             //Noise rate bin size depending on the strip surface
             float binWidth = 1.;
@@ -344,7 +179,7 @@ void GetNoiseRate(string fName){ //raw root file name
 
                 //Hit multiplicity
                 SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
-                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 33, -0.5, 32.5);
+                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 101, -0.5, 100.5);
                 HitMultiplicity[t][rpc][p] = new TCanvas(hisid,hisname);
             }
         }

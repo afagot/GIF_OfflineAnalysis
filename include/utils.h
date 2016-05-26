@@ -22,9 +22,29 @@
 
 using namespace std;
 
-const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-2015XXXX.csv";
+const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
+const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
 
 void MakeHeader(string filename);
+
+//Infrastructure inside GIF++
+struct RPC{
+    int           nPartitions;
+    int           strips;
+    vector<float> stripGeo;
+};
+
+struct GIFTrolley {
+    int         nSlots;
+    int         SlotsID;
+    vector<RPC> RPCs;
+};
+
+struct Infrastructure {
+    int                nTrolleys;
+    int                TrolleysID;
+    vector<GIFTrolley> Trolleys;
+};
 
 //Data in the root file
 struct RAWData {

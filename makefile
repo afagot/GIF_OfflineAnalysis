@@ -5,6 +5,8 @@ DAQ_INC_DIR = ./include
 DAQ_SRC_DIR = ./src
 DAQ_OBJ_DIR = ./obj
 
+CC = g++ -std=c++11
+
 ROOT_INC = $(ROOTSYS)/include
 ROOTCFLAGS := $(shell root-config --cflags)
 ROOTLIBS := $(shell root-config --libs)
@@ -27,13 +29,13 @@ offlineanalysis: 	main.o NoiseRate.o utils.o IniFile.o
         		 	-l curses
 
 main.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/main.cc -o $(DAQ_OBJ_DIR)/main.o
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/main.cc -o $(DAQ_OBJ_DIR)/main.o
 utils.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/utils.cc -o $(DAQ_OBJ_DIR)/utils.o
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/utils.cc -o $(DAQ_OBJ_DIR)/utils.o
 NoiseRate.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/NoiseRate.cc -o $(DAQ_OBJ_DIR)/NoiseRate.o
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/NoiseRate.cc -o $(DAQ_OBJ_DIR)/NoiseRate.o
 IniFile.o:
-	g++ -std=c++11 -c $(CFLAGS) $(DAQ_SRC_DIR)/IniFile.cc -o $(DAQ_OBJ_DIR)/IniFile.o
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/IniFile.cc -o $(DAQ_OBJ_DIR)/IniFile.o
 
 $(DAQ_BIN_DIR):
 	mkdir -p $(DAQ_BIN_DIR)/
