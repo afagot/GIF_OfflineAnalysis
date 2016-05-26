@@ -3,17 +3,22 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
 #include <fstream>
 #include <map>
 #include <string>
 #include <vector>
+#include <unistd.h>
+#include <iomanip>
+
+#include "IniFile.h"
 
 #define RDMTDCWINDOW   400.*25.
 #define BMTDCWINDOW    24.*25.
 #define BMNOISEWDW     300.
 
 #define NTROLLEYS      5
-#define NRPCTROLLEY    4
+#define NSLOTS         4
 #define NPARTITIONS    4
 
 #define NSTRIPSRPC     128
@@ -24,27 +29,39 @@ using namespace std;
 
 const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
 const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
+const string __logpath = "/var/operation/RUN/log";
 
-void MakeHeader(string filename);
+int     CharToInt(char& C);
+string  CharToString(char& C);
+string  intTostring(int value);
+string  longTostring(long value);
+string  floatTostring(float value);
+string  GetLogTimeStamp();
 
 //Infrastructure inside GIF++
 struct RPC{
-    int           nPartitions;
-    int           strips;
+    unsigned int  nPartitions;
+    unsigned int  strips;
     vector<float> stripGeo;
 };
 
+void SetRPC(RPC& rpc, string ID, IniFile* geofile);
+
 struct GIFTrolley {
-    int         nSlots;
-    int         SlotsID;
-    vector<RPC> RPCs;
+    unsigned int nSlots;
+    string       SlotsID;
+    vector<RPC>  RPCs;
 };
 
+void SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
+
 struct Infrastructure {
-    int                nTrolleys;
-    int                TrolleysID;
+    unsigned int       nTrolleys;
+    string             TrolleysID;
     vector<GIFTrolley> Trolleys;
 };
+
+void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 
 //Data in the root file
 struct RAWData {
@@ -54,7 +71,7 @@ struct RAWData {
     vector<float>  *TDCTS;      //List of the corresponding time stamps
 };
 
-void SetIDName(unsigned int trolley, unsigned int station, unsigned int partition, char* ID, char* Name, const char* IDroot, const char* Nameroot);
+void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot);
 
 //Hit in the RPC
 struct RPCHit {

@@ -14,44 +14,24 @@
 
 #include <cmath>
 
-string GetPath(string fileName){
+string GetPath(string fName){
     string path;
-    path = fileName.substr(0,fileName.find_last_of("/")+1);
+    path = fName.substr(0,fName.find_last_of("/")+1);
     return path;
 }
 
 //*******************************************************************************
 
-string GetBaseName(string fileName){
-    if(fileName.substr(fileName.find_last_of(".")) == ".root"){
-        MSG_INFO("[NoiseRate]: Using data file %s\n",fileName.c_str());
-        string base = fileName.erase(fileName.find_last_of("."));
+string GetBaseName(string fName){
+    if(fName.substr(fName.find_last_of(".")) == ".root"){
+        MSG_INFO("[NoiseRate]: Using data file " + fName + " \n");
+        string base = fName.erase(fName.find_last_of("."));
         return base;
     } else {
-        string extension = fileName.substr(fileName.find_last_of("."));
-        MSG_ERROR("[NoiseRate]: Wrong file format %s used\n",extension.c_str());
+        string extension = fName.substr(fName.find_last_of("."));
+        MSG_ERROR("[NoiseRate]: Wrong file format " + extension + " used\n");
         return "";
     }
-}
-
-//*******************************************************************************
-
-float GetStripSurface(int trolley, int slot, char partition, IniFile* GeoFile){
-    string group = "";
-    stringstream ss;
-    ss << "T" << trolley << "S" << slot;
-    ss >> group;
-
-    string minortoken = "Minor-" + partition;
-    string majortoken = "Major-" + partition;
-    string heighttoken = "Height-" + partition;
-
-    float stripMinor = GeoFile->stringType(group,minortoken,"1.");
-    float stripMajor = GeoFile->stringType(group,majortoken,"1.");
-    float stripHeight = GeoFile->stringType(group,heighttoken,"1.");
-
-    float stripSurface = (stripMinor+stripMajor)*stripHeight/2.;
-    return stripSurface;
 }
 
 //*******************************************************************************
@@ -112,9 +92,8 @@ void GetNoiseRate(string fName){ //raw root file name
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
-    IniFile* Dimensions = new IniFile(__dimension.c_str());
+    IniFile* Dimensions = new IniFile(__dimensions.c_str());
     Dimensions->Read();
-    map<int,float> StripSurface;
 
     //****************** MAPPING *************************************
 
@@ -122,65 +101,83 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //****************** HISTOGRAMS & CANVAS *************************
 
-    TH2F     *RPCInstantNoiseRate[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TProfile *RPCMeanNoiseProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1I     *RPCHitProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1F     *RPCTimeProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1I     *RPCHitMultiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
+    TH2F     *RPCInstantNoiseRate[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TProfile *RPCMeanNoiseProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1I     *RPCHitProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1F     *RPCTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1I     *RPCHitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
-    TCanvas *InstantNoise[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *MeanNoise[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *HitProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *TimeProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *HitMultiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
+    TCanvas *InstantNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *MeanNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *HitProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *TimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *HitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     char hisid[50];                     //ID of the histogram
     char hisname[50];                   //Name of the histogram
 
-    for (unsigned int t = 0; t < NTROLLEYS; t++){
-        if(t != 1) continue;
-        for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
-            for (unsigned int p = 0; p < NPARTITIONS; p++){
-                //Get profit of these loops to fill the strip surface map
-                int GeoID = t*100 + (rpc+1)*10 + p+1;
-                StripSurface[GeoID] = GetStripSurface(GeoID,Dimensions);
+    Infrastructure GIFInfra;
+    SetInfrastructure(GIFInfra,Dimensions);
 
-            //Noise rate bin size depending on the strip surface
-            float binWidth = 1.;
-            float timeWidth = 1.;
+    for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
+        unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+        unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
 
-            if(Beam->CompareTo("ON") == 0){
-                    binWidth = 1./(BMNOISEWDW*1e-9*StripSurface[GeoID]);
-            timeWidth = BMTDCWINDOW;
-            } else if(Beam->CompareTo("OFF") == 0){
-                    binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-            timeWidth = RDMTDCWINDOW;
+        for (unsigned int s = 0; s < nSlotsTrolley; s++){
+            unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
+            unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+
+            string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
+                    "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
+
+            for (unsigned int p = 0; p < nPartRPC; p++){
+                //Set bining
+                unsigned int nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
+                float low = nStrips*p + 0.5;
+                float high = nStrips*(p+1) + 0.5;
+
+                unsigned int nBinsMult = 101;
+                float lowBin = -0.5;
+                float highBin = (float)nBinsMult + lowBin;
+
+                //Noise rate bin size depending on the strip surface
+                float stripArea = GIFInfra.Trolleys[t].RPCs[s].stripGeo[p];
+                float binWidth = 1.;
+                float timeWidth = 1.;
+
+                if(Beam->CompareTo("ON") == 0){
+                    binWidth = 1./(BMNOISEWDW*1e-9*stripArea);
+                    timeWidth = BMTDCWINDOW;
+                } else if(Beam->CompareTo("OFF") == 0){
+                    binWidth = 1./(RDMTDCWINDOW*1e-9*stripArea);
+                    timeWidth = RDMTDCWINDOW;
                 }
 
                 //Instantaneous noise rate 2D map
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
-                RPCInstantNoiseRate[t][rpc][p] = new TH2F( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5, 21, -0.5*binWidth, 20.5*binWidth);
-                InstantNoise[t][rpc][p] = new TCanvas(hisid,hisname);
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
+                RPCInstantNoiseRate[trolley][slot][p] =
+                        new TH2F( hisid, hisname, nStrips, low, high, nBinsMult, lowBin*binWidth, highBin*binWidth);
+                InstantNoise[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Mean noise rate profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-                RPCMeanNoiseProfile[t][rpc][p] = new TProfile( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
-                MeanNoise[t][rpc][p] = new TCanvas(hisid,hisname);
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
+                RPCMeanNoiseProfile[trolley][slot][p] = new TProfile( hisid, hisname, nStrips, low, high);
+                MeanNoise[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Hit profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Profile","RPC hit profile");
-                RPCHitProfile[t][rpc][p] = new TH1I( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
-                HitProfile[t][rpc][p] = new TCanvas(hisid,hisname);
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Hit_Profile","RPC hit profile");
+                RPCHitProfile[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low, high);
+                HitProfile[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Time profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Time_Profile","RPC time profile");
-                RPCTimeProfile[t][rpc][p] = new TH1F( hisid, hisname, (int)timeWidth, 0., timeWidth);
-                TimeProfile[t][rpc][p] = new TCanvas(hisid,hisname);
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Time_Profile","RPC time profile");
+                RPCTimeProfile[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth, 0., timeWidth);
+                TimeProfile[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Hit multiplicity
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
-                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 101, -0.5, 100.5);
-                HitMultiplicity[t][rpc][p] = new TCanvas(hisid,hisname);
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
+                RPCHitMultiplicity[trolley][slot][p] = new TH1I( hisid, hisname, nBinsMult, lowBin, highBin);
+                HitMultiplicity[trolley][slot][p] = new TCanvas(hisid,hisname);
             }
         }
     }
@@ -189,8 +186,8 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //Tabel to count the hits in every chamber partitions - used to
     //compute the noise rate
-    int NHitsPerStrip[NTROLLEYS][NRPCTROLLEY][NSTRIPSRPC] = { {0} };
-    int Multiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS] = { {0} };
+    int NHitsPerStrip[NTROLLEYS][NSLOTS][NSTRIPSRPC] = { {0} };
+    int Multiplicity[NTROLLEYS][NSLOTS][NPARTITIONS] = { {0} };
 
     unsigned int nEntries = dataTree->GetEntries();
 
@@ -223,35 +220,40 @@ void GetNoiseRate(string fName){ //raw root file name
 
         //** INSTANTANEOUS NOISE RATE ********************************
 
-        for(unsigned int t=0; t<NTROLLEYS; t++){
-            if(t != 1) continue; //since we only use T1
+        for(unsigned int t=0; t<GIFInfra.nTrolleys; t++){
+            unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+            unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
 
-            for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
-                for(unsigned int s=0; s<NSTRIPSRPC; s++){
-                    //Partition from 0 to 2
-                    int p = s/NSTRIPSPART;
+            for(unsigned int sl=0; sl<nSlotsTrolley; sl++){
+                unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+                unsigned int nStripsSlot = nStripsPart * GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+                unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
 
-                    //Get the geometry ID
-                    int GeoID = t*100 + (rpc+1)*10 + p+1;
+                for(unsigned int st=0; st<nStripsSlot; st++){
+                    //Partition
+                    int p = st/nStripsPart;
+
+                    //Get the strip geometry
+                    float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
 
                     //Get the instaneous noise by normalise the hit count to the
                     //time window length in seconds and to the strip surface
                     float InstantNoise = 0.;
 
                     if(Beam->CompareTo("OFF") == 0)
-                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
+                        InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(RDMTDCWINDOW*1e-9*stripArea);
                     else if (Beam->CompareTo("ON") == 0)
-                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(BMNOISEWDW*1e-9*StripSurface[GeoID]);
+                        InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(BMNOISEWDW*1e-9*stripArea);
 
-                    RPCInstantNoiseRate[t][rpc][p]->Fill(s+1,InstantNoise);
+                    RPCInstantNoiseRate[trolley][slot][p]->Fill(st+1,InstantNoise);
 
                     //Reinitialise the hit count for strip s
-                    NHitsPerStrip[t][rpc][s]=0;
+                    NHitsPerStrip[trolley][slot][st]=0;
 
                     //Fill the multiplicity for this event
-                    if(s == 0 || s == 32 || s == 64 || s == 96){
-                        RPCHitMultiplicity[t][rpc][p]->Fill(Multiplicity[t][rpc][p]);
-                        Multiplicity[t][rpc][p] = 0;
+                    if(st%nStripsPart == 0){
+                        RPCHitMultiplicity[trolley][slot][p]->Fill(Multiplicity[trolley][slot][p]);
+                        Multiplicity[trolley][slot][p] = 0;
                     }
                 }
             }
@@ -270,63 +272,65 @@ void GetNoiseRate(string fName){ //raw root file name
     outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
 
     //Loop over trolleys
-    for (unsigned int t = 0; t < NTROLLEYS; t++){
-        if(t != 1) continue; //since we only use T1
-        //Loop over stations
-        for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
-            //Loop over partitions
-            for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                if(p == 3) continue; //there are only 3 partitions in type 2 chambers
+    for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
+        unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+        unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
+
+        for (unsigned int s = 0; s < nSlotsTrolley; s++){
+            unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
+            unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+
+            for (unsigned int p = 0; p < nPartRPC; p++){
                 //Project the histograms along the X-axis to get the
                 //mean noise profile on the strips
-                RPCMeanNoiseProfile[t][rpc][p] = RPCInstantNoiseRate[t][rpc][p]->ProfileX();
+                RPCMeanNoiseProfile[trolley][slot][p] = RPCInstantNoiseRate[trolley][slot][p]->ProfileX();
 
                 //Write in the output file the mean noise rate per
                 //partition and its error defined as twice the RMS
                 //over the sqrt of the number of events
-                float MeanNoiseRate = RPCInstantNoiseRate[t][rpc][p]->ProjectionY()->GetMean();
-                float ErrorMean = 2*RPCInstantNoiseRate[t][rpc][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
+                float MeanNoiseRate = RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetMean();
+                float ErrorMean = 2*RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
                 outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
 
                 //Draw the histograms and write the canvas
 
-                InstantNoise[t][rpc][p]->cd(0);
-                RPCInstantNoiseRate[t][rpc][p]->SetXTitle("Strip");
-                RPCInstantNoiseRate[t][rpc][p]->SetYTitle("Noise rate (Hz/cm^{2})");
-                RPCInstantNoiseRate[t][rpc][p]->SetZTitle("# events");
+                InstantNoise[trolley][slot][p]->cd(0);
+                RPCInstantNoiseRate[trolley][slot][p]->SetXTitle("Strip");
+                RPCInstantNoiseRate[trolley][slot][p]->SetYTitle("Noise rate (Hz/cm^{2})");
+                RPCInstantNoiseRate[trolley][slot][p]->SetZTitle("# events");
                 gStyle->SetPalette(55);
-                RPCInstantNoiseRate[t][rpc][p]->Draw("COLZ");
-                InstantNoise[t][rpc][p]->SetLogz(1);
-                InstantNoise[t][rpc][p]->Write();
+                RPCInstantNoiseRate[trolley][slot][p]->Draw("COLZ");
+                InstantNoise[trolley][slot][p]->SetLogz(1);
+                InstantNoise[trolley][slot][p]->Write();
 
-                MeanNoise[t][rpc][p]->cd(0);
-                RPCMeanNoiseProfile[t][rpc][p]->SetXTitle("Strip");
-                RPCMeanNoiseProfile[t][rpc][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
-                RPCMeanNoiseProfile[t][rpc][p]->SetFillColor(kBlue);
-                RPCMeanNoiseProfile[t][rpc][p]->Draw("HIST");
-                RPCMeanNoiseProfile[t][rpc][p]->Draw("E1 SAME");
-                MeanNoise[t][rpc][p]->Write();
+                MeanNoise[trolley][slot][p]->cd(0);
+                RPCMeanNoiseProfile[trolley][slot][p]->SetXTitle("Strip");
+                RPCMeanNoiseProfile[trolley][slot][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
+                RPCMeanNoiseProfile[trolley][slot][p]->SetFillColor(kBlue);
+                RPCMeanNoiseProfile[trolley][slot][p]->Draw("HIST");
+                RPCMeanNoiseProfile[trolley][slot][p]->Draw("E1 SAME");
+                MeanNoise[trolley][slot][p]->Write();
 
-                HitProfile[t][rpc][p]->cd(0);
-                RPCHitProfile[t][rpc][p]->SetXTitle("Strip");
-                RPCHitProfile[t][rpc][p]->SetYTitle("# events");
-                RPCHitProfile[t][rpc][p]->SetFillColor(kBlue);
-                RPCHitProfile[t][rpc][p]->Draw();
-                HitProfile[t][rpc][p]->Write();
+                HitProfile[trolley][slot][p]->cd(0);
+                RPCHitProfile[trolley][slot][p]->SetXTitle("Strip");
+                RPCHitProfile[trolley][slot][p]->SetYTitle("# events");
+                RPCHitProfile[trolley][slot][p]->SetFillColor(kBlue);
+                RPCHitProfile[trolley][slot][p]->Draw();
+                HitProfile[trolley][slot][p]->Write();
 
-                TimeProfile[t][rpc][p]->cd(0);
-                RPCTimeProfile[t][rpc][p]->SetXTitle("Time stamp (ns)");
-                RPCTimeProfile[t][rpc][p]->SetYTitle("# events");
-                RPCTimeProfile[t][rpc][p]->SetFillColor(kBlue);
-                RPCTimeProfile[t][rpc][p]->Draw();
-                TimeProfile[t][rpc][p]->Write();
+                TimeProfile[trolley][slot][p]->cd(0);
+                RPCTimeProfile[trolley][slot][p]->SetXTitle("Time stamp (ns)");
+                RPCTimeProfile[trolley][slot][p]->SetYTitle("# events");
+                RPCTimeProfile[trolley][slot][p]->SetFillColor(kBlue);
+                RPCTimeProfile[trolley][slot][p]->Draw();
+                TimeProfile[trolley][slot][p]->Write();
 
-                HitMultiplicity[t][rpc][p]->cd(0);
-                RPCHitMultiplicity[t][rpc][p]->SetXTitle("Multiplicity");
-                RPCHitMultiplicity[t][rpc][p]->SetYTitle("# events");
-                RPCHitMultiplicity[t][rpc][p]->SetFillColor(kBlue);
-                RPCHitMultiplicity[t][rpc][p]->Draw();
-                HitMultiplicity[t][rpc][p]->Write();
+                HitMultiplicity[trolley][slot][p]->cd(0);
+                RPCHitMultiplicity[trolley][slot][p]->SetXTitle("Multiplicity");
+                RPCHitMultiplicity[trolley][slot][p]->SetYTitle("# events");
+                RPCHitMultiplicity[trolley][slot][p]->SetFillColor(kBlue);
+                RPCHitMultiplicity[trolley][slot][p]->Draw();
+                HitMultiplicity[trolley][slot][p]->Write();
            }
         }
     }

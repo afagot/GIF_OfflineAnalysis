@@ -2,33 +2,160 @@
 
 using namespace std;
 
-void MakeHeader(string filename){
-    char part[4] = "ABC";               //Names of the partitions
-    string position[4] = {"S4","S3","S2","S1"};
+int CharToInt(char &C){
+    stringstream ss;
+    ss << C;
 
-    ofstream outputCSV(filename.c_str(), ios::out | ios::app);
-
-    outputCSV	<< "File Name" << '\t';
-
-    for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
-        for(unsigned int p=0; p<NPARTITIONS; p++){
-            char columnLabel[100];
-            char errorLabel[100];
-            sprintf(columnLabel,"Mean Rate%s%c (Hz/cm2)",position[rpc].c_str(),part[p]);
-            sprintf(errorLabel,"Error %s%c (Hz/cm2)",position[rpc].c_str(),part[p]);
-            outputCSV << columnLabel << '\t' << errorLabel << '\t';
-        }
-    }
-    outputCSV << '\n';
-    outputCSV.close();
+    int I;
+    ss >> I;
+    return I;
 }
+
+// ****************************************************************************************************
+
+
+string CharToString(char& C){
+    stringstream ss;
+    ss << C;
+
+    string S;
+    ss >> S;
+    return S;
+}
+
+// ****************************************************************************************************
+
+string intTostring(int value){
+    string word;
+    stringstream ss;
+    ss << value;
+    ss>> word;
+
+    return word;
+}
+
+// ****************************************************************************************************
+
+string longTostring(long value){
+    string word;
+    stringstream ss;
+    ss << value;
+    ss>> word;
+
+    return word;
+}
+
+// ****************************************************************************************************
+
+string floatTostring(float value){
+    string word;
+    stringstream ss;
+    ss << value;
+    ss>> word;
+
+    return word;
+}
+
+// ****************************************************************************************************
+
+string GetLogTimeStamp(){
+    stringstream stream;
+
+    //Get time information
+    time_t t = time(0);
+    struct tm *Time = localtime(&t);
+    int Y = Time->tm_year + 1900;
+    int M = Time->tm_mon + 1;
+    int D = Time->tm_mday;
+    int h = Time->tm_hour;
+    int m = Time->tm_min;
+    int s = Time->tm_sec;
+
+    //Set the Date
+    string Date;
+
+    stream << setfill('0') << setw(4) << Y << "-"
+           << setfill('0') << setw(2) << M << "-"
+           << setfill('0') << setw(2) << D << "."
+           << setfill('0') << setw(2) << h << ":"
+           << setfill('0') << setw(2) << m << ":"
+           << setfill('0') << setw(2) << s << ".";
+
+    stream >> Date;
+    stream.clear();
+
+    return Date;
+}
+
+// ****************************************************************************************************
+
+
+//Functions to set up the structures needed to define the GIF++ infrastructure
+void SetRPC(RPC &rpc, string ID, IniFile *geofile){
+    rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
+    rpc.strips = geofile->intType(ID,"Strips",NSLOTS);
+
+    string partID = "ABCD";
+
+    for(unsigned int p = 0; p < rpc.nPartitions; p++){
+        string minorID = "Minor-" + partID[p];
+        string majorID = "Major-" + partID[p];
+        string heightID = "Height-" + partID[p];
+
+        float minor = geofile->floatType(ID,minorID,1.);
+        float major = geofile->floatType(ID,majorID,1.);
+        float height = geofile->floatType(ID,heightID,1.);
+
+        float area = ((minor + major) * height)/2.;
+        rpc.stripGeo.push_back(area);
+    }
+}
+
+// ****************************************************************************************************
+
+
+void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
+    trolley.nSlots = geofile->intType(ID,"nSlots",NSLOTS);
+    trolley.SlotsID = geofile->stringType(ID,"SlotsID","");
+
+    for(unsigned int s = 0; s < trolley.nSlots; s++){
+        string rpcID = ID + "S" + trolley.SlotsID[s];
+
+        RPC temprpc;
+        SetRPC(temprpc,rpcID,geofile);
+        trolley.RPCs.push_back(temprpc);
+    }
+}
+
+// ****************************************************************************************************
+
+
+void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
+    infra.nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
+    infra.TrolleysID = geofile->stringType("General","TrolleysID","");
+    infra.Trolleys.clear();
+
+    for(unsigned int t = 0; t < infra.nTrolleys; t++){
+        string trolleyID = "T" + infra.TrolleysID[t];
+
+        GIFTrolley tempTrolley;
+        SetTrolley(tempTrolley, trolleyID, geofile);
+        infra.Trolleys.push_back(tempTrolley);
+    }
+}
+
+// ****************************************************************************************************
+
 
 //Name of histograms
-void SetIDName(unsigned int trolley, unsigned int station,unsigned int partition, char* ID, char* Name, const char* IDroot, const char* Nameroot){
+void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot){
     string P[4] = {"A","B","C","D"};
-    sprintf(ID,"%s_T%u_S%u_%s",IDroot,trolley,station+1,P[partition].c_str());
-    sprintf(Name,"%s T%u_S%u_%s",Nameroot,trolley,station+1,P[partition].c_str());
+    sprintf(ID,"%s_%s_%s",IDroot.c_str(),rpcID.c_str(),P[partition].c_str());
+    sprintf(Name,"%s %s_%s",Nameroot.c_str(),rpcID.c_str(),P[partition].c_str());
 }
+
+// ****************************************************************************************************
+
 
 //Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp){
@@ -41,10 +168,16 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp){
     Hit.TimeStamp   = TimeStamp;
 }
 
+// ****************************************************************************************************
+
+
 //Function use to sort hits by increasing strip number
 bool SortStrips ( RPCHit A, RPCHit B ) {
     return ( A.Strip < B.Strip );
 }
+
+// ****************************************************************************************************
+
 
 //Return the partition corresponding to the strip
 int GetPartition( int strip ) {

@@ -5,9 +5,8 @@
 #include "TTree.h"
 #include "IniFile.h"
 
-string          GetPath(string fileName);
-string          GetBaseName(string fileName);
-float           GetStripSurface(int GeoID, IniFile* GeoFile);
+string          GetPath(string fName);
+string          GetBaseName(string fName);
 map<int,int>    TDCMapping();
 void            GetNoiseRate(string fName);
 

@@ -6,6 +6,7 @@
 
 #include <string>
 #include <map>
+#include "utils.h"
 
 #ifndef __INIFILE_H_
 #define __INIFILE_H_
@@ -51,7 +52,9 @@ class IniFile{
         int             Read();
 
         // Data readout methods
-        float           GetValue( string groupname, const string keyname, const float defaultvalue );
+        long            intType     (string groupname, string keyname, long defaultvalue);
+        string          stringType  (string groupname, string keyname, string defaultvalue );
+        float           floatType   (string groupname, string keyname, float defaultvalue );
 };
 
 #endif
