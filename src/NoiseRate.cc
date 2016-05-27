@@ -13,6 +13,7 @@
 #include "TString.h"
 
 #include <cmath>
+#include <cstdlib>
 
 string GetPath(string fName){
     string path;
@@ -270,6 +271,17 @@ void GetNoiseRate(string fName){ //raw root file name
     //Print the file name as first column
     outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
 
+    //Create the output folder for the DQM plots
+    string mkdirDQMFolder = "mkdir -p " + baseName;
+    system(mkdirDQMFolder.c_str());
+
+    //Variables for the DQM file names
+    string PDF;
+    PDF.clear();
+
+    string PNG;
+    PNG.clear();
+
     //Loop over trolleys
     for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
         unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
@@ -300,6 +312,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 gStyle->SetPalette(55);
                 RPCInstantNoiseRate[trolley][slot][p]->Draw("COLZ");
                 InstantNoise[trolley][slot][p]->SetLogz(1);
+                InstantNoise[trolley][slot][p]->Update();
+                PDF = baseName  + "/" + InstantNoise[trolley][slot][p]->GetName() + ".pdf";
+                PNG = baseName  + "/" + InstantNoise[trolley][slot][p]->GetName() + ".png";
+                InstantNoise[trolley][slot][p]->SaveAs(PDF.c_str());
+                InstantNoise[trolley][slot][p]->SaveAs(PNG.c_str());
                 InstantNoise[trolley][slot][p]->Write();
 
                 MeanNoise[trolley][slot][p]->cd(0);
@@ -308,6 +325,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCMeanNoiseProfile[trolley][slot][p]->SetFillColor(kBlue);
                 RPCMeanNoiseProfile[trolley][slot][p]->Draw("HIST");
                 RPCMeanNoiseProfile[trolley][slot][p]->Draw("E1 SAME");
+                MeanNoise[trolley][slot][p]->Update();
+                PDF = baseName  + "/" + MeanNoise[trolley][slot][p]->GetName() + ".pdf";
+                PNG = baseName  + "/" + MeanNoise[trolley][slot][p]->GetName() + ".png";
+                MeanNoise[trolley][slot][p]->SaveAs(PDF.c_str());
+                MeanNoise[trolley][slot][p]->SaveAs(PNG.c_str());
                 MeanNoise[trolley][slot][p]->Write();
 
                 HitProfile[trolley][slot][p]->cd(0);
@@ -315,6 +337,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCHitProfile[trolley][slot][p]->SetYTitle("# events");
                 RPCHitProfile[trolley][slot][p]->SetFillColor(kBlue);
                 RPCHitProfile[trolley][slot][p]->Draw();
+                HitProfile[trolley][slot][p]->Update();
+                PDF = baseName  + "/" + HitProfile[trolley][slot][p]->GetName() + ".pdf";
+                PNG = baseName  + "/" + HitProfile[trolley][slot][p]->GetName() + ".png";
+                HitProfile[trolley][slot][p]->SaveAs(PDF.c_str());
+                HitProfile[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitProfile[trolley][slot][p]->Write();
 
                 TimeProfile[trolley][slot][p]->cd(0);
@@ -322,6 +349,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCTimeProfile[trolley][slot][p]->SetYTitle("# events");
                 RPCTimeProfile[trolley][slot][p]->SetFillColor(kBlue);
                 RPCTimeProfile[trolley][slot][p]->Draw();
+                TimeProfile[trolley][slot][p]->Update();
+                PDF = baseName  + "/" + TimeProfile[trolley][slot][p]->GetName() + ".pdf";
+                PNG = baseName  + "/" + TimeProfile[trolley][slot][p]->GetName() + ".png";
+                TimeProfile[trolley][slot][p]->SaveAs(PDF.c_str());
+                TimeProfile[trolley][slot][p]->SaveAs(PNG.c_str());
                 TimeProfile[trolley][slot][p]->Write();
 
                 HitMultiplicity[trolley][slot][p]->cd(0);
@@ -329,6 +361,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCHitMultiplicity[trolley][slot][p]->SetYTitle("# events");
                 RPCHitMultiplicity[trolley][slot][p]->SetFillColor(kBlue);
                 RPCHitMultiplicity[trolley][slot][p]->Draw();
+                HitMultiplicity[trolley][slot][p]->Update();
+                PDF = baseName  + "/" + HitMultiplicity[trolley][slot][p]->GetName() + ".pdf";
+                PNG = baseName  + "/" + HitMultiplicity[trolley][slot][p]->GetName() + ".png";
+                HitMultiplicity[trolley][slot][p]->SaveAs(PDF.c_str());
+                HitMultiplicity[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitMultiplicity[trolley][slot][p]->Write();
            }
         }
