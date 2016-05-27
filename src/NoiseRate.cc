@@ -155,8 +155,7 @@ void GetNoiseRate(string fName){ //raw root file name
 
                 //Instantaneous noise rate 2D map
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
-                RPCInstantNoiseRate[trolley][slot][p] =
-                        new TH2F( hisid, hisname, nStrips, low, high, nBinsMult, lowBin*binWidth, highBin*binWidth);
+                RPCInstantNoiseRate[trolley][slot][p] = new TH2F( hisid, hisname, nStrips, low, high, nBinsMult, lowBin*binWidth, highBin*binWidth);
                 InstantNoise[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Mean noise rate profile

@@ -29,7 +29,9 @@ using namespace std;
 
 const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
 const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
+//const string __dimensions = "Dimensions/Dimensions_20150928-20160512.ini";
 const string __logpath = "/var/operation/RUN/log";
+//const string __logpath = "log";
 
 int     CharToInt(char& C);
 string  CharToString(char& C);

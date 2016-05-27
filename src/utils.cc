@@ -98,9 +98,9 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     string partID = "ABCD";
 
     for(unsigned int p = 0; p < rpc.nPartitions; p++){
-        string minorID = "Minor-" + partID[p];
-        string majorID = "Major-" + partID[p];
-        string heightID = "Height-" + partID[p];
+        string minorID = "Minor-" + CharToString(partID[p]);
+        string majorID = "Major-" + CharToString(partID[p]);
+        string heightID = "Height-" + CharToString(partID[p]);
 
         float minor = geofile->floatType(ID,minorID,1.);
         float major = geofile->floatType(ID,majorID,1.);
@@ -119,7 +119,7 @@ void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
     trolley.SlotsID = geofile->stringType(ID,"SlotsID","");
 
     for(unsigned int s = 0; s < trolley.nSlots; s++){
-        string rpcID = ID + "S" + trolley.SlotsID[s];
+        string rpcID = ID + "S" + CharToString(trolley.SlotsID[s]);
 
         RPC temprpc;
         SetRPC(temprpc,rpcID,geofile);
@@ -136,7 +136,7 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
     infra.Trolleys.clear();
 
     for(unsigned int t = 0; t < infra.nTrolleys; t++){
-        string trolleyID = "T" + infra.TrolleysID[t];
+        string trolleyID = "T" + CharToString(infra.TrolleysID[t]);
 
         GIFTrolley tempTrolley;
         SetTrolley(tempTrolley, trolleyID, geofile);
