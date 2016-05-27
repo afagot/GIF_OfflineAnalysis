@@ -22,7 +22,7 @@
 #define NPARTITIONS    4
 
 #define NSTRIPSRPC     128
-#define NSTRIPSPART    32
+#define NSTRIPSPART    48
 #define NSTRIPSCONN    16
 
 using namespace std;
@@ -86,7 +86,7 @@ struct RPCHit {
     float           TimeStamp;  //TDC time stamp
 };
 
-void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp);
+void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
 bool SortStrips ( RPCHit A, RPCHit B );
 int GetPartition( int strip );
 

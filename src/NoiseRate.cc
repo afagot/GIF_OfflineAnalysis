@@ -17,7 +17,7 @@
 
 string GetPath(string fName){
     string path;
-    path = fName.substr(0,fName.find_last_of("/")+1);
+    path = fName.substr(fName.find_last_of("_")-3,3) + "/DAQ/";
     return path;
 }
 
@@ -201,7 +201,7 @@ void GetNoiseRate(string fName){ //raw root file name
             //Get rid of the noise hits outside of the connected channels
             if(data.TDCCh->at(h) > 5095) continue;
 
-            SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
+            SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
             //Count the number of hits outside the peak
             bool earlyhit = (hit.TimeStamp >= 150. && hit.TimeStamp < 250.);
@@ -272,7 +272,8 @@ void GetNoiseRate(string fName){ //raw root file name
     outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
 
     //Create the output folder for the DQM plots
-    string mkdirDQMFolder = "mkdir -p " + baseName;
+    string DQMFolder = baseName.substr(0,baseName.find_last_of("/")+1) + GetPath(baseName);
+    string mkdirDQMFolder = "mkdir -p " + DQMFolder;
     system(mkdirDQMFolder.c_str());
 
     //Variables for the DQM file names
@@ -313,8 +314,8 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCInstantNoiseRate[trolley][slot][p]->Draw("COLZ");
                 InstantNoise[trolley][slot][p]->SetLogz(1);
                 InstantNoise[trolley][slot][p]->Update();
-                PDF = baseName  + "/" + InstantNoise[trolley][slot][p]->GetName() + ".pdf";
-                PNG = baseName  + "/" + InstantNoise[trolley][slot][p]->GetName() + ".png";
+                PDF = DQMFolder + InstantNoise[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + InstantNoise[trolley][slot][p]->GetName() + ".png";
                 InstantNoise[trolley][slot][p]->SaveAs(PDF.c_str());
                 InstantNoise[trolley][slot][p]->SaveAs(PNG.c_str());
                 InstantNoise[trolley][slot][p]->Write();
@@ -326,8 +327,8 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCMeanNoiseProfile[trolley][slot][p]->Draw("HIST");
                 RPCMeanNoiseProfile[trolley][slot][p]->Draw("E1 SAME");
                 MeanNoise[trolley][slot][p]->Update();
-                PDF = baseName  + "/" + MeanNoise[trolley][slot][p]->GetName() + ".pdf";
-                PNG = baseName  + "/" + MeanNoise[trolley][slot][p]->GetName() + ".png";
+                PDF = DQMFolder + MeanNoise[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + MeanNoise[trolley][slot][p]->GetName() + ".png";
                 MeanNoise[trolley][slot][p]->SaveAs(PDF.c_str());
                 MeanNoise[trolley][slot][p]->SaveAs(PNG.c_str());
                 MeanNoise[trolley][slot][p]->Write();
@@ -338,8 +339,8 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCHitProfile[trolley][slot][p]->SetFillColor(kBlue);
                 RPCHitProfile[trolley][slot][p]->Draw();
                 HitProfile[trolley][slot][p]->Update();
-                PDF = baseName  + "/" + HitProfile[trolley][slot][p]->GetName() + ".pdf";
-                PNG = baseName  + "/" + HitProfile[trolley][slot][p]->GetName() + ".png";
+                PDF = DQMFolder + HitProfile[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + HitProfile[trolley][slot][p]->GetName() + ".png";
                 HitProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitProfile[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitProfile[trolley][slot][p]->Write();
@@ -350,8 +351,8 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCTimeProfile[trolley][slot][p]->SetFillColor(kBlue);
                 RPCTimeProfile[trolley][slot][p]->Draw();
                 TimeProfile[trolley][slot][p]->Update();
-                PDF = baseName  + "/" + TimeProfile[trolley][slot][p]->GetName() + ".pdf";
-                PNG = baseName  + "/" + TimeProfile[trolley][slot][p]->GetName() + ".png";
+                PDF = DQMFolder + TimeProfile[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + TimeProfile[trolley][slot][p]->GetName() + ".png";
                 TimeProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 TimeProfile[trolley][slot][p]->SaveAs(PNG.c_str());
                 TimeProfile[trolley][slot][p]->Write();
@@ -362,8 +363,8 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCHitMultiplicity[trolley][slot][p]->SetFillColor(kBlue);
                 RPCHitMultiplicity[trolley][slot][p]->Draw();
                 HitMultiplicity[trolley][slot][p]->Update();
-                PDF = baseName  + "/" + HitMultiplicity[trolley][slot][p]->GetName() + ".pdf";
-                PNG = baseName  + "/" + HitMultiplicity[trolley][slot][p]->GetName() + ".png";
+                PDF = DQMFolder + HitMultiplicity[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + HitMultiplicity[trolley][slot][p]->GetName() + ".png";
                 HitMultiplicity[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitMultiplicity[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitMultiplicity[trolley][slot][p]->Write();
@@ -376,5 +377,13 @@ void GetNoiseRate(string fName){ //raw root file name
 
     outputfile.Close();
     dataFile.Close();
+    
+    //Finally give the permission to the DCS to delete the file if necessary
+    string GivePermission = "chmod 775 " + fNameROOT;
+    system(GivePermission.c_str());
+    GivePermission = "chmod -R 775 " + DQMFolder + "*";
+    system(GivePermission.c_str());
+    GivePermission = "chmod 775 " + csvName;
+    system(GivePermission.c_str());
 }
 

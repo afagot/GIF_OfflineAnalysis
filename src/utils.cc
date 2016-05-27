@@ -158,12 +158,24 @@ void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, strin
 
 
 //Set the RPCHit variables
-void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp){
+void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Channel     = Channel;                      //RPC channel according to mapping (5 digits)
     Hit.Trolley     = Channel/10000;                //0, 1 or 3 (1st digit of the RPC channel)
     Hit.Station     = (Channel%10000)/1000;         //From 1 to 4 (2nd digit)
     Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
-    Hit.Partition   = (Hit.Strip-1)/NSTRIPSPART+1;  //From 1 to 4
+
+    int nStripsPart = 0;
+
+    for(unsigned int i = 0; i < Infra.nTrolleys; i++){
+        if(CharToInt(Infra.TrolleysID[i]) == Hit.Trolley){
+            for(unsigned int j = 0; j < Infra.Trolleys[i].nSlots; j++){
+                if(CharToInt(Infra.Trolleys[i].SlotsID[j]) == Hit.Station)
+                    nStripsPart = Infra.Trolleys[i].RPCs[j].strips;
+            }
+        }
+    }
+
+    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
     Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
     Hit.TimeStamp   = TimeStamp;
 }
