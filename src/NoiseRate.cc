@@ -112,12 +112,14 @@ void GetNoiseRate(string fName){ //raw root file name
     TH2F     *RPCInstantNoiseRate[NTROLLEYS][NSLOTS][NPARTITIONS];
     TProfile *RPCMeanNoiseProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1I     *RPCHitProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1I     *RPCBeamProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1F     *RPCTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1I     *RPCHitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     TCanvas *InstantNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *MeanNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *HitProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *BeamProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *TimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *HitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
@@ -176,6 +178,11 @@ void GetNoiseRate(string fName){ //raw root file name
                 RPCHitProfile[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low, high);
                 HitProfile[trolley][slot][p] = new TCanvas(hisid,hisname);
 
+                //Beam profile
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Beam_Profile","RPC beam profile");
+                RPCBeamProfile[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low, high);
+                BeamProfile[trolley][slot][p] = new TCanvas(hisid,hisname);
+
                 //Time profile
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Time_Profile","RPC time profile");
                 RPCTimeProfile[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth, 0., timeWidth);
@@ -208,15 +215,22 @@ void GetNoiseRate(string fName){ //raw root file name
             //Get rid of the noise hits outside of the connected channels
             if(data.TDCCh->at(h) > 5095) continue;
 
+            //Get rid of the noisy gRPC channels
+            if(data.TDCCh->at(h) == 3052 || data.TDCCh->at(h) == 3056 || data.TDCCh->at(h) == 3098) continue;
+
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
             //Count the number of hits outside the peak
             bool earlyhit = (hit.TimeStamp >= 150. && hit.TimeStamp < 250.);
+            bool intimehit = (hit.TimeStamp >= 250. && hit.TimeStamp < 350.);
             bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
 
-            if(Beam->CompareTo("ON") == 0 && (earlyhit || latehit))
-                NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
-            else if(Beam->CompareTo("OFF") == 0)
+            if(Beam->CompareTo("ON") == 0){
+                if(earlyhit || latehit)
+                    NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
+                else if(intimehit)
+                    RPCBeamProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);                    
+            } else if(Beam->CompareTo("OFF") == 0)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
@@ -351,6 +365,18 @@ void GetNoiseRate(string fName){ //raw root file name
                 HitProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitProfile[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitProfile[trolley][slot][p]->Write();
+
+                BeamProfile[trolley][slot][p]->cd(0);
+                RPCBeamProfile[trolley][slot][p]->SetXTitle("Strip");
+                RPCBeamProfile[trolley][slot][p]->SetYTitle("# events");
+                RPCBeamProfile[trolley][slot][p]->SetFillColor(kBlue);
+                RPCBeamProfile[trolley][slot][p]->Draw();
+                BeamProfile[trolley][slot][p]->Update();
+                PDF = DQMFolder + BeamProfile[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + BeamProfile[trolley][slot][p]->GetName() + ".png";
+                BeamProfile[trolley][slot][p]->SaveAs(PDF.c_str());
+                BeamProfile[trolley][slot][p]->SaveAs(PNG.c_str());
+                BeamProfile[trolley][slot][p]->Write();
 
                 TimeProfile[trolley][slot][p]->cd(0);
                 RPCTimeProfile[trolley][slot][p]->SetXTitle("Time stamp (ns)");
