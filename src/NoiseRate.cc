@@ -140,6 +140,15 @@ void GetNoiseRate(string fName){ //raw root file name
             string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
                     "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
 
+            string HVeffHisto;
+            if(rpcID != "T3S2"){
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
+                HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+            } else {
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+            }
+
             for (unsigned int p = 0; p < nPartRPC; p++){
                 //Set bining
                 unsigned int nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
@@ -229,7 +238,7 @@ void GetNoiseRate(string fName){ //raw root file name
                 if(earlyhit || latehit)
                     NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
                 else if(intimehit)
-                    RPCBeamProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);                    
+                    RPCBeamProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
             } else if(Beam->CompareTo("OFF") == 0)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
@@ -312,6 +321,9 @@ void GetNoiseRate(string fName){ //raw root file name
         for (unsigned int s = 0; s < nSlotsTrolley; s++){
             unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+
+            float HighVoltage = HVeff[trolley][slot]->GetMean();
+            outputCSV << HighVoltage << '\t';
 
             for (unsigned int p = 0; p < nPartRPC; p++){
                 //Project the histograms along the X-axis to get the
