@@ -92,18 +92,19 @@ string GetLogTimeStamp(){
 
 //Functions to set up the structures needed to define the GIF++ infrastructure
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){
+    rpc.name        = geofile->stringType(ID,"Name","");
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
-    rpc.strips = geofile->intType(ID,"Strips",NSLOTS);
+    rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
 
     string partID = "ABCD";
 
     for(unsigned int p = 0; p < rpc.nPartitions; p++){
-        string minorID = "Minor-" + CharToString(partID[p]);
-        string majorID = "Major-" + CharToString(partID[p]);
+        string minorID  = "Minor-"  + CharToString(partID[p]);
+        string majorID  = "Major-"  + CharToString(partID[p]);
         string heightID = "Height-" + CharToString(partID[p]);
 
-        float minor = geofile->floatType(ID,minorID,1.);
-        float major = geofile->floatType(ID,majorID,1.);
+        float minor  = geofile->floatType(ID,minorID,1.);
+        float major  = geofile->floatType(ID,majorID,1.);
         float height = geofile->floatType(ID,heightID,1.);
 
         float area = ((minor + major) * height)/2.;

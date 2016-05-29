@@ -5,8 +5,8 @@
 #include "TTree.h"
 #include "IniFile.h"
 
-string          GetPath(string fName);
 string          GetBaseName(string fName);
+string          GetPath(string baseName, TString *stepID);
 map<int,int>    TDCMapping();
 void            GetNoiseRate(string fName);
 

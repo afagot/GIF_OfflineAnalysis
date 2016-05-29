@@ -15,24 +15,24 @@
 #include <cmath>
 #include <cstdlib>
 
-string GetPath(string fName){
-    string path;
-    path = fName.substr(fName.find_last_of("_")-3,3) + "/DAQ/";
-    return path;
+string GetBaseName(string fName){
+    if(fName.substr(fName.find_last_of("_")) == "_DAQ.root"){
+        MSG_INFO("[NoiseRate]: Using data file " + fName);
+        string base = fName.erase(fName.find_last_of("_"));
+        return base;
+    } else {
+        string extension = fName.substr(fName.find_last_of("_"));
+        MSG_ERROR("[NoiseRate]: Wrong file format " + extension + " used");
+        return "";
+    }
 }
 
 //*******************************************************************************
 
-string GetBaseName(string fName){
-    if(fName.substr(fName.find_last_of(".")) == ".root"){
-        MSG_INFO("[NoiseRate]: Using data file " + fName + " \n");
-        string base = fName.erase(fName.find_last_of("."));
-        return base;
-    } else {
-        string extension = fName.substr(fName.find_last_of("."));
-        MSG_ERROR("[NoiseRate]: Wrong file format " + extension + " used\n");
-        return "";
-    }
+string GetPath(string baseName, TString* stepID){
+    string path;
+    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + string(stepID->Data()) + "/DAQ/";
+    return path;
 }
 
 //*******************************************************************************
@@ -60,7 +60,7 @@ void GetNoiseRate(string fName){ //raw root file name
     //output file name
     string baseName = GetBaseName(fName);
 
-    //****************** ROOT FILE ***********************************
+    //****************** DAQ ROOT FILE *******************************
 
     //input ROOT data file containing the RAWData TTree that we'll
     //link to our RAWData structure
@@ -78,9 +78,6 @@ void GetNoiseRate(string fName){ //raw root file name
     dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
     dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
-    //****************** TRIGGER TYPE ********************************
-
-    //Get the chamber geometry
     //First open the RunParameters TTree from the dataFile
     //Then link a string to the branch corresponding to the beam
     //status and get the entry
@@ -88,7 +85,17 @@ void GetNoiseRate(string fName){ //raw root file name
     TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
     TString* Beam = new TString();
     RunParameters->SetBranchAddress("Beam",&Beam);
+    TString* HVstep = new TString();
+    RunParameters->SetBranchAddress("HV",&HVstep);
     RunParameters->GetEntry(0);
+
+    //****************** CAEN ROOT FILE ******************************
+
+    //input CAEN ROOT data file containing the values of the HV eff for
+    //every HV step
+    string caenName = baseName + "_CAEN.root";
+    TFile caenFile(caenName.c_str());
+    TH1F *HVeff[NTROLLEYS][NSLOTS];
 
     //****************** GEOMETRY ************************************
 
@@ -266,13 +273,13 @@ void GetNoiseRate(string fName){ //raw root file name
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
-    string csvName = fName.substr(0,fName.find_last_of("/")+1) + "Offline-Rate.csv";
+    string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate.csv";
     ofstream outputCSV(csvName.c_str(),ios::app);
     //Print the file name as first column
     outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
 
     //Create the output folder for the DQM plots
-    string DQMFolder = baseName.substr(0,baseName.find_last_of("/")+1) + GetPath(baseName);
+    string DQMFolder = GetPath(baseName,HVstep);
     string mkdirDQMFolder = "mkdir -p " + DQMFolder;
     system(mkdirDQMFolder.c_str());
 
@@ -377,7 +384,7 @@ void GetNoiseRate(string fName){ //raw root file name
 
     outputfile.Close();
     dataFile.Close();
-    
+
     //Finally give the permission to the DCS to delete the file if necessary
     string GivePermission = "chmod 775 " + fNameROOT;
     system(GivePermission.c_str());

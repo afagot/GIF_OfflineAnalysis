@@ -42,6 +42,7 @@ string  GetLogTimeStamp();
 
 //Infrastructure inside GIF++
 struct RPC{
+    string        name;
     unsigned int  nPartitions;
     unsigned int  strips;
     vector<float> stripGeo;
