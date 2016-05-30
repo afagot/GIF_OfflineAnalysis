@@ -32,6 +32,8 @@ string GetBaseName(string fName){
 string GetPath(string baseName, string stepID){
     string path;
     path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
+//    path = baseName.substr(0,baseName.find_last_of("/")+1) + baseName.substr(baseName.find_last_of("_")+1) + "/DAQ/";
+//    path = baseName.substr(0,baseName.find_last_of("/")+1) + baseName.substr(baseName.find_last_of("/")+1);
     MSG_INFO("[NoiseRate]: Offline file in " + path);
     return path;
 }
@@ -228,6 +230,9 @@ void GetNoiseRate(string fName){ //raw root file name
 
             //Get rid of the noisy gRPC channels
             if(data.TDCCh->at(h) == 3052 || data.TDCCh->at(h) == 3056 || data.TDCCh->at(h) == 3098) continue;
+
+            //Get rid of the noisy GT 1.8 channels
+            if(data.TDCCh->at(h) >= 4048 && data.TDCCh->at(h) < 4052) continue;
 
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
