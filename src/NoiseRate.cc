@@ -92,7 +92,7 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //Then get the HVstep number from the ID histogram
     TH1D* ID = (TH1D*)dataFile.Get("ID");
-    string HVstep = floatTostring(ID->GetBinContent(0));
+    string HVstep = floatTostring(ID->GetBinContent(1));
 
     //****************** CAEN ROOT FILE ******************************
 
