@@ -88,17 +88,18 @@ void GetNoiseRate(string fName){ //raw root file name
     RunParameters->SetBranchAddress("Beam",&Beam);
     RunParameters->GetEntry(0);
 
+    //Then get the HVstep number from the ID histogram
     TH1D* ID = (TH1D*)dataFile.Get("ID");
     string HVstep = floatTostring(ID->GetBinContent(0));
-   
+
     //****************** CAEN ROOT FILE ******************************
-/*
+
     //input CAEN ROOT data file containing the values of the HV eff for
     //every HV step
     string caenName = baseName + "_CAEN.root";
     TFile caenFile(caenName.c_str());
     TH1F *HVeff[NTROLLEYS][NSLOTS];
-*/
+
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
@@ -139,18 +140,20 @@ void GetNoiseRate(string fName){ //raw root file name
             unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
 
-            string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
-                    "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
-/*
+            //Initialise
             string HVeffHisto;
-            if(rpcID != "T3S2"){
+            if(trolley != 3 && slot != 2){
                 HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
             } else {
                 HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
             }
-*/
+
+            //
+            string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
+                    "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
+
             for (unsigned int p = 0; p < nPartRPC; p++){
                 //Set bining
                 unsigned int nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
