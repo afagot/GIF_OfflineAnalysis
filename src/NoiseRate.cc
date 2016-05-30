@@ -91,8 +91,8 @@ void GetNoiseRate(string fName){ //raw root file name
     RunParameters->GetEntry(0);
 
     TH1D* ID = (TH1D*)dataFile.Get("ID");
-    string HVstep = floatTostring(ID->GetBinContent(0));
-   
+    string HVstep = floatTostring(ID->GetBinContent(1));
+
     //****************** CAEN ROOT FILE ******************************
 /*
     //input CAEN ROOT data file containing the values of the HV eff for
