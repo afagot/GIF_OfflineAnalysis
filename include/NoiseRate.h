@@ -6,7 +6,7 @@
 #include "IniFile.h"
 
 string          GetBaseName(string fName);
-string          GetPath(string baseName, TString *stepID);
+string          GetPath(string baseName, string stepID);
 map<int,int>    TDCMapping();
 void            GetNoiseRate(string fName);
 

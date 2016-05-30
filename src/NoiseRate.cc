@@ -17,8 +17,8 @@
 
 string GetBaseName(string fName){
     if(fName.substr(fName.find_last_of("_")) == "_DAQ.root"){
-        MSG_INFO("[NoiseRate]: Using data file " + fName);
         string base = fName.erase(fName.find_last_of("_"));
+        MSG_INFO("[NoiseRate]: Analysis of " + fName);
         return base;
     } else {
         string extension = fName.substr(fName.find_last_of("_"));
@@ -29,9 +29,10 @@ string GetBaseName(string fName){
 
 //*******************************************************************************
 
-string GetPath(string baseName, TString* stepID){
+string GetPath(string baseName, string stepID){
     string path;
-    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + string(stepID->Data()) + "/DAQ/";
+    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
+    MSG_INFO("[NoiseRate]: Offline file in " + path);
     return path;
 }
 
@@ -85,10 +86,11 @@ void GetNoiseRate(string fName){ //raw root file name
     TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
     TString* Beam = new TString();
     RunParameters->SetBranchAddress("Beam",&Beam);
-    TString* HVstep = new TString();
-    RunParameters->SetBranchAddress("HV",&HVstep);
     RunParameters->GetEntry(0);
 
+    TH1D* ID = (TH1D*)dataFile.Get("ID");
+    string HVstep = floatTostring(ID->GetBinContent(0));
+   
     //****************** CAEN ROOT FILE ******************************
 /*
     //input CAEN ROOT data file containing the values of the HV eff for
