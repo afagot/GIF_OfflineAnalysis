@@ -299,7 +299,7 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //************** MEAN NOISE RATE *********************************
     //create a ROOT output file to save the histograms
-    string fNameROOT = baseName + "-Rate.root";
+    string fNameROOT = baseName + "_DAQ-Rate.root";
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
