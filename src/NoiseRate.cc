@@ -41,9 +41,9 @@ string GetPath(string baseName, string stepID){
 //*******************************************************************************
 
 map<int,int> TDCMapping(){
-    int RPCCh;              //# RPC Channel (X00 to X95 : X stations [X = 0,1,...], 96 strips)
-    int TDCCh;              //# TDC Channel (X000 to X127 : X modules [X = 0,1,...], 128 channels)
-    map<int,int> Map;       //2D Map of the TDC Channels and their corresponding RPC strips
+    int RPCCh; //# RPC Channel (TS000 to TS127 : T trolleys (1 or 3), S slots (1 to 4), up to 127 strips)
+    int TDCCh; //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
+    map<int,int> Map;   //2D Map of the TDC Channels and their corresponding RPC strips
 
     ifstream mappingfile(__mapping.c_str(), ios::in);	//Mapping file
 
