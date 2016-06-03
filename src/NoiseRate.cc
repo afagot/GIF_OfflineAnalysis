@@ -142,15 +142,30 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
 
             //Initialise
-            //T3S2 (trolley = 3 and slot = 1) is a multigap
-            //there is only 1 HV channel for this one
-            string HVeffHisto;
-            if(trolley == 3 && slot == (2-1)){
-                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+            string HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+
+            if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str()))
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
-            } else {
+
+            else {
                 HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
-                HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+                if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
+                    HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+
+                    //Control that we are not in single TOP gap mode
+                    //If this is the case, the voltage will be at 6000V for the BOT gap
+                    if(HVeff[trolley][slot]->GetMean() == 6000.){
+                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
+                        HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+
+                        //If the TW was also in standby, set using TN
+                        if(HVeff[trolley][slot]->GetMean() == 6000.){
+                            HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
+                            HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+                        }
+                    }
+                } else
+                    HVeff[trolley][slot] = new TH1F();
             }
 
             //Get the chamber ID in terms of trolley + slot position TXSX
