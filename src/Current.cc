@@ -92,8 +92,8 @@ void GetCurrent(string fName, string caenName){
     outputCSV << '\n';
     outputCSV.close();
 
-    dataFile.Close();
     caenFile.Close();
+    dataFile.Close();
 
     //Finally give the permission to the DCS to delete the file if necessary
     string GivePermission = "chmod 775 " + csvName;

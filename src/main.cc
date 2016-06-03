@@ -14,7 +14,7 @@ int main(int argc ,char *argv[]){
     converter.clear();
 
     if(argc != 3){
-        MSG_WARNING("[Online] USAGE is : " + program + " DAQfilename CAENfilename");
+        MSG_WARNING("[Offline] USAGE is : " + program + " DAQfilename CAENfilename");
         return -1;
     } else {
         converter << argv[1];
@@ -28,9 +28,10 @@ int main(int argc ,char *argv[]){
         converter.clear();
 
         GetNoiseRate(fName, caenName);
+
         GetCurrent(fName, caenName);
 
-        MSG_INFO("[Online] Analysis complete");
+        MSG_INFO("[Offline] Analysis complete");
         return 0;
     }
 }

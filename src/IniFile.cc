@@ -46,7 +46,7 @@ bool IniFile::CheckIfGroup(string line,string& group){
             group = line.substr(1,line.length()-2);
         } else {
             Error = INI_ERROR_WRONG_GROUP_FORMAT;
-            MSG_ERROR("[Offline-Inifile]: Group error " + to_string(Error));
+            MSG_ERROR("[Offline-Inifile] Group error " + to_string(Error));
         }
         return true;
     }
@@ -68,12 +68,12 @@ bool IniFile::CheckIfToken(string line,string& key,string& value){
             value = line.substr(p0,(line.size()-p0));
         } else {
             Error = INI_ERROR_MISSING_VALUE;
-            MSG_ERROR("[Offline-Inifile]: Token error " + to_string(Error));
+            MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
         }
         return true;
     } else {
         Error = INI_ERROR_WRONG_FORMAT;
-        MSG_ERROR("[Offline-Inifile]: Token error " + to_string(Error));
+        MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
         return false;
     }
 }
@@ -99,7 +99,7 @@ int IniFile::Read(){
         ini.close();
     } else {
         Error = INI_ERROR_CANNOT_OPEN_READ_FILE;
-        MSG_ERROR("[Offline-Inifile]: Read error " + to_string(Error));
+        MSG_ERROR("[Offline-Inifile] Read error " + to_string(Error));
         return Error;
     }
 
