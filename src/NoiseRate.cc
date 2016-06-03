@@ -58,7 +58,7 @@ map<int,int> TDCMapping(){
 
 //*******************************************************************************
 
-void GetNoiseRate(string fName){ //raw root file name
+void GetNoiseRate(string fName, string caenName){ //raw root file name
     // strip off .root from filename - usefull to contruct the
     //output file name
     string baseName = GetBaseName(fName);
@@ -98,7 +98,6 @@ void GetNoiseRate(string fName){ //raw root file name
 
     //input CAEN ROOT data file containing the values of the HV eff for
     //every HV step
-    string caenName = baseName + "_CAEN.root";
     TFile caenFile(caenName.c_str());
     TH1F *HVeff[NTROLLEYS][NSLOTS];
 
@@ -143,16 +142,18 @@ void GetNoiseRate(string fName){ //raw root file name
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
 
             //Initialise
+            //T3S2 (trolley = 3 and slot = 1) is a multigap
+            //there is only 1 HV channel for this one
             string HVeffHisto;
-            if(trolley != 3 && slot != 2){
-                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
+            if(trolley == 3 && slot == (2-1)){
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
             } else {
-                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
             }
 
-            //
+            //Get the chamber ID in terms of trolley + slot position TXSX
             string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
                     "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
 
@@ -308,8 +309,8 @@ void GetNoiseRate(string fName){ //raw root file name
     //output csv file
     string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate.csv";
     ofstream outputCSV(csvName.c_str(),ios::app);
-    //Print the file name as first column
-    outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
+    //Print the HV step as first column
+    outputCSV << HVstep << '\t';
 
     //Create the output folder for the DQM plots
     string DQMFolder = GetPath(baseName,HVstep);
@@ -331,10 +332,10 @@ void GetNoiseRate(string fName){ //raw root file name
         for (unsigned int s = 0; s < nSlotsTrolley; s++){
             unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
-/*
+
             float HighVoltage = HVeff[trolley][slot]->GetMean();
             outputCSV << HighVoltage << '\t';
-*/
+
             for (unsigned int p = 0; p < nPartRPC; p++){
                 //Project the histograms along the X-axis to get the
                 //mean noise profile on the strips

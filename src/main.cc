@@ -5,8 +5,8 @@
 using namespace std;
 
 int main(int argc ,char *argv[]){
-    if(argc != 2){
-        cout<<"[OfflineAnalysis]: USAGE is :"<< argv[0] <<" filename triggertype\n";
+    if(argc != 3){
+        cout<<"[OfflineAnalysis]: USAGE is :"<< argv[0] <<" DAQfilename CAENfilename \n";
         return -1;
     } else {
         stringstream converter;
@@ -16,7 +16,12 @@ int main(int argc ,char *argv[]){
         converter >> fName;
         converter.clear();
 
-        GetNoiseRate(fName);
+        converter << argv[2];
+        string caenName;
+        converter >> caenName;
+        converter.clear();
+
+        GetNoiseRate(fName, caenName);
 
         return 0;
     }
