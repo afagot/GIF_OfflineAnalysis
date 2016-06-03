@@ -447,6 +447,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     outputCSV.close();
 
     outputfile.Close();
+    caenFile.Close();
     dataFile.Close();
 
     //Finally give the permission to the DCS to delete the file if necessary
