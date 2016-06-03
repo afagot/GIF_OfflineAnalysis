@@ -18,11 +18,11 @@
 string GetBaseName(string fName){
     if(fName.substr(fName.find_last_of("_")) == "_DAQ.root"){
         string base = fName.erase(fName.find_last_of("_"));
-        MSG_INFO("[NoiseRate]: Analysis of " + fName);
+        MSG_INFO("[NoiseRate] Analysis of " + fName);
         return base;
     } else {
         string extension = fName.substr(fName.find_last_of("_"));
-        MSG_ERROR("[NoiseRate]: Wrong file format " + extension + " used");
+        MSG_ERROR("[NoiseRate] Wrong file format " + extension + " used");
         return "";
     }
 }
