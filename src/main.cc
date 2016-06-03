@@ -1,4 +1,5 @@
 #include "../include/NoiseRate.h"
+#include "../include/Current.h"
 #include "../include/MsgSvc.h"
 
 #include <sstream>
@@ -13,7 +14,7 @@ int main(int argc ,char *argv[]){
     converter.clear();
 
     if(argc != 3){
-        MSG_WARNING("[NoiseRate] USAGE is : " + program + " DAQfilename CAENfilename");
+        MSG_WARNING("[Online] USAGE is : " + program + " DAQfilename CAENfilename");
         return -1;
     } else {
         converter << argv[1];
@@ -27,8 +28,9 @@ int main(int argc ,char *argv[]){
         converter.clear();
 
         GetNoiseRate(fName, caenName);
+        GetCurrent(fName, caenName);
 
-        MSG_INFO("[NoiseRate] Analysis complete");
+        MSG_INFO("[Online] Analysis complete");
         return 0;
     }
 }

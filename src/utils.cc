@@ -94,8 +94,14 @@ string GetLogTimeStamp(){
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.name        = geofile->stringType(ID,"Name","");
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
-    rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
+    rpc.nGaps       = geofile->intType(ID,"Gaps",0);
 
+    for(unsigned int g = 0 ; g < rpc.nGaps; g++){
+        string gapID = "Gap" + intTostring(g+1);
+        rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
+    }
+
+    rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
     string partID = "ABCD";
 
     for(unsigned int p = 0; p < rpc.nPartitions; p++){

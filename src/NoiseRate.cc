@@ -18,11 +18,11 @@
 string GetBaseName(string fName){
     if(fName.substr(fName.find_last_of("_")) == "_DAQ.root"){
         string base = fName.erase(fName.find_last_of("_"));
-        MSG_INFO("[NoiseRate] Analysis of " + fName);
+        MSG_INFO("[Online] Analysis of " + fName);
         return base;
     } else {
         string extension = fName.substr(fName.find_last_of("_"));
-        MSG_ERROR("[NoiseRate] Wrong file format " + extension + " used");
+        MSG_ERROR("[Online] Wrong file format " + extension + " used");
         return "";
     }
 }
@@ -34,7 +34,7 @@ string GetPath(string baseName, string stepID){
     path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
 //    path = baseName.substr(0,baseName.find_last_of("/")+1) + baseName.substr(baseName.find_last_of("_")+1) + "/DAQ/";
 //    path = baseName.substr(0,baseName.find_last_of("/")+1) + baseName.substr(baseName.find_last_of("/")+1);
-    MSG_INFO("[NoiseRate]: Offline file in " + path);
+    MSG_INFO("[Online] DQM files in " + path);
     return path;
 }
 
@@ -322,7 +322,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     TFile outputfile(fNameROOT.c_str(), "recreate");
 
     //output csv file
-    string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate.csv";
+    string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Online-Rate.csv";
     ofstream outputCSV(csvName.c_str(),ios::app);
     //Print the HV step as first column
     outputCSV << HVstep << '\t';
