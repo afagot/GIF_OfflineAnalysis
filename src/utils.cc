@@ -172,7 +172,6 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-
     for(unsigned int i = 0; i < Infra.nTrolleys; i++){
         if(CharToInt(Infra.TrolleysID[i]) == Hit.Trolley){
             for(unsigned int j = 0; j < Infra.Trolleys[i].nSlots; j++){

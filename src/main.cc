@@ -13,10 +13,22 @@ int main(int argc ,char *argv[]){
     converter >> program;
     converter.clear();
 
-    if(argc != 3){
-        MSG_WARNING("[Offline] USAGE is : " + program + " DAQfilename CAENfilename");
+    if(argc != 2 && argc != 3){
+        MSG_WARNING("[Offline] expects to have 2 or 3 parameters");
+        MSG_WARNING("[Offline] USAGE is : " + program + " CAENfilename");
+        MSG_WARNING("[Offline] or : " + program + " DAQfilename CAENfilename");
         return -1;
-    } else {
+    } else if(argc == 2){
+        converter << argv[1];
+        string caenName;
+        converter >> caenName;
+        converter.clear();
+
+        GetCurrent(caenName);
+
+        MSG_INFO("[Offline] Current HVScan Analysis complete");
+        return 0;
+    } else if(argc == 3){
         converter << argv[1];
         string fName;
         converter >> fName;
@@ -28,10 +40,9 @@ int main(int argc ,char *argv[]){
         converter.clear();
 
         GetNoiseRate(fName, caenName);
+        GetCurrent(caenName);
 
-        GetCurrent(fName, caenName);
-
-        MSG_INFO("[Offline] Analysis complete");
+        MSG_INFO("[Offline] DAQ HVScan Analysis complete");
         return 0;
     }
 }

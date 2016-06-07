@@ -11,17 +11,12 @@
 
 using namespace std;
 
-void GetCurrent(string fName, string caenName){
+void GetCurrent(string caenName){
 
-    //****************** DAQ ROOT FILE *******************************
+    //****************** HVSTEP **************************************
 
-    //input ROOT data file containing the RAWData TTree that we'll
-    //link to our RAWData structure
-    TFile dataFile(fName.c_str());
-
-    //Then get the HVstep number from the ID histogram
-    TH1D* ID = (TH1D*)dataFile.Get("ID");
-    string HVstep = floatTostring(ID->GetBinContent(1));
+    //Get the HVstep number from the file name
+    string HVstep = caenName.substr(caenName.find_last_of("_")-1,1);
 
     //****************** CAEN ROOT FILE ******************************
 
@@ -42,7 +37,7 @@ void GetCurrent(string fName, string caenName){
     //****************** OUPUT FILE **********************************
 
     //output csv file
-    string csvName = caenName.substr(0,caenName.find_last_of("/")) + "/Online-Current.csv";
+    string csvName = caenName.substr(0,caenName.find_last_of("/")) + "/Offline-Current.csv";
     ofstream outputCSV(csvName.c_str(),ios::app);
     //Print the HV step as first column
     outputCSV << HVstep << '\t';
@@ -69,10 +64,10 @@ void GetCurrent(string fName, string caenName){
                 if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
                     TH1F* HVeff = (TH1F*)caenFile.Get(HVeffHisto.c_str());
                     float voltage = HVeff->GetMean();
-
                     outputCSV << voltage << '\t';
                 } else {
-                    MSG_ERROR("[Current] Histogram " + HVeffHisto + " does not exist");
+                    float voltage = 0;
+                    outputCSV << voltage << '\t';
                 }
 
                 //Save the corresponding gap currents
@@ -80,10 +75,11 @@ void GetCurrent(string fName, string caenName){
                     TH1F* Imon = (TH1F*)caenFile.Get(ImonHisto.c_str());
                     float current = Imon->GetMean();
                     float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries());
-
                     outputCSV << current << '\t' << currentErr << '\t';
                 } else {
-                    MSG_ERROR("[Current] Histogram " + ImonHisto + " does not exist");
+                    float current = 0;
+                    float currentErr = 0;
+                    outputCSV << current << '\t' << currentErr << '\t';
                 }
             }
         }
@@ -93,7 +89,6 @@ void GetCurrent(string fName, string caenName){
     outputCSV.close();
 
     caenFile.Close();
-    dataFile.Close();
 
     //Finally give the permission to the DCS to delete the file if necessary
     string GivePermission = "chmod 775 " + csvName;

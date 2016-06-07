@@ -5,6 +5,6 @@
 
 using namespace std;
 
-void GetCurrent(string fName, string caenName);
+void GetCurrent(string caenName);
 
 #endif // CURRENT_H
