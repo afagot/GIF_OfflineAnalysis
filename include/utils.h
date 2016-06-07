@@ -47,6 +47,7 @@ struct RPC{
     unsigned int    nPartitions;
     unsigned int    nGaps;
     vector<string>  gaps;
+    vector<float>   gapGeo;
     unsigned int    strips;
     vector<float>   stripGeo;
 };

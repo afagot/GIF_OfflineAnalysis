@@ -99,6 +99,9 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     for(unsigned int g = 0 ; g < rpc.nGaps; g++){
         string gapID = "Gap" + intTostring(g+1);
         rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
+
+        string areaID = "Area" + gapID;
+        rpc.gapGeo.push_back(geofile->floatType(ID,areaID,1.));
     }
 
     rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);

@@ -50,6 +50,7 @@ void GetCurrent(string caenName){
 
             for(unsigned int g = 0; g < nGapsRPC; g++){
                 string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
+                float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
                 string ImonHisto, HVeffHisto;
 
                 if(gapID == "empty"){
@@ -66,19 +67,19 @@ void GetCurrent(string caenName){
                     float voltage = HVeff->GetMean();
                     outputCSV << voltage << '\t';
                 } else {
-                    float voltage = 0;
+                    float voltage = 0.;
                     outputCSV << voltage << '\t';
                 }
 
                 //Save the corresponding gap currents
                 if(caenFile.GetListOfKeys()->Contains(ImonHisto.c_str())){
                     TH1F* Imon = (TH1F*)caenFile.Get(ImonHisto.c_str());
-                    float current = Imon->GetMean();
-                    float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries());
+                    float current = Imon->GetMean()/areagap;
+                    float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries())/areagap;
                     outputCSV << current << '\t' << currentErr << '\t';
                 } else {
-                    float current = 0;
-                    float currentErr = 0;
+                    float current = 0.;
+                    float currentErr = 0.;
                     outputCSV << current << '\t' << currentErr << '\t';
                 }
             }
