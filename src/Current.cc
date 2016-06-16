@@ -16,7 +16,8 @@ void GetCurrent(string caenName){
     //****************** HVSTEP **************************************
 
     //Get the HVstep number from the file name
-    string HVstep = caenName.substr(caenName.find_last_of("_")-1,1);
+    unsigned int length = caenName.rfind("_") - caenName.rfind("HV") - 2;
+    string HVstep = caenName.substr(caenName.find_last_of("_")-length,length);
 
     //****************** CAEN ROOT FILE ******************************
 
