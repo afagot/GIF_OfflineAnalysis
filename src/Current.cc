@@ -89,8 +89,13 @@ void GetCurrent(string caenName){
                 //Save the corresponding gap ADC currents
                 if(caenFile.GetListOfKeys()->Contains(ADCHisto.c_str())){
                     TH1F* ADC = (TH1F*)caenFile.Get(ADCHisto.c_str());
-                    float ADCcur = ADC->GetMean()/areagap;
-                    float ADCcurErr = ADC->GetRMS()/sqrt(ADC->GetEntries())/areagap;
+                    float ADCcur = 0.;
+                    float ADCcurErr = 0.;
+
+                    if(ADC->GetEntries() > 0){
+                        ADCcur = ADC->GetMean()/areagap;
+                        ADCcurErr = ADC->GetRMS()/sqrt(ADC->GetEntries())/areagap;
+                    }
                     outputCSV << ADCcur << '\t' << ADCcurErr << '\t';
                 } else {
                     float ADCcur = 0.;
