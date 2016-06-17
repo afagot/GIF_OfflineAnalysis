@@ -52,14 +52,16 @@ void GetCurrent(string caenName){
             for(unsigned int g = 0; g < nGapsRPC; g++){
                 string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
                 float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
-                string ImonHisto, HVeffHisto;
+                string ImonHisto, HVeffHisto, ADCHisto;
 
                 if(gapID == "empty"){
                     HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
                     ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                    ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name;
                 } else {
                     HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                     ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                    ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                 }
 
                 //Save the effective voltages
@@ -72,7 +74,7 @@ void GetCurrent(string caenName){
                     outputCSV << voltage << '\t';
                 }
 
-                //Save the corresponding gap currents
+                //Save the corresponding gap imons
                 if(caenFile.GetListOfKeys()->Contains(ImonHisto.c_str())){
                     TH1F* Imon = (TH1F*)caenFile.Get(ImonHisto.c_str());
                     float current = Imon->GetMean()/areagap;
@@ -82,6 +84,18 @@ void GetCurrent(string caenName){
                     float current = 0.;
                     float currentErr = 0.;
                     outputCSV << current << '\t' << currentErr << '\t';
+                }
+
+                //Save the corresponding gap ADC currents
+                if(caenFile.GetListOfKeys()->Contains(ADCHisto.c_str())){
+                    TH1F* ADC = (TH1F*)caenFile.Get(ADCHisto.c_str());
+                    float ADCcur = ADC->GetMean()/areagap;
+                    float ADCcurErr = ADC->GetRMS()/sqrt(ADC->GetEntries())/areagap;
+                    outputCSV << ADCcur << '\t' << ADCcurErr << '\t';
+                } else {
+                    float ADCcur = 0.;
+                    float ADCcurErr = 0.;
+                    outputCSV << ADCcur << '\t' << ADCcurErr << '\t';
                 }
             }
         }
