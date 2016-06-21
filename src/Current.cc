@@ -43,6 +43,12 @@ void GetCurrent(string caenName){
     //Print the HV step as first column
     outputCSV << HVstep << '\t';
 
+    //output csv file to save the list of parameters saved into the
+    //Offline-Current.csv file - it represents the header of that file
+    string listName = caenName.substr(0,caenName.find_last_of("/")) + "/Offline-Current-Header.csv";
+    ofstream listCSV(listName.c_str(),ios::out);
+    listCSV << "HVstep\t";
+
     for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
         unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
 
@@ -63,6 +69,10 @@ void GetCurrent(string caenName){
                     ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                     ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                 }
+
+                listCSV << HVeffHisto << '\t'
+                        << ImonHisto << '\t' << ImonHisto << "_err\t"
+                        << ADCHisto << '\t' << ADCHisto << "_err\t";
 
                 //Save the effective voltages
                 if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
@@ -105,6 +115,7 @@ void GetCurrent(string caenName){
             }
         }
     }
+    listCSV.close();
 
     outputCSV << '\n';
     outputCSV.close();

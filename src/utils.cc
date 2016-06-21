@@ -89,6 +89,40 @@ string GetLogTimeStamp(){
 
 // ****************************************************************************************************
 
+bool IsReRunning(string fName){
+    unsigned int length = 0;
+
+    //First get the information from the «last» file in the RUN
+    //diretory. We will need to compare the ScanID and the HVStep
+    //of the file that is being analysed and of the last file that
+    //have been taken.
+    ifstream last(__lastpath.c_str(), ios::in);
+
+    string lastfName;
+    last >> lastfName;
+
+    //Get the Scan number from the file name
+    string lastScanID = lastfName.substr(0,lastfName.find_first_of("_"));
+
+    //Get the HVstep number from the file name
+    length = lastfName.rfind("_") - lastfName.rfind("HV");
+    string lastHVstep = lastfName.substr(lastfName.find_last_of("_")-length,length);
+
+    //Now we get the same information from the analysed file name
+    string currentScanID = fName.substr(0,fName.find_first_of("_"));
+
+    //Get the HVstep number from the file name
+    length = fName.rfind("_") - fName.rfind("HV");
+    string currentHVstep = fName.substr(fName.find_last_of("_")-length,length);
+
+    //return the comparison
+    //if one of the 2 parameters is not the same, this means that we
+    //are not analysing the last run but rerunning the analysis on old
+    //files
+    return (lastScanID != currentScanID || lastHVstep != currentHVstep);
+}
+
+// ****************************************************************************************************
 
 //Functions to set up the structures needed to define the GIF++ infrastructure
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){

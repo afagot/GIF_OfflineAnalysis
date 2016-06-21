@@ -327,6 +327,12 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     //Print the HV step as first column
     outputCSV << HVstep << '\t';
 
+    //output csv file to save the list of parameters saved into the
+    //Offline-Rate.csv file - it represents the header of that file
+    string listName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate-Header.csv";
+    ofstream listCSV(listName.c_str(),ios::out);
+    listCSV << "HVstep\t";
+
     //Create the output folder for the DQM plots
     string DQMFolder = GetPath(baseName,HVstep);
     string mkdirDQMFolder = "mkdir -p " + DQMFolder;
@@ -351,7 +357,20 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             float HighVoltage = HVeff[trolley][slot]->GetMean();
             outputCSV << HighVoltage << '\t';
 
+            //Write the header file
+            listCSV << "HVeff-" << GIFInfra.Trolleys[t].RPCs[s].name << '\t';
+
             for (unsigned int p = 0; p < nPartRPC; p++){
+                string partID = "ABCD";
+                //Write the header file
+                listCSV << "Rate-"
+                        << GIFInfra.Trolleys[t].RPCs[s].name
+                        << "-" << partID[p]
+                        << "\tRate-"
+                        << GIFInfra.Trolleys[t].RPCs[s].name
+                        << "-" << partID[p]
+                        << "_err\t";
+
                 //Project the histograms along the X-axis to get the
                 //mean noise profile on the strips
                 RPCMeanNoiseProfile[trolley][slot][p] = RPCInstantNoiseRate[trolley][slot][p]->ProfileX();
@@ -442,6 +461,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
            }
         }
     }
+    listCSV.close();
 
     outputCSV << '\n';
     outputCSV.close();

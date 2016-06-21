@@ -1,5 +1,6 @@
 #include "../include/NoiseRate.h"
 #include "../include/Current.h"
+#include "../include/DIP.h"
 #include "../include/MsgSvc.h"
 
 #include <sstream>
@@ -25,8 +26,9 @@ int main(int argc ,char *argv[]){
         converter.clear();
 
         GetCurrent(caenName);
+        GetDIP(caenName);
 
-        MSG_INFO("[Offline] Current HVScan Analysis complete");
+        if(!IsReRunning(caenName)) MSG_INFO("[Offline] Current HVScan Analysis complete");
         return 0;
     } else if(argc == 3){
         converter << argv[1];
@@ -41,8 +43,9 @@ int main(int argc ,char *argv[]){
 
         GetNoiseRate(fName, caenName);
         GetCurrent(caenName);
+        GetDIP(caenName);
 
-        MSG_INFO("[Offline] DAQ HVScan Analysis complete");
+        if(!IsReRunning(caenName)) MSG_INFO("[Offline] DAQ HVScan Analysis complete");
         return 0;
     }
 }

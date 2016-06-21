@@ -32,8 +32,10 @@ const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-20160512.csv";
 const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
 //const string __dimensions = "Dimensions/Dimensions_20150928-20160512.ini";
-const string __logpath = "/var/operation/RUN/log";
-//const string __logpath = "log";
+//const string __logpath = "/var/operation/RUN/log";
+const string __logpath = "001329/log";
+//const string __lastpath = "/var/operation/RUN/last";
+const string __lastpath = "001329/last";
 
 int     CharToInt(char& C);
 string  CharToString(char& C);
@@ -41,6 +43,7 @@ string  intTostring(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
 string  GetLogTimeStamp();
+bool    IsReRunning(string fName);
 
 //Infrastructure inside GIF++
 struct RPC{
