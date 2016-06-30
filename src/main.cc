@@ -21,14 +21,20 @@ int main(int argc ,char *argv[]){
         return -1;
     } else if(argc == 2){
         converter << argv[1];
-        string caenName;
-        converter >> caenName;
+        string fileName;
+        converter >> fileName;
         converter.clear();
 
-        GetCurrent(caenName);
-        GetDIP(caenName);
+        if(fileName.substr(fileName.find_last_of("_")) == "_CAEN.root"){
+            GetCurrent(fileName);
+            GetDIP(fileName);
 
-        if(!IsReRunning(caenName)) MSG_INFO("[Offline] Current HVScan Analysis complete");
+            if(!IsReRunning(fileName)) MSG_INFO("[Offline] Current HVScan Analysis complete");
+        } else if(fileName.substr(fileName.find_last_of("_")) == "_DAQ.root"){
+            GetNoiseRate(fileName);
+
+            if(!IsReRunning(fileName)) MSG_INFO("[Offline] DAQ HVScan Analysis complete");
+        }
         return 0;
     } else if(argc == 3){
         converter << argv[1];
