@@ -1,3 +1,4 @@
+#include <cmath>
 #include "../include/utils.h"
 
 using namespace std;
@@ -90,7 +91,7 @@ string GetLogTimeStamp(){
 // ****************************************************************************************************
 
 bool IsReRunning(string fName){
-    unsigned int length = 0;
+    int length = 0;
 
     //First get the information from the «last» file in the RUN
     //diretory. We will need to compare the ScanID and the HVStep
@@ -109,11 +110,14 @@ bool IsReRunning(string fName){
     string lastHVstep = lastfName.substr(lastfName.find_last_of("_")-length,length);
 
     //Now we get the same information from the analysed file name
+    fName = fName.substr(fName.find_last_of("/")+1);
     string currentScanID = fName.substr(0,fName.find_first_of("_"));
 
     //Get the HVstep number from the file name
     length = fName.rfind("_") - fName.rfind("HV");
-    string currentHVstep = fName.substr(fName.find_last_of("_")-length,length);
+    string currentHVstep;
+    if(length < 0) currentHVstep = fName.substr(fName.find_last_of("_")-length);
+    else currentHVstep = fName.substr(fName.find_last_of("_")-length,length);
 
     //return the comparison
     //if one of the 2 parameters is not the same, this means that we
