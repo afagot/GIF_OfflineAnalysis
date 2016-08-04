@@ -12,8 +12,7 @@
 
 using namespace std;
 
-void GetDIP(string caenName){
-    string dipName = caenName.substr(0,caenName.find_last_of("_")) + "_DIP.root";
+void GetDIP(string dipName){
 
     //****************** HVSTEP **************************************
 

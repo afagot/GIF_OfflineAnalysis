@@ -14,44 +14,33 @@ int main(int argc ,char *argv[]){
     converter >> program;
     converter.clear();
 
-    if(argc != 2 && argc != 3){
-        MSG_WARNING("[Offline] expects to have 2 or 3 parameters");
-        MSG_WARNING("[Offline] USAGE is : " + program + " CAENfilename");
-        MSG_WARNING("[Offline] or : " + program + " DAQfilename CAENfilename");
+    if(argc != 2){
+        MSG_WARNING("[Offline] expects to have 2 parameters");
+        MSG_WARNING("[Offline] USAGE is : " + program + " filebasename");
         return -1;
     } else if(argc == 2){
         converter << argv[1];
-        string fileName;
-        converter >> fileName;
+        string baseName;
+        converter >> baseName;
         converter.clear();
 
-        if(fileName.substr(fileName.find_last_of("_")) == "_CAEN.root"){
-            GetCurrent(fileName);
-            GetDIP(fileName);
+        //Write in the log file of the RUN directory the path to the log file
+        //in the HVSCAN directory to know where to write the logs.
+        string logpath = baseName.substr(0, baseName.find_last_of("/")+1) + "log";
 
-            if(!IsReRunning(fileName)) MSG_INFO("[Offline] Current HVScan Analysis complete");
-        } else if(fileName.substr(fileName.find_last_of("_")) == "_DAQ.root"){
-            GetNoiseRate(fileName);
+        ofstream logpathfile(__logpath.c_str(), ios::out);
+        logpathfile << logpath;
+        logpathfile.close();
 
-            if(!IsReRunning(fileName)) MSG_INFO("[Offline] DAQ HVScan Analysis complete");
+        if(existFile(baseName+"_DAQ.root")){
+            if(existFile(baseName+"_CAEN.root"))
+                GetNoiseRate(baseName+"_DAQ.root",baseName+"_CAEN.root");
+            else
+                GetNoiseRate(baseName+"_DAQ.root");
         }
-        return 0;
-    } else if(argc == 3){
-        converter << argv[1];
-        string fName;
-        converter >> fName;
-        converter.clear();
+        if(existFile(baseName+"_CAEN.root")) GetCurrent(baseName+"_CAEN.root");
+        if(existFile(baseName+"_DIP.root")) GetDIP(baseName+"_DIP.root");
 
-        converter << argv[2];
-        string caenName;
-        converter >> caenName;
-        converter.clear();
-
-        GetNoiseRate(fName, caenName);
-        GetCurrent(caenName);
-        GetDIP(caenName);
-
-        if(!IsReRunning(caenName)) MSG_INFO("[Offline] DAQ HVScan Analysis complete");
         return 0;
     }
 }

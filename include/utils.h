@@ -37,13 +37,13 @@ const string __logpath = "/var/operation/RUN/log";
 const string __lastpath = "/var/operation/RUN/last";
 //const string __lastpath = "001329/last";
 
+bool    existFile(string filename);
 int     CharToInt(char& C);
 string  CharToString(char& C);
 string  intTostring(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
 string  GetLogTimeStamp();
-bool    IsReRunning(string fName);
 
 //Infrastructure inside GIF++
 struct RPC{

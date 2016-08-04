@@ -5,6 +5,6 @@
 
 using namespace std;
 
-void GetDIP(string caenName);
+void GetDIP(string dipName);
 
 #endif // DIP_H
