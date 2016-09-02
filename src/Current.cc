@@ -29,7 +29,6 @@ void GetCurrent(string caenName){
 
     //Get the chamber geometry
     IniFile* Dimensions = new IniFile(__dimensions.c_str());
-//  printf("--> Sal0 %s\n",__dimensions.c_str());
     Dimensions->Read();
 
     Infrastructure GIFInfra;
@@ -60,15 +59,15 @@ void GetCurrent(string caenName){
                 string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
                 float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
                 string ImonHisto, HVeffHisto, ADCHisto;
-//Sal changin _ vs - // 2016 Aug 18
+
                 if(gapID == "empty"){
-                    HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name;
-                    ImonHisto = "Imon-" + GIFInfra.Trolleys[t].RPCs[s].name;
-                    ADCHisto = "ADC-" + GIFInfra.Trolleys[t].RPCs[s].name;
+                    HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                    ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                    ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name;
                 } else {
-                    HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                    ImonHisto = "Imon-" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                    ADCHisto = "ADC-" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                    HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                    ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                    ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                 }
 
                 listCSV << HVeffHisto << '\t'

@@ -142,27 +142,33 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
 
             //Initialise
-            string HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name;
+            string HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
 
             if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str()))
                 HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
 
             else {
-                HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
                 if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
                     HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
 
                     //Control that we are not in single TOP gap mode
-                    //If this is the case, the voltage will be at 6000V for the BOT gap
-                    if(HVeff[trolley][slot]->GetMean() == 6000.){
-                        HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
+                    //If this is the case, the voltage will be at 6500V for the BOT gap
+                    if(HVeff[trolley][slot]->GetMean() == 6500.){
+                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
                         HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
 
                         //If the TW was also in standby, set using TN
-                        if(HVeff[trolley][slot]->GetMean() == 6000.){
-                            HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
+                        if(HVeff[trolley][slot]->GetMean() == 6500.){
+                            HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
                             HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
                         }
+                    }
+
+                    //If there are only 2 gaps (BOT and TOP) and BOT was standby, set using TOP
+                    if(HVeff[trolley][slot]->GetMean() == 6500.){
+                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TOP";
+                        HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
                     }
                 } else
                     HVeff[trolley][slot] = new TH1F();
@@ -217,7 +223,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
 
                 //Time profile
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Time_Profile","RPC time profile");
-                RPCTimeProfile[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth, 0., timeWidth);
+                RPCTimeProfile[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth/10, 0., timeWidth);
                 TimeProfile[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //Hit multiplicity
@@ -252,9 +258,9 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
             //Count the number of hits outside the peak
-            bool earlyhit = (hit.TimeStamp >= 150. && hit.TimeStamp < 250.);
+            bool earlyhit = (hit.TimeStamp >= 50. && hit.TimeStamp < 200.);
             bool intimehit = (hit.TimeStamp >= 250. && hit.TimeStamp < 350.);
-            bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
+            bool latehit = (hit.TimeStamp >= 400. && hit.TimeStamp < 550.);
 
             if(Beam->CompareTo("ON") == 0){
                 if(earlyhit || latehit)
@@ -561,25 +567,25 @@ void GetNoiseRate(string fName){ //raw root file name
             unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
 
             //Initialise
-            string HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name;
+            string HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
 
             if(dataFile.GetListOfKeys()->Contains(HVeffHisto.c_str()))
                 HVeff[trolley][slot] = (TH1F*)dataFile.Get(HVeffHisto.c_str());
 
             else {
-                HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
+                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-BOT";
                 if(dataFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
                     HVeff[trolley][slot] = (TH1F*)dataFile.Get(HVeffHisto.c_str());
 
                     //Control that we are not in single TOP gap mode
                     //If this is the case, the voltage will be at 6000V for the BOT gap
                     if(HVeff[trolley][slot]->GetMean() == 6000.){
-                        HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
+                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
                         HVeff[trolley][slot] = (TH1F*)dataFile.Get(HVeffHisto.c_str());
 
                         //If the TW was also in standby, set using TN
                         if(HVeff[trolley][slot]->GetMean() == 6000.){
-                            HVeffHisto = "HVeff-" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
+                            HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
                             HVeff[trolley][slot] = (TH1F*)dataFile.Get(HVeffHisto.c_str());
                         }
                     }
