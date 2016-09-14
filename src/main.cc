@@ -32,12 +32,9 @@ int main(int argc ,char *argv[]){
         logpathfile << logpath;
         logpathfile.close();
 
-        if(existFile(baseName+"_DAQ.root")){
+        if(existFile(baseName+"_DAQ.root"))
             if(existFile(baseName+"_CAEN.root"))
                 GetNoiseRate(baseName+"_DAQ.root",baseName+"_CAEN.root");
-            else
-                GetNoiseRate(baseName+"_DAQ.root");
-        }
         if(existFile(baseName+"_CAEN.root")) GetCurrent(baseName+"_CAEN.root");
         if(existFile(baseName+"_DIP.root")) GetDIP(baseName+"_DIP.root");
 

@@ -9,6 +9,5 @@ string          GetBaseName(string fName);
 string          GetPath(string baseName, string stepID);
 map<int,int>    TDCMapping();
 void            GetNoiseRate(string fName, string caenName);
-void            GetNoiseRate(string fName);
 
 #endif // NOISERATE_H

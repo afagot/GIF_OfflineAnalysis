@@ -17,8 +17,7 @@
 #define BMTDCWINDOW    24.*25.
 #define BMNOISEWDW     300.
 
-#define NTROLLEYS      5
-#define NSLOTS         6
+#define NSLOTS         8
 #define NPARTITIONS    4
 
 #define NSTRIPSRPC     128
@@ -27,27 +26,10 @@
 
 using namespace std;
 
-const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160910-XXXXXXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907-20160910.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160831-20160907.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T3.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160817-2016XXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-20160512.csv";
-
-//const string __dimensions = "Dimensions/Dimensions_20160910-XXXXXXXX.ini";
-const string __dimensions = "Dimensions/Dimensions_20160907-20160910.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160831-20160907.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
-//const string __dimensions = "Dimensions/Dimensions_20150928-20160512.ini";
-//const string __dimensions = "Dimensions/Dimensions_Korea.ini";
-
-const string __logpath = "/var/operation/RUN/log-offline";
-//const string __logpath = "log";
-
-const string __lastpath = "/var/operation/RUN/last";
-//const string __lastpath = "001329/last";
+const string __mapping    = "Mappings/Mapping.csv";
+const string __dimensions = "Dimensions/Dimensions.ini";
+const string __logpath    = "/var/operation/RUN/log-offline";
+const string __lastpath   = "/var/operation/RUN/last";
 
 bool    existFile(string filename);
 int     CharToInt(char& C);
@@ -70,18 +52,10 @@ struct RPC{
 
 void SetRPC(RPC& rpc, string ID, IniFile* geofile);
 
-struct GIFTrolley {
+struct Infrastructure {
     unsigned int nSlots;
     string       SlotsID;
     vector<RPC>  RPCs;
-};
-
-void SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
-
-struct Infrastructure {
-    unsigned int       nTrolleys;
-    string             TrolleysID;
-    vector<GIFTrolley> Trolleys;
 };
 
 void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
@@ -99,7 +73,6 @@ void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, strin
 //Hit in the RPC
 struct RPCHit {
     int             Channel;    //RPC Channel (5 digit numbers like XX000 - XX128)
-    int             Trolley;    //1 or 3 (1st digit of the RPC channel)
     int             Station;    //Place in the trolley (S1 to S4 - 2nd digit)
     int             Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
     int             Partition;  //Partition (1 to 4)
