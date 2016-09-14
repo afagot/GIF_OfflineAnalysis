@@ -156,19 +156,23 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                     //If this is the case, the voltage will be at 6500V for the BOT gap
                     if(HVeff[trolley][slot]->GetMean() == 6500.){
                         HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TW";
-                        HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
-
-                        //If the TW was also in standby, set using TN
-                        if(HVeff[trolley][slot]->GetMean() == 6500.){
-                            HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
+                        if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
                             HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
-                        }
-                    }
 
-                    //If there are only 2 gaps (BOT and TOP) and BOT was standby, set using TOP
-                    if(HVeff[trolley][slot]->GetMean() == 6500.){
-                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TOP";
-                        HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+                            //If the TW was also in standby, set using TN
+                            if(HVeff[trolley][slot]->GetMean() == 6500.){
+                                HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TN";
+                                if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str()))
+                                    HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+                            }
+                        }
+
+                        //If there are only 2 gaps (BOT and TOP) and BOT was standby, set using TOP
+                        else {
+                            HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-TOP";
+                            if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str()))
+                                HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+                        }
                     }
                 } else
                     HVeff[trolley][slot] = new TH1F();
@@ -252,14 +256,20 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             RPCHit hit;
 
             //Get rid of the noise hits outside of the connected channels
-            if(data.TDCCh->at(h) > 5095) continue;
+            //if(data.TDCCh->at(h) > 5127) continue;
+            if(data.TDCCh->at(h) > 5096) continue;
+            //if(data.TDCCh->at(h) < 2000) continue;
             if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
+            if(RPCChMap[data.TDCCh->at(h)] > 13000 && RPCChMap[data.TDCCh->at(h)] < 34000) continue;
+            //if(RPCChMap[data.TDCCh->at(h)] < 31000) continue;
+
+            //Get rid of the noise hits in the ground channels of KODEL chambers
 
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
             //Count the number of hits outside the peak
             bool earlyhit = (hit.TimeStamp >= 50. && hit.TimeStamp < 200.);
-            bool intimehit = (hit.TimeStamp >= 250. && hit.TimeStamp < 350.);
+            bool intimehit = (hit.TimeStamp >= 255. && hit.TimeStamp < 310.);
             bool latehit = (hit.TimeStamp >= 400. && hit.TimeStamp < 550.);
 
             if(Beam->CompareTo("ON") == 0){
