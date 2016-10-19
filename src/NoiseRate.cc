@@ -256,21 +256,19 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
             RPCHit hit;
 
             //Get rid of the noise hits outside of the connected channels
-            //if(data.TDCCh->at(h) > 5127) continue;
-            if(data.TDCCh->at(h) > 5096) continue;
-            //if(data.TDCCh->at(h) < 2000) continue;
+            if(data.TDCCh->at(h) > 5127) continue;
             if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
-            if(RPCChMap[data.TDCCh->at(h)] > 13000 && RPCChMap[data.TDCCh->at(h)] < 34000) continue;
-            //if(RPCChMap[data.TDCCh->at(h)] < 31000) continue;
+            //if(RPCChMap[data.TDCCh->at(h)]%32000 <= 128) continue;
+            //if(RPCChMap[data.TDCCh->at(h)]%12000 <= 128) continue;
 
             //Get rid of the noise hits in the ground channels of KODEL chambers
 
             SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
             //Count the number of hits outside the peak
-            bool earlyhit = (hit.TimeStamp >= 50. && hit.TimeStamp < 200.);
-            bool intimehit = (hit.TimeStamp >= 255. && hit.TimeStamp < 310.);
-            bool latehit = (hit.TimeStamp >= 400. && hit.TimeStamp < 550.);
+            bool earlyhit = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
+            bool intimehit = (hit.TimeStamp >= 255. && hit.TimeStamp < 315.);
+            bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
 
             if(Beam->CompareTo("ON") == 0){
                 if(earlyhit || latehit)

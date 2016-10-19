@@ -27,7 +27,9 @@
 
 using namespace std;
 
-const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160910-XXXXXXXX.csv";
+const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160927-2016XXXX.csv";
+//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160914-20160927.csv";
+//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160910-20160914.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907-20160910.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160831-20160907.csv";
@@ -36,8 +38,10 @@ const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160910-XXXXXXXX.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
 //const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-20160512.csv";
 
-//const string __dimensions = "Dimensions/Dimensions_20160910-XXXXXXXX.ini";
-const string __dimensions = "Dimensions/Dimensions_20160907-20160910.ini";
+const string __dimensions = "Dimensions/Dimensions_20160927-2016XXXX.ini";
+//const string __dimensions = "Dimensions/Dimensions_20160914-20160927.ini";
+//const string __dimensions = "Dimensions/Dimensions_20160910-20160914.ini";
+//const string __dimensions = "Dimensions/Dimensions_20160907-20160910.ini";
 //const string __dimensions = "Dimensions/Dimensions_20160831-20160907.ini";
 //const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
 //const string __dimensions = "Dimensions/Dimensions_20150928-20160512.ini";
