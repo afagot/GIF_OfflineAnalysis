@@ -120,6 +120,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     TH1F     *RPCTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1I     *RPCHitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1F     *RPCStripActivity[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1F     *RPCNoiseHomogeneity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     TCanvas *InstantNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *MeanNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
@@ -128,6 +129,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     TCanvas *TimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *HitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *StripActivity[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *NoiseHomogeneity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     char hisid[50];                     //ID of the histogram
     char hisname[50];                   //Name of the histogram
@@ -241,6 +243,12 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Strip_Activity","RPC strip activity");
                 RPCStripActivity[trolley][slot][p] = new TH1F( hisid, hisname, nStrips, low, high);
                 StripActivity[trolley][slot][p] = new TCanvas(hisid,hisname);
+
+                //Noise homogeneity
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Noise_homogeneity","RPC noise homogeneity");
+                RPCNoiseHomogeneity[trolley][slot][p] = new TH1F( hisid, hisname, nPartRPC, 0, nPartRPC);
+                RPCNoiseHomogeneity[trolley][slot][p]->SetOption("TEXT");
+                NoiseHomogeneity[trolley][slot][p] = new TCanvas(hisid,hisname);
             }
         }
     }
@@ -396,25 +404,37 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 //partition and its error defined as twice the RMS
                 //over the sqrt of the number of events
                 float MeanNoiseRate = RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetMean();
-                float ErrorMean = 2*RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
+                float RMSMean = RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetRMS();
+                float ErrorMean = 2*RMSMean/sqrt(nEntries);
                 outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
 
                 //Get the activity of each strip defined as the mean noise rate
                 //the strip normalised to the mean rate of the partition it
                 //belongs too. This way, it is possible to keep track of the
-                //apparition of noisy strips and/or dead strips
+                //apparition of noisy strips and/or dead strips.
                 unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
 
                 for(unsigned int st = 0; st < nStripsPart; st++){
+                    //Extract the noise for each strip
                     float StripNoiseRate = RPCMeanNoiseProfile[trolley][slot][p]->GetBinContent(st+1);
                     float ErrorStripRate = RPCMeanNoiseProfile[trolley][slot][p]->GetBinError(st+1);
 
+                    //Get the strip activity
                     float StripActivity = StripNoiseRate / MeanNoiseRate;
                     float ErrorStripAct = StripActivity*(ErrorStripRate/StripNoiseRate + ErrorMean/MeanNoiseRate);
 
+                    //Fill the histogram using SetBin methods (to set the error as well)
                     RPCStripActivity[trolley][slot][p]->SetBinContent(st+1,StripActivity);
                     RPCStripActivity[trolley][slot][p]->SetBinError(st+1,ErrorStripAct);
                 }
+
+                //Get the partition homogeneity defined as 1 - RMS(mean noise)/(mean noise)
+                //The closer the homogeneity is to 1 the more homogeneus, but
+                //the homogeneity can be negative if the RMS is very big. That also
+                //gives an idea about noisy strips and dead strips.
+                float homogeneity = 1. - RMSMean/MeanNoiseRate;
+
+                RPCNoiseHomogeneity[trolley][slot][p]->Fill(partID[p],homogeneity);
 
                 //Draw the histograms and write the canvas
 
@@ -497,13 +517,26 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 RPCStripActivity[trolley][slot][p]->SetXTitle("Strip");
                 RPCStripActivity[trolley][slot][p]->SetYTitle("Relative strip activity");
                 RPCStripActivity[trolley][slot][p]->SetFillColor(kBlue);
-                RPCStripActivity[trolley][slot][p]->Draw();
+                RPCStripActivity[trolley][slot][p]->Draw("HIST");
+                RPCStripActivity[trolley][slot][p]->Draw("E1 SAME");
                 StripActivity[trolley][slot][p]->Update();
                 PDF = DQMFolder + StripActivity[trolley][slot][p]->GetName() + ".pdf";
                 PNG = DQMFolder + StripActivity[trolley][slot][p]->GetName() + ".png";
                 StripActivity[trolley][slot][p]->SaveAs(PDF.c_str());
                 StripActivity[trolley][slot][p]->SaveAs(PNG.c_str());
                 StripActivity[trolley][slot][p]->Write();
+
+                NoiseHomogeneity[trolley][slot][p]->cd(0);
+                RPCNoiseHomogeneity[trolley][slot][p]->SetXTitle("Partition");
+                RPCNoiseHomogeneity[trolley][slot][p]->SetYTitle("Homogeneity");
+                RPCNoiseHomogeneity[trolley][slot][p]->SetFillColor(kBlue);
+                RPCNoiseHomogeneity[trolley][slot][p]->Draw("HIST");
+                NoiseHomogeneity[trolley][slot][p]->Update();
+                PDF = DQMFolder + NoiseHomogeneity[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + NoiseHomogeneity[trolley][slot][p]->GetName() + ".png";
+                NoiseHomogeneity[trolley][slot][p]->SaveAs(PDF.c_str());
+                NoiseHomogeneity[trolley][slot][p]->SaveAs(PNG.c_str());
+                NoiseHomogeneity[trolley][slot][p]->Write();
            }
         }
     }
