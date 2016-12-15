@@ -246,8 +246,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
 
                 //Noise homogeneity
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Noise_homogeneity","RPC noise homogeneity");
-                RPCNoiseHomogeneity[trolley][slot][p] = new TH1F( hisid, hisname, nPartRPC, 0, nPartRPC);
-                RPCNoiseHomogeneity[trolley][slot][p]->SetOption("TEXT");
+                RPCNoiseHomogeneity[trolley][slot][p] = new TH1F( hisid, hisname, 1, 0, 1);
                 NoiseHomogeneity[trolley][slot][p] = new TCanvas(hisid,hisname);
             }
         }
@@ -428,13 +427,13 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                     RPCStripActivity[trolley][slot][p]->SetBinError(st+1,ErrorStripAct);
                 }
 
-                //Get the partition homogeneity defined as 1 - RMS(mean noise)/(mean noise)
-                //The closer the homogeneity is to 1 the more homogeneus, but
-                //the homogeneity can be negative if the RMS is very big. That also
-                //gives an idea about noisy strips and dead strips.
-                float homogeneity = 1. - RMSMean/MeanNoiseRate;
+                //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
+                //The closer the homogeneity is to 1 the more homogeneus, the closer
+                //the homogeneity is to 0 the less homogeneous.
+                //This gives idea about noisy strips and dead strips.
+                float homogeneity = exp(-RMSMean/MeanNoiseRate);
 
-                RPCNoiseHomogeneity[trolley][slot][p]->Fill(partID[p],homogeneity);
+                RPCNoiseHomogeneity[trolley][slot][p]->Fill(0.,homogeneity);
 
                 //Draw the histograms and write the canvas
 
@@ -530,7 +529,8 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 RPCNoiseHomogeneity[trolley][slot][p]->SetXTitle("Partition");
                 RPCNoiseHomogeneity[trolley][slot][p]->SetYTitle("Homogeneity");
                 RPCNoiseHomogeneity[trolley][slot][p]->SetFillColor(kBlue);
-                RPCNoiseHomogeneity[trolley][slot][p]->Draw("HIST");
+                RPCNoiseHomogeneity[trolley][slot][p]->Draw("HIST TEXT0");
+                RPCNoiseHomogeneity[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
                 NoiseHomogeneity[trolley][slot][p]->Update();
                 PDF = DQMFolder + NoiseHomogeneity[trolley][slot][p]->GetName() + ".pdf";
                 PNG = DQMFolder + NoiseHomogeneity[trolley][slot][p]->GetName() + ".png";
