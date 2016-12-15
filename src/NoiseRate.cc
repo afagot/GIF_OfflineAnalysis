@@ -119,6 +119,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     TH1I     *RPCBeamProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1F     *RPCTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TH1I     *RPCHitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TH1F     *RPCStripActivity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     TCanvas *InstantNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *MeanNoise[NTROLLEYS][NSLOTS][NPARTITIONS];
@@ -126,6 +127,7 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
     TCanvas *BeamProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *TimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
     TCanvas *HitMultiplicity[NTROLLEYS][NSLOTS][NPARTITIONS];
+    TCanvas *StripActivity[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     char hisid[50];                     //ID of the histogram
     char hisname[50];                   //Name of the histogram
@@ -234,6 +236,11 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 SetIDName(rpcID,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
                 RPCHitMultiplicity[trolley][slot][p] = new TH1I( hisid, hisname, nBinsMult, lowBin, highBin);
                 HitMultiplicity[trolley][slot][p] = new TCanvas(hisid,hisname);
+
+                //Strip activity
+                SetIDName(rpcID,p,hisid,hisname,"RPC_Strip_Activity","RPC strip activity");
+                RPCStripActivity[trolley][slot][p] = new TH1F( hisid, hisname, nStrips, low, high);
+                StripActivity[trolley][slot][p] = new TCanvas(hisid,hisname);
             }
         }
     }
@@ -360,24 +367,24 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
         unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
         unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
 
-        for (unsigned int s = 0; s < nSlotsTrolley; s++){
-            unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
-            unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+        for (unsigned int sl = 0; sl < nSlotsTrolley; sl++){
+            unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+            unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
 
             float HighVoltage = HVeff[trolley][slot]->GetMean();
             outputCSV << HighVoltage << '\t';
 
             //Write the header file
-            listCSV << "HVeff-" << GIFInfra.Trolleys[t].RPCs[s].name << '\t';
+            listCSV << "HVeff-" << GIFInfra.Trolleys[t].RPCs[sl].name << '\t';
 
             for (unsigned int p = 0; p < nPartRPC; p++){
                 string partID = "ABCD";
                 //Write the header file
                 listCSV << "Rate-"
-                        << GIFInfra.Trolleys[t].RPCs[s].name
+                        << GIFInfra.Trolleys[t].RPCs[sl].name
                         << "-" << partID[p]
                         << "\tRate-"
-                        << GIFInfra.Trolleys[t].RPCs[s].name
+                        << GIFInfra.Trolleys[t].RPCs[sl].name
                         << "-" << partID[p]
                         << "_err\t";
 
@@ -391,6 +398,23 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 float MeanNoiseRate = RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetMean();
                 float ErrorMean = 2*RPCInstantNoiseRate[trolley][slot][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
                 outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
+
+                //Get the activity of each strip defined as the mean noise rate
+                //the strip normalised to the mean rate of the partition it
+                //belongs too. This way, it is possible to keep track of the
+                //apparition of noisy strips and/or dead strips
+                unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+
+                for(unsigned int st = 0; st < nStripsPart; st++){
+                    float StripNoiseRate = RPCMeanNoiseProfile[trolley][slot][p]->GetBinContent(st+1);
+                    float ErrorStripRate = RPCMeanNoiseProfile[trolley][slot][p]->GetBinError(st+1);
+
+                    float StripActivity = StripNoiseRate / MeanNoiseRate;
+                    float ErrorStripAct = StripActivity*(ErrorStripRate/StripNoiseRate + ErrorMean/MeanNoiseRate);
+
+                    RPCStripActivity[trolley][slot][p]->SetBinContent(st+1,StripActivity);
+                    RPCStripActivity[trolley][slot][p]->SetBinError(st+1,ErrorStripAct);
+                }
 
                 //Draw the histograms and write the canvas
 
@@ -468,6 +492,18 @@ void GetNoiseRate(string fName, string caenName){ //raw root file name
                 HitMultiplicity[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitMultiplicity[trolley][slot][p]->SaveAs(PNG.c_str());
                 HitMultiplicity[trolley][slot][p]->Write();
+
+                StripActivity[trolley][slot][p]->cd(0);
+                RPCStripActivity[trolley][slot][p]->SetXTitle("Strip");
+                RPCStripActivity[trolley][slot][p]->SetYTitle("Relative strip activity");
+                RPCStripActivity[trolley][slot][p]->SetFillColor(kBlue);
+                RPCStripActivity[trolley][slot][p]->Draw();
+                StripActivity[trolley][slot][p]->Update();
+                PDF = DQMFolder + StripActivity[trolley][slot][p]->GetName() + ".pdf";
+                PNG = DQMFolder + StripActivity[trolley][slot][p]->GetName() + ".png";
+                StripActivity[trolley][slot][p]->SaveAs(PDF.c_str());
+                StripActivity[trolley][slot][p]->SaveAs(PNG.c_str());
+                StripActivity[trolley][slot][p]->Write();
            }
         }
     }
