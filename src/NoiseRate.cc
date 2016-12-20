@@ -452,7 +452,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + InstantNoise[trolley][slot][p]->GetName() + ".png";
                 InstantNoise[trolley][slot][p]->SaveAs(PDF.c_str());
                 InstantNoise[trolley][slot][p]->SaveAs(PNG.c_str());
-                InstantNoise[trolley][slot][p]->Write();
+                RPCInstantNoiseRate[trolley][slot][p]->Write();
 
                 MeanNoise[trolley][slot][p]->cd(0);
                 RPCMeanNoiseProfile[trolley][slot][p]->SetXTitle("Strip");
@@ -465,7 +465,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + MeanNoise[trolley][slot][p]->GetName() + ".png";
                 MeanNoise[trolley][slot][p]->SaveAs(PDF.c_str());
                 MeanNoise[trolley][slot][p]->SaveAs(PNG.c_str());
-                MeanNoise[trolley][slot][p]->Write();
+                RPCMeanNoiseProfile[trolley][slot][p]->Write();
 
                 HitProfile[trolley][slot][p]->cd(0);
                 RPCHitProfile[trolley][slot][p]->SetXTitle("Strip");
@@ -477,7 +477,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + HitProfile[trolley][slot][p]->GetName() + ".png";
                 HitProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitProfile[trolley][slot][p]->SaveAs(PNG.c_str());
-                HitProfile[trolley][slot][p]->Write();
+                RPCHitProfile[trolley][slot][p]->Write();
 
                 BeamProfile[trolley][slot][p]->cd(0);
                 RPCBeamProfile[trolley][slot][p]->SetXTitle("Strip");
@@ -489,7 +489,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + BeamProfile[trolley][slot][p]->GetName() + ".png";
                 BeamProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 BeamProfile[trolley][slot][p]->SaveAs(PNG.c_str());
-                BeamProfile[trolley][slot][p]->Write();
+                RPCBeamProfile[trolley][slot][p]->Write();
 
                 TimeProfile[trolley][slot][p]->cd(0);
                 RPCTimeProfile[trolley][slot][p]->SetXTitle("Time stamp (ns)");
@@ -501,7 +501,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + TimeProfile[trolley][slot][p]->GetName() + ".png";
                 TimeProfile[trolley][slot][p]->SaveAs(PDF.c_str());
                 TimeProfile[trolley][slot][p]->SaveAs(PNG.c_str());
-                TimeProfile[trolley][slot][p]->Write();
+                RPCTimeProfile[trolley][slot][p]->Write();
 
                 HitMultiplicity[trolley][slot][p]->cd(0);
                 RPCHitMultiplicity[trolley][slot][p]->SetXTitle("Multiplicity");
@@ -513,7 +513,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + HitMultiplicity[trolley][slot][p]->GetName() + ".png";
                 HitMultiplicity[trolley][slot][p]->SaveAs(PDF.c_str());
                 HitMultiplicity[trolley][slot][p]->SaveAs(PNG.c_str());
-                HitMultiplicity[trolley][slot][p]->Write();
+                RPCHitMultiplicity[trolley][slot][p]->Write();
 
                 StripActivity[trolley][slot][p]->cd(0);
                 RPCStripActivity[trolley][slot][p]->SetXTitle("Strip");
@@ -526,7 +526,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + StripActivity[trolley][slot][p]->GetName() + ".png";
                 StripActivity[trolley][slot][p]->SaveAs(PDF.c_str());
                 StripActivity[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripActivity[trolley][slot][p]->Write();
+                RPCStripActivity[trolley][slot][p]->Write();
 
                 NoiseHomogeneity[trolley][slot][p]->cd(0);
                 RPCNoiseHomogeneity[trolley][slot][p]->SetXTitle("Partition");
@@ -539,7 +539,7 @@ void GetNoiseRate(string baseName){
                 PNG = DQMFolder + NoiseHomogeneity[trolley][slot][p]->GetName() + ".png";
                 NoiseHomogeneity[trolley][slot][p]->SaveAs(PDF.c_str());
                 NoiseHomogeneity[trolley][slot][p]->SaveAs(PNG.c_str());
-                NoiseHomogeneity[trolley][slot][p]->Write();
+                RPCNoiseHomogeneity[trolley][slot][p]->Write();
            }
         }
     }
