@@ -209,7 +209,7 @@ void GetNoiseRate(string baseName){
                 if(RunType->CompareTo("efficiency") == 0){
                     binWidth = 1./(BMNOISEWDW*1e-9*stripArea);
                     timeWidth = BMTDCWINDOW;
-                } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0){
+                } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0){
                     binWidth = 1./(RDMTDCWINDOW*1e-9*stripArea);
                     timeWidth = RDMTDCWINDOW;
                 }
@@ -292,7 +292,7 @@ void GetNoiseRate(string baseName){
                     NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
                 else if(intimehit)
                     RPCBeamProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-            } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0)
+            } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
@@ -323,7 +323,7 @@ void GetNoiseRate(string baseName){
                     //time window length in seconds and to the strip surface
                     float InstantNoise = 0.;
 
-                    if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0)
+                    if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0)
                         InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(RDMTDCWINDOW*1e-9*stripArea);
                     else if (RunType->CompareTo("efficiency") == 0)
                         InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(BMNOISEWDW*1e-9*stripArea);
