@@ -1,3 +1,16 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    main.cc
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
+
 #include "../include/NoiseRate.h"
 #include "../include/Current.h"
 #include "../include/DIP.h"
@@ -24,22 +37,18 @@ int main(int argc ,char *argv[]){
         converter >> baseName;
         converter.clear();
 
-        //Write in the log file of the RUN directory the path to the log file
-        //in the HVSCAN directory to know where to write the logs.
-        string logpath = baseName.substr(0, baseName.find_last_of("/")+1) + "log.txt";
+        //Write in the files of the RUN directory the path to the files
+        //in the HVSCAN directory to know where to write the logs
+        WritePath(baseName);
 
-        ofstream logpathfile(__logpath.c_str(), ios::out);
-        logpathfile << logpath;
-        logpathfile.close();
-
-        if(existFile(baseName+"_DAQ.root")){
-            if(existFile(baseName+"_CAEN.root"))
-                GetNoiseRate(baseName+"_DAQ.root",baseName+"_CAEN.root");
-            else
-                GetNoiseRate(baseName+"_DAQ.root");
+        //Start the needed analysis tools - check if the ROOT files exist
+        if(existFiles(baseName)) {
+            GetNoiseRate(baseName);
+            GetCurrent(baseName);
+            GetDIP(baseName);
+        } else {
+            MSG_ERROR("[Offline] a data file is missing for run " + baseName);
         }
-        if(existFile(baseName+"_CAEN.root")) GetCurrent(baseName+"_CAEN.root");
-        if(existFile(baseName+"_DIP.root")) GetDIP(baseName+"_DIP.root");
 
         return 0;
     }

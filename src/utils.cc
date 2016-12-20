@@ -1,12 +1,34 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    utils.cc
+// *
+// *    All usefull functions (type cast, time stamps,...)
+// *    and structures (used for the GIF layout definition).
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
 #include <cmath>
 #include "../include/utils.h"
 
 using namespace std;
 
 
-bool existFile(string filename){
-    ifstream file(filename.c_str());
-    return file.good();
+bool existFiles(string basename){
+    string DAQname = basename + "_DAQ.root";
+    string CAENname = basename + "_CAEN.root";
+    string DIPname = basename + "_DIP.root";
+
+    ifstream DAQfile(DAQname.c_str());
+    ifstream CAENfile(CAENname.c_str());
+    ifstream DIPfile(DIPname.c_str());
+
+    return (DAQfile.good() && CAENfile.good() && DIPfile.good());
 }
 
 // ****************************************************************************************************
@@ -94,6 +116,17 @@ string GetLogTimeStamp(){
     stream.clear();
 
     return Date;
+}
+
+// ****************************************************************************************************
+
+void WritePath(string baseName){
+    //First let's write the path to the log file
+    string logpath = baseName.substr(0, baseName.find_last_of("/")+1) + "log.txt";
+
+    ofstream logpathfile(__logpath.c_str(), ios::out);
+    logpathfile << logpath;
+    logpathfile.close();
 }
 
 // ****************************************************************************************************

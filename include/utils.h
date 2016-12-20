@@ -1,6 +1,21 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    utils.h
+// *
+// *    All usefull functions (type cast, time stamps,...)
+// *    and structures (used for the GIF layout definition).
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
@@ -27,39 +42,17 @@
 
 using namespace std;
 
-const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160927-2016XXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160914-20160927.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160910-20160914.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907-20160910.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160907.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160831-20160907.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T3.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160817-2016XXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20160526-2016XXXX.csv";
-//const string __mapping = "Mappings/ChannelsMapping_T1_T3_20150928-20160512.csv";
+const string __rundir = "/var/operation/RUN/";
+const string __logpath = __rundir + "log-offline";
 
-const string __dimensions = "Dimensions/Dimensions_20160927-2016XXXX.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160914-20160927.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160910-20160914.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160907-20160910.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160831-20160907.ini";
-//const string __dimensions = "Dimensions/Dimensions_20160526-2016XXXX.ini";
-//const string __dimensions = "Dimensions/Dimensions_20150928-20160512.ini";
-//const string __dimensions = "Dimensions/Dimensions_Korea.ini";
-
-const string __logpath = "/var/operation/RUN/log-offline";
-//const string __logpath = "log";
-
-const string __lastpath = "/var/operation/RUN/last";
-//const string __lastpath = "001329/last";
-
-bool    existFile(string filename);
+bool    existFiles(string basename);
 int     CharToInt(char& C);
 string  CharToString(char& C);
 string  intTostring(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
 string  GetLogTimeStamp();
+void    WritePath(string basename);
 
 //Infrastructure inside GIF++
 struct RPC{

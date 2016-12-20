@@ -1,3 +1,17 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    Current.cc
+// *
+// *    Current extraction from Scan_00XXXX_HVX_CAEN.root files
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
 #include "../include/Current.h"
 #include "../include/utils.h"
 #include "../include/MsgSvc.h"
@@ -11,7 +25,9 @@
 
 using namespace std;
 
-void GetCurrent(string caenName){
+void GetCurrent(string baseName){
+
+    string caenName = baseName + "_CAEN.root";
 
     //****************** HVSTEP **************************************
 
@@ -28,7 +44,8 @@ void GetCurrent(string caenName){
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
-    IniFile* Dimensions = new IniFile(__dimensions.c_str());
+    string dimpath = caenName.substr(0,caenName.find_last_of("/")) + "/Dimensioins.ini";
+    IniFile* Dimensions = new IniFile(dimpath.c_str());
     Dimensions->Read();
 
     Infrastructure GIFInfra;
@@ -40,6 +57,7 @@ void GetCurrent(string caenName){
     //output csv file
     string csvName = caenName.substr(0,caenName.find_last_of("/")) + "/Offline-Current.csv";
     ofstream outputCSV(csvName.c_str(),ios::app);
+
     //Print the HV step as first column
     outputCSV << HVstep << '\t';
 
@@ -60,6 +78,7 @@ void GetCurrent(string caenName){
                 float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
                 string ImonHisto, HVeffHisto, ADCHisto;
 
+                //Histogram names
                 if(gapID == "empty"){
                     HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
                     ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;

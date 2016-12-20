@@ -1,9 +1,21 @@
 #ifndef _MSGSVC_CXX_
 #define _MSGSVC_CXX_
+
 //***************************************************************
-// *   MsgSvc.h
-// *   Alexis Fagot
-// *   22/04/2016
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    MsgSvc.cc
+// *
+// *    Macro to print log messages into the log file.
+// *    This file was originally developped for the GIF_DAQ.
+// *    and was an improvement of an existing file created by
+// *    Nir Amram on 21/06/2010
+// *
+// *    Developped by : Alexis Fagot
+// *    29/01/2015
 //***************************************************************
 
 #include "../include/MsgSvc.h"
