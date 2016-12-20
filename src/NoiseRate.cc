@@ -287,12 +287,12 @@ void GetNoiseRate(string baseName){
             bool intimehit = (hit.TimeStamp >= 255. && hit.TimeStamp < 315.);
             bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
 
-            if(RunType->CompareTo("ON") == 0){
+            if(RunType->CompareTo("efficiency") == 0){
                 if(earlyhit || latehit)
                     NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
                 else if(intimehit)
                     RPCBeamProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-            } else if(RunType->CompareTo("OFF") == 0)
+            } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0)
                 NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
 
             //Fill the RPC profiles
