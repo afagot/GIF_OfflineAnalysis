@@ -33,7 +33,7 @@
 #define BMNOISEWDW     300.
 
 #define NTROLLEYS      5
-#define NSLOTS         6
+#define NSLOTS         9
 #define NPARTITIONS    4
 
 #define NSTRIPSRPC     128
