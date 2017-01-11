@@ -245,3 +245,39 @@ bool SortStrips ( RPCHit A, RPCHit B ) {
 int GetPartition( int strip ) {
     return strip/NSTRIPSPART;
 }
+
+// ****************************************************************************************************
+
+
+//Draw 1D histograms
+void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, string DQMFolder){
+    C->cd(0);
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+    H->SetFillColor(kBlue);
+    H->Draw(option.c_str());
+    C->Update();
+    string PDF = DQMFolder + C->GetName() + ".pdf";
+    string PNG = DQMFolder + C->GetName() + ".png";
+    C->SaveAs(PDF.c_str());
+    C->SaveAs(PNG.c_str());
+}
+
+// ****************************************************************************************************
+
+
+//Draw 2D histograms
+void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option, string DQMFolder){
+    C->cd(0);
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+    H->SetXTitle(ztitle.c_str());
+    gStyle->SetPalette(55);
+    H->Draw(option.c_str());
+    C->SetLogz(1);
+    C->Update();
+    string PDF = DQMFolder + C->GetName() + ".pdf";
+    string PNG = DQMFolder + C->GetName() + ".png";
+    C->SaveAs(PDF.c_str());
+    C->SaveAs(PNG.c_str());
+}

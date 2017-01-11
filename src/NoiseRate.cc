@@ -17,17 +17,6 @@
 #include "../include/NoiseRate.h"
 #include "../include/MsgSvc.h"
 
-#include "TFile.h"
-#include "TBranch.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TProfile.h"
-#include "TCanvas.h"
-#include "THistPainter.h"
-#include "TColor.h"
-#include "TStyle.h"
-#include "TString.h"
-
 #include <cmath>
 #include <cstdlib>
 
@@ -224,6 +213,25 @@ void GetNoiseRate(string baseName){
                     timeWidth = RDMTDCWINDOW;
                 }
 
+                //Initialisation of the histograms
+
+                //***************************************** General histograms
+
+                //Beam profile
+                SetIDName(rpcID,p,hisid,hisname,"Beam_Profile","Beam profile");
+                BeamProf_H[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low_s, high_s);
+                BeamProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+
+                //Time profile
+                SetIDName(rpcID,p,hisid,hisname,"Time_Profile","Time profile");
+                TimeProfile_H[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth/10, 0., timeWidth);
+                TimeProfile_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+
+                //Hit multiplicity
+                SetIDName(rpcID,p,hisid,hisname,"Hit_Multiplicity","Hit multiplicity");
+                HitMultiplicity_H[trolley][slot][p] = new TH1I( hisid, hisname, nBinsMult, lowBin, highBin);
+                HitMultiplicity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+
                 //****************************************** Strip granularuty level histograms
 
                 //Hit profile
@@ -250,23 +258,6 @@ void GetNoiseRate(string baseName){
                 SetIDName(rpcID,p,hisid,hisname,"Strip_Homogeneity","Strip homogeneity");
                 StripHomogeneity_H[trolley][slot][p] = new TH1F( hisid, hisname, 1, 0, 1);
                 StripHomogeneity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
-
-                //***************************************** General histograms
-
-                //Beam profile
-                SetIDName(rpcID,p,hisid,hisname,"Beam_Profile","Beam profile");
-                BeamProf_H[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low_s, high_s);
-                BeamProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
-
-                //Time profile
-                SetIDName(rpcID,p,hisid,hisname,"Time_Profile","Time profile");
-                TimeProfile_H[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth/10, 0., timeWidth);
-                TimeProfile_C[trolley][slot][p] = new TCanvas(hisid,hisname);
-
-                //Hit multiplicity
-                SetIDName(rpcID,p,hisid,hisname,"Hit_Multiplicity","Hit multiplicity");
-                HitMultiplicity_H[trolley][slot][p] = new TH1I( hisid, hisname, nBinsMult, lowBin, highBin);
-                HitMultiplicity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
 
                 //****************************************** Chip granularuty level histograms
 
@@ -408,13 +399,6 @@ void GetNoiseRate(string baseName){
     string mkdirDQMFolder = "mkdir -p " + DQMFolder;
     system(mkdirDQMFolder.c_str());
 
-    //Variables for the DQM file names
-    string PDF;
-    PDF.clear();
-
-    string PNG;
-    PNG.clear();
-
     //Loop over trolleys
     for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
         unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
@@ -501,176 +485,51 @@ void GetNoiseRate(string baseName){
 
                 //Draw and write the histograms into the output ROOT file
 
-                //******************************* Strip granularity histograms
-
-                StripHitProf_C[trolley][slot][p]->cd(0);
-                StripHitProf_H[trolley][slot][p]->SetXTitle("Strip");
-                StripHitProf_H[trolley][slot][p]->SetYTitle("# events");
-                StripHitProf_H[trolley][slot][p]->SetFillColor(kBlue);
-                StripHitProf_H[trolley][slot][p]->Draw();
-                StripHitProf_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + StripHitProf_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + StripHitProf_C[trolley][slot][p]->GetName() + ".png";
-                StripHitProf_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                StripHitProf_C[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripHitProf_H[trolley][slot][p]->Write();
-
-                StripInstNoiseMap_C[trolley][slot][p]->cd(0);
-                StripInstNoiseMap_H[trolley][slot][p]->SetXTitle("Strip");
-                StripInstNoiseMap_H[trolley][slot][p]->SetYTitle("Noise rate (Hz/cm^{2})");
-                StripInstNoiseMap_H[trolley][slot][p]->SetZTitle("# events");
-                gStyle->SetPalette(55);
-                StripInstNoiseMap_H[trolley][slot][p]->Draw("COLZ");
-                StripInstNoiseMap_C[trolley][slot][p]->SetLogz(1);
-                StripInstNoiseMap_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + StripInstNoiseMap_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + StripInstNoiseMap_C[trolley][slot][p]->GetName() + ".png";
-                StripInstNoiseMap_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                StripInstNoiseMap_C[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripInstNoiseMap_H[trolley][slot][p]->Write();
-
-                StripMeanNoiseProf_C[trolley][slot][p]->cd(0);
-                StripMeanNoiseProf_H[trolley][slot][p]->SetXTitle("Strip");
-                StripMeanNoiseProf_H[trolley][slot][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
-                StripMeanNoiseProf_H[trolley][slot][p]->SetFillColor(kBlue);
-                StripMeanNoiseProf_H[trolley][slot][p]->Draw("HIST");
-                StripMeanNoiseProf_H[trolley][slot][p]->Draw("E1 SAME");
-                StripMeanNoiseProf_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + StripMeanNoiseProf_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + StripMeanNoiseProf_C[trolley][slot][p]->GetName() + ".png";
-                StripMeanNoiseProf_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                StripMeanNoiseProf_C[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripMeanNoiseProf_H[trolley][slot][p]->Write();
-
-                StripActivity_C[trolley][slot][p]->cd(0);
-                StripActivity_H[trolley][slot][p]->SetXTitle("Strip");
-                StripActivity_H[trolley][slot][p]->SetYTitle("Relative strip activity");
-                StripActivity_H[trolley][slot][p]->SetFillColor(kBlue);
-                StripActivity_H[trolley][slot][p]->Draw("HIST");
-                StripActivity_H[trolley][slot][p]->Draw("E1 SAME");
-                StripActivity_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + StripActivity_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + StripActivity_C[trolley][slot][p]->GetName() + ".png";
-                StripActivity_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                StripActivity_C[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripActivity_H[trolley][slot][p]->Write();
-
-                StripHomogeneity_C[trolley][slot][p]->cd(0);
-                StripHomogeneity_H[trolley][slot][p]->SetXTitle("Partition");
-                StripHomogeneity_H[trolley][slot][p]->SetYTitle("Homogeneity");
-                StripHomogeneity_H[trolley][slot][p]->SetFillColor(kBlue);
-                StripHomogeneity_H[trolley][slot][p]->Draw("HIST TEXT0");
-                StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                StripHomogeneity_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + StripHomogeneity_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + StripHomogeneity_C[trolley][slot][p]->GetName() + ".png";
-                StripHomogeneity_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                StripHomogeneity_C[trolley][slot][p]->SaveAs(PNG.c_str());
-                StripHomogeneity_H[trolley][slot][p]->Write();
-
                 //********************************* General histograms
 
-                BeamProf_C[trolley][slot][p]->cd(0);
-                BeamProf_H[trolley][slot][p]->SetXTitle("Strip");
-                BeamProf_H[trolley][slot][p]->SetYTitle("# events");
-                BeamProf_H[trolley][slot][p]->SetFillColor(kBlue);
-                BeamProf_H[trolley][slot][p]->Draw();
-                BeamProf_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + BeamProf_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + BeamProf_C[trolley][slot][p]->GetName() + ".png";
-                BeamProf_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                BeamProf_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(BeamProf_C[trolley][slot][p],BeamProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
                 BeamProf_H[trolley][slot][p]->Write();
 
-                TimeProfile_C[trolley][slot][p]->cd(0);
-                TimeProfile_H[trolley][slot][p]->SetXTitle("Time stamp (ns)");
-                TimeProfile_H[trolley][slot][p]->SetYTitle("# events");
-                TimeProfile_H[trolley][slot][p]->SetFillColor(kBlue);
-                TimeProfile_H[trolley][slot][p]->Draw();
-                TimeProfile_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + TimeProfile_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + TimeProfile_C[trolley][slot][p]->GetName() + ".png";
-                TimeProfile_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                TimeProfile_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(TimeProfile_C[trolley][slot][p],TimeProfile_H[trolley][slot][p],"Time stamp (ns)","# events","",DQMFolder);
                 TimeProfile_H[trolley][slot][p]->Write();
 
-                HitMultiplicity_C[trolley][slot][p]->cd(0);
-                HitMultiplicity_H[trolley][slot][p]->SetXTitle("Multiplicity");
-                HitMultiplicity_H[trolley][slot][p]->SetYTitle("# events");
-                HitMultiplicity_H[trolley][slot][p]->SetFillColor(kBlue);
-                HitMultiplicity_H[trolley][slot][p]->Draw();
-                HitMultiplicity_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + HitMultiplicity_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + HitMultiplicity_C[trolley][slot][p]->GetName() + ".png";
-                HitMultiplicity_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                HitMultiplicity_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(HitMultiplicity_C[trolley][slot][p],HitMultiplicity_H[trolley][slot][p],"Multiplicity","# events","",DQMFolder);
                 HitMultiplicity_H[trolley][slot][p]->Write();
+
+                //******************************* Strip granularity histograms
+
+                DrawTH1(StripHitProf_C[trolley][slot][p],StripHitProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
+                StripHitProf_H[trolley][slot][p]->Write();
+
+                DrawTH2(StripInstNoiseMap_C[trolley][slot][p],StripInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ",DQMFolder);
+                StripInstNoiseMap_H[trolley][slot][p]->Write();
+
+                DrawTH1(StripMeanNoiseProf_C[trolley][slot][p],StripMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1",DQMFolder);
+                StripMeanNoiseProf_H[trolley][slot][p]->Write();
+
+                DrawTH1(StripActivity_C[trolley][slot][p],StripActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1",DQMFolder);
+                StripActivity_H[trolley][slot][p]->Write();
+
+                StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
+                DrawTH1(StripHomogeneity_C[trolley][slot][p],StripHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0",DQMFolder);
+                StripHomogeneity_H[trolley][slot][p]->Write();
 
                 //******************************* Chip granularity histograms
 
-                ChipHitProf_C[trolley][slot][p]->cd(0);
-                ChipHitProf_H[trolley][slot][p]->SetXTitle("Strip");
-                ChipHitProf_H[trolley][slot][p]->SetYTitle("# events");
-                ChipHitProf_H[trolley][slot][p]->SetFillColor(kBlue);
-                ChipHitProf_H[trolley][slot][p]->Draw();
-                ChipHitProf_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + ChipHitProf_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + ChipHitProf_C[trolley][slot][p]->GetName() + ".png";
-                ChipHitProf_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                ChipHitProf_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(ChipHitProf_C[trolley][slot][p],ChipHitProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
                 ChipHitProf_H[trolley][slot][p]->Write();
 
-                ChipInstNoiseMap_C[trolley][slot][p]->cd(0);
-                ChipInstNoiseMap_H[trolley][slot][p]->SetXTitle("Strip");
-                ChipInstNoiseMap_H[trolley][slot][p]->SetYTitle("Noise rate (Hz/cm^{2})");
-                ChipInstNoiseMap_H[trolley][slot][p]->SetZTitle("# events");
-                gStyle->SetPalette(55);
-                ChipInstNoiseMap_H[trolley][slot][p]->Draw("COLZ");
-                ChipInstNoiseMap_C[trolley][slot][p]->SetLogz(1);
-                ChipInstNoiseMap_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + ChipInstNoiseMap_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + ChipInstNoiseMap_C[trolley][slot][p]->GetName() + ".png";
-                ChipInstNoiseMap_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                ChipInstNoiseMap_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH2(ChipInstNoiseMap_C[trolley][slot][p],ChipInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ",DQMFolder);
                 ChipInstNoiseMap_H[trolley][slot][p]->Write();
 
-                ChipMeanNoiseProf_C[trolley][slot][p]->cd(0);
-                ChipMeanNoiseProf_H[trolley][slot][p]->SetXTitle("Strip");
-                ChipMeanNoiseProf_H[trolley][slot][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
-                ChipMeanNoiseProf_H[trolley][slot][p]->SetFillColor(kBlue);
-                ChipMeanNoiseProf_H[trolley][slot][p]->Draw("HIST");
-                ChipMeanNoiseProf_H[trolley][slot][p]->Draw("E1 SAME");
-                ChipMeanNoiseProf_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + ChipMeanNoiseProf_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + ChipMeanNoiseProf_C[trolley][slot][p]->GetName() + ".png";
-                ChipMeanNoiseProf_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                ChipMeanNoiseProf_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(ChipMeanNoiseProf_C[trolley][slot][p],ChipMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1",DQMFolder);
                 ChipMeanNoiseProf_H[trolley][slot][p]->Write();
 
-                ChipActivity_C[trolley][slot][p]->cd(0);
-                ChipActivity_H[trolley][slot][p]->SetXTitle("Strip");
-                ChipActivity_H[trolley][slot][p]->SetYTitle("Relative strip activity");
-                ChipActivity_H[trolley][slot][p]->SetFillColor(kBlue);
-                ChipActivity_H[trolley][slot][p]->Draw("HIST");
-                ChipActivity_H[trolley][slot][p]->Draw("E1 SAME");
-                ChipActivity_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + ChipActivity_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + ChipActivity_C[trolley][slot][p]->GetName() + ".png";
-                ChipActivity_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                ChipActivity_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(ChipActivity_C[trolley][slot][p],ChipActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1",DQMFolder);
                 ChipActivity_H[trolley][slot][p]->Write();
 
-                ChipHomogeneity_C[trolley][slot][p]->cd(0);
-                ChipHomogeneity_H[trolley][slot][p]->SetXTitle("Partition");
-                ChipHomogeneity_H[trolley][slot][p]->SetYTitle("Homogeneity");
-                ChipHomogeneity_H[trolley][slot][p]->SetFillColor(kBlue);
-                ChipHomogeneity_H[trolley][slot][p]->Draw("HIST TEXT0");
                 ChipHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                ChipHomogeneity_C[trolley][slot][p]->Update();
-                PDF = DQMFolder + ChipHomogeneity_C[trolley][slot][p]->GetName() + ".pdf";
-                PNG = DQMFolder + ChipHomogeneity_C[trolley][slot][p]->GetName() + ".png";
-                ChipHomogeneity_C[trolley][slot][p]->SaveAs(PDF.c_str());
-                ChipHomogeneity_C[trolley][slot][p]->SaveAs(PNG.c_str());
+                DrawTH1(ChipHomogeneity_C[trolley][slot][p],ChipHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0",DQMFolder);
                 ChipHomogeneity_H[trolley][slot][p]->Write();
            }
         }
