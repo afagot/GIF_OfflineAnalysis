@@ -44,7 +44,7 @@ void GetCurrent(string baseName){
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
-    string dimpath = caenName.substr(0,caenName.find_last_of("/")) + "/Dimensioins.ini";
+    string dimpath = caenName.substr(0,caenName.find_last_of("/")) + "/Dimensions.ini";
     IniFile* Dimensions = new IniFile(dimpath.c_str());
     Dimensions->Read();
 

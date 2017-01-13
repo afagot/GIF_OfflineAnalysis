@@ -32,17 +32,23 @@ int MSG(string message, int level){
     string logpath;
 
     ifstream logpathfile(__logpath.c_str(), ios::in);
-    logpathfile >> logpath;
-    logpathfile.close();
+    if(logpathfile){
+        logpathfile >> logpath;
+        logpathfile.close();
 
-    ofstream logfile(logpath.c_str(), ios::app);
-
-    if(logfile){
-        logfile << GetLogTimeStamp() << message << endl;
-        logfile.close();
-        return level;
-    } else
-        return -1;
+        ofstream logfile(logpath.c_str(), ios::app);
+        if(logfile){
+            logfile << GetLogTimeStamp() << message << endl;
+            logfile.close();
+            return level;
+        } else {
+            cout << "File not found " << logpath << endl;
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        cout << "File not found " << __logpath << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 void MSG_FATAL(string message)  {MSG(message,FATAL);}

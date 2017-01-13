@@ -37,6 +37,8 @@ int main(int argc ,char *argv[]){
         converter >> baseName;
         converter.clear();
 
+        baseName = baseName.substr(0,baseName.find_last_of("_"));
+
         //Write in the files of the RUN directory the path to the files
         //in the HVSCAN directory to know where to write the logs
         WritePath(baseName);

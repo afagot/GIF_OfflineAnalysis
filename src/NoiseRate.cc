@@ -44,19 +44,19 @@ map<int,int> TDCMapping(string baseName){
     //File that contains the path to the mapping file located
     //in the scan directory
     string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
-    ifstream mappathfile(mapping.c_str(), ios::in);
-    string mappath;
-    mappathfile >> mappath;
-    mappathfile.close();
 
     //Open mapping file
-    ifstream mappingfile(mappath.c_str(), ios::in);
-
-    while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-        mappingfile >> RPCCh >> TDCCh;
-        if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+    ifstream mappingfile(mapping.c_str(), ios::in);
+    if(mappingfile){
+        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
+            mappingfile >> RPCCh >> TDCCh;
+            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+        }
+        mappingfile.close();
+    } else {
+        MSG_ERROR("[Offline] Couldn't open file " + mapping);
+        exit(EXIT_FAILURE);
     }
-    mappingfile.close();
 
     return Map;
 }
@@ -96,8 +96,7 @@ void GetNoiseRate(string baseName){
     RunParameters->GetEntry(0);
 
     //Then get the HVstep number from the ID histogram
-    TH1D* ID = (TH1D*)dataFile.Get("ID");
-    string HVstep = floatTostring(ID->GetBinContent(1));
+    string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
 
     //****************** CAEN ROOT FILE ******************************
 
@@ -109,7 +108,7 @@ void GetNoiseRate(string baseName){
     //****************** GEOMETRY ************************************
 
     //Get the chamber geometry
-    string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensioins.ini";
+    string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
     IniFile* Dimensions = new IniFile(dimpath.c_str());
     Dimensions->Read();
 
@@ -184,7 +183,8 @@ void GetNoiseRate(string baseName){
                 }
             }
 
-            if(HVeffHisto != "") HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+            if(HVeffHisto != "")
+                HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
 
             //Get the chamber ID in terms of trolley + slot position TXSX
             string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
