@@ -13,7 +13,6 @@
 
 #include "../include/NoiseRate.h"
 #include "../include/Current.h"
-#include "../include/DIP.h"
 #include "../include/MsgSvc.h"
 
 #include <sstream>
@@ -47,7 +46,6 @@ int main(int argc ,char *argv[]){
         if(existFiles(baseName)) {
             GetNoiseRate(baseName);
             GetCurrent(baseName);
-            GetDIP(baseName);
         } else {
             MSG_ERROR("[Offline] a data file is missing for run " + baseName);
         }

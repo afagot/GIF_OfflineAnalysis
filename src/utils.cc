@@ -29,13 +29,11 @@ using namespace std;
 bool existFiles(string baseName){
     string DAQname = baseName + "_DAQ.root";
     string CAENname = baseName + "_CAEN.root";
-    string DIPname = baseName + "_DIP.root";
 
     ifstream DAQfile(DAQname.c_str());
     ifstream CAENfile(CAENname.c_str());
-    ifstream DIPfile(DIPname.c_str());
 
-    return (DAQfile.good() && CAENfile.good() && DIPfile.good());
+    return (DAQfile.good() && CAENfile.good());
 }
 
 // ****************************************************************************************************
@@ -213,37 +211,16 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
 //
 // ****************************************************************************************************
 
+void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
+    infra.nSlots = geofile->intType("General","nSlots",NSLOTS);
+    infra.SlotsID = geofile->stringType("General","SlotsID","");
 
-void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
-    trolley.nSlots = geofile->intType(ID,"nSlots",NSLOTS);
-    trolley.SlotsID = geofile->stringType(ID,"SlotsID","");
-
-    for(unsigned int s = 0; s < trolley.nSlots; s++){
-        string rpcID = ID + "S" + CharToString(trolley.SlotsID[s]);
+    for(unsigned int s = 0; s < infra.nSlots; s++){
+        string rpcID = "S" + CharToString(infra.SlotsID[s]);
 
         RPC temprpc;
         SetRPC(temprpc,rpcID,geofile);
-        trolley.RPCs.push_back(temprpc);
-    }
-}
-
-// ****************************************************************************************************
-// *    int CharToInt(char &C)
-//
-//
-// ****************************************************************************************************
-
-void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
-    infra.nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
-    infra.TrolleysID = geofile->stringType("General","TrolleysID","");
-    infra.Trolleys.clear();
-
-    for(unsigned int t = 0; t < infra.nTrolleys; t++){
-        string trolleyID = "T" + CharToString(infra.TrolleysID[t]);
-
-        GIFTrolley tempTrolley;
-        SetTrolley(tempTrolley, trolleyID, geofile);
-        infra.Trolleys.push_back(tempTrolley);
+        infra.RPCs.push_back(temprpc);
     }
 }
 
@@ -268,19 +245,14 @@ void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, strin
 
 //Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
-    Hit.Channel     = Channel;                      //RPC channel according to mapping (5 digits)
-    Hit.Trolley     = Channel/10000;                //0, 1 or 3 (1st digit of the RPC channel)
-    Hit.Station     = (Channel%10000)/1000;         //From 1 to 4 (2nd digit)
+    Hit.Channel     = Channel;                      //RPC channel according to mapping (4 digits)
+    Hit.Station     = (Channel%10000)/1000;         //From 1 to 9 (1st digit)
     Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-    for(unsigned int i = 0; i < Infra.nTrolleys; i++){
-        if(CharToInt(Infra.TrolleysID[i]) == Hit.Trolley){
-            for(unsigned int j = 0; j < Infra.Trolleys[i].nSlots; j++){
-                if(CharToInt(Infra.Trolleys[i].SlotsID[j]) == Hit.Station)
-                    nStripsPart = Infra.Trolleys[i].RPCs[j].strips;
-            }
-        }
+    for(unsigned int i = 0; i < Infra.nSlots; i++){
+            if(CharToInt(Infra.SlotsID[i]) == Hit.Station)
+                nStripsPart = Infra.RPCs[i].strips;
     }
 
     Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4

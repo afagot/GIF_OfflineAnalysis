@@ -43,7 +43,6 @@
 #define BMTDCWINDOW    24.*25.
 #define BMNOISEWDW     300.
 
-#define NTROLLEYS      5
 #define NSLOTS         9
 #define NPARTITIONS    4
 
@@ -65,7 +64,7 @@ string  floatTostring(float value);
 string  GetLogTimeStamp();
 void    WritePath(string basename);
 
-//Infrastructure inside GIF++
+//Infrastructure inside 904
 struct RPC{
     string          name;
     unsigned int    nPartitions;
@@ -78,18 +77,10 @@ struct RPC{
 
 void SetRPC(RPC& rpc, string ID, IniFile* geofile);
 
-struct GIFTrolley {
+struct Infrastructure {
     unsigned int nSlots;
     string       SlotsID;
     vector<RPC>  RPCs;
-};
-
-void SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
-
-struct Infrastructure {
-    unsigned int       nTrolleys;
-    string             TrolleysID;
-    vector<GIFTrolley> Trolleys;
 };
 
 void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
@@ -106,9 +97,8 @@ void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, strin
 
 //Hit in the RPC
 struct RPCHit {
-    int             Channel;    //RPC Channel (5 digit numbers like XX000 - XX128)
-    int             Trolley;    //1 or 3 (1st digit of the RPC channel)
-    int             Station;    //Place in the trolley (S1 to S4 - 2nd digit)
+    int             Channel;    //RPC Channel (4 digit numbers like X000 - X128)
+    int             Station;    //Place in the trolley (S1 to S9 - 1st digit)
     int             Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
     int             Partition;  //Partition (1 to 4)
     int             Connector;  //Connector (1 to 8)
