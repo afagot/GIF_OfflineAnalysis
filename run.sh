@@ -8,4 +8,4 @@ export DYLD_LIBRARY_PATH=$ROOTSYS/lib:$DYLD_LIBRARY_PATH
 export PYTHONPATH=$ROOTSYS/lib:$PYTHONPATH
 
 cd /home/onanalysis/software/GIF_OfflineAnalysis/
-bin/offlineanalysis $1 $2
+bin/offlineanalysis $1

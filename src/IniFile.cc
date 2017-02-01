@@ -1,8 +1,19 @@
-// *************************************************************************************************************
-// *   IniFile
-// *   Alexis Fagot
-// *   29/01/2015
-// *************************************************************************************************************
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    Inifile.cc
+// *
+// *    Macro to read Dimensions.ini files and extract
+// *    information from each RPC as number of partitions,
+// *    gaps, strips, and all ID names.
+// *    This file was originally developped for the GIF_DAQ.
+// *
+// *    Developped by : Alexis Fagot
+// *    29/01/2015
+//***************************************************************
 
 #include <iostream>
 #include <cstdlib>

@@ -1,3 +1,16 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    DIP.cc
+// *
+// *    DIP extraction from Scan_00XXXX_HVX_DIP.root files
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
 
 #include "../include/DIP.h"
 #include "../include/utils.h"
@@ -12,7 +25,9 @@
 
 using namespace std;
 
-void GetDIP(string dipName){
+void GetDIP(string baseName){
+
+    string dipName = baseName + "_DIP.root";
 
     //****************** HVSTEP **************************************
 
@@ -28,7 +43,6 @@ void GetDIP(string dipName){
 
 
     //****************** OUPUT FILE **********************************
-
 
     //output csv file
     string csvName = dipName.substr(0,dipName.find_last_of("/")) + "/Offline-DIP.csv";

@@ -1,14 +1,47 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    utils.cc
+// *
+// *    All usefull functions (type cast, time stamps,...)
+// *    and structures (used for the GIF layout definition).
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
 #include <cmath>
 #include "../include/utils.h"
 
 using namespace std;
 
 
-bool existFile(string filename){
-    ifstream file(filename.c_str());
-    return file.good();
+// ****************************************************************************************************
+// *    bool existFiles(string baseName)
+//
+//  Function that test if the 3 root files created during the data taking exist in the scan directory
+//  or not. This is the needed condition for the offline tool to start.
+// ****************************************************************************************************
+
+bool existFiles(string baseName){
+    string DAQname = baseName + "_DAQ.root";
+    string CAENname = baseName + "_CAEN.root";
+    string DIPname = baseName + "_DIP.root";
+
+    ifstream DAQfile(DAQname.c_str());
+    ifstream CAENfile(CAENname.c_str());
+    ifstream DIPfile(DIPname.c_str());
+
+    return (DAQfile.good() && CAENfile.good() && DIPfile.good());
 }
 
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//  Function that casts a char into an int
 // ****************************************************************************************************
 
 int CharToInt(char &C){
@@ -21,7 +54,10 @@ int CharToInt(char &C){
 }
 
 // ****************************************************************************************************
-
+// *    string CharToString(char& C)
+//
+//  Function that casts a char into a string
+// ****************************************************************************************************
 
 string CharToString(char& C){
     stringstream ss;
@@ -32,6 +68,10 @@ string CharToString(char& C){
     return S;
 }
 
+// ****************************************************************************************************
+// *    string intTostring(int value)
+//
+//  Function that casts an int into a string
 // ****************************************************************************************************
 
 string intTostring(int value){
@@ -44,6 +84,10 @@ string intTostring(int value){
 }
 
 // ****************************************************************************************************
+// *    string longTostring(long value)
+//
+//  Function that casts a long into a string
+// ****************************************************************************************************
 
 string longTostring(long value){
     string word;
@@ -55,6 +99,10 @@ string longTostring(long value){
 }
 
 // ****************************************************************************************************
+// *    string floatTostring(float value)
+//
+//  Function that casts a float into a string
+// ****************************************************************************************************
 
 string floatTostring(float value){
     string word;
@@ -65,6 +113,11 @@ string floatTostring(float value){
     return word;
 }
 
+// ****************************************************************************************************
+// *    string GetLogTimeStamp()
+//
+//  Function that gets the system time. The output format of this function has been optimised to be
+//  used in the log file. For each log message, the line starts with this time stamp.
 // ****************************************************************************************************
 
 string GetLogTimeStamp(){
@@ -97,8 +150,33 @@ string GetLogTimeStamp(){
 }
 
 // ****************************************************************************************************
+// *    void WritePath(string baseName)
+//
+//  Function that uses the argument "baseName" passed to the main function to write the location of
+//  scan's log file (typically into the scan's directory you are analising the files from) in to a
+//  system file placed into WEB DCS system directory. This location is then read out by the function
+//  that writes the logs into this log file in the scan directory.
+//  The choice has been made to use this solution instead of passing the path as an argument of the
+//  messaging function in order to make the code a bit lighter (it saves an extra argument at several
+//  places of the code).
+// ****************************************************************************************************
 
-//Functions to set up the structures needed to define the GIF++ infrastructure
+void WritePath(string baseName){
+    //First let's write the path to the log file
+    string logpath = baseName.substr(0, baseName.find_last_of("/")+1) + "log.txt";
+
+    ofstream logpathfile(__logpath.c_str(), ios::out);
+    logpathfile << logpath;
+    logpathfile.close();
+}
+
+// ****************************************************************************************************
+// *    void SetRPC(RPC &rpc, string ID, IniFile *geofile)
+//
+//  Set up the RPC structure needed which is the innermost part of the GIF++ infrasctructure. The RPCs
+//  Are contained inside the Trolleys. For details about RPC members, see file utils.h.
+// ****************************************************************************************************
+
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.name        = geofile->stringType(ID,"Name","");
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
@@ -130,6 +208,10 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
 }
 
 // ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 
 void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
@@ -146,7 +228,10 @@ void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
     infra.nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
@@ -163,7 +248,10 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 //Name of histograms
 void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot){
@@ -173,7 +261,10 @@ void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, strin
 }
 
 // ****************************************************************************************************
-
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 //Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
@@ -198,7 +289,10 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 }
 
 // ****************************************************************************************************
-
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 //Function use to sort hits by increasing strip number
 bool SortStrips ( RPCHit A, RPCHit B ) {
@@ -206,9 +300,54 @@ bool SortStrips ( RPCHit A, RPCHit B ) {
 }
 
 // ****************************************************************************************************
-
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
 
 //Return the partition corresponding to the strip
 int GetPartition( int strip ) {
     return strip/NSTRIPSPART;
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Draw 1D histograms
+void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, string DQMFolder){
+    C->cd(0);
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+    H->SetFillColor(kBlue);
+    H->Draw(option.c_str());
+    C->Update();
+    string PDF = DQMFolder + C->GetName() + ".pdf";
+    string PNG = DQMFolder + C->GetName() + ".png";
+    C->SaveAs(PDF.c_str());
+    C->SaveAs(PNG.c_str());
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Draw 2D histograms
+void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option, string DQMFolder){
+    C->cd(0);
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+    H->SetXTitle(ztitle.c_str());
+    gStyle->SetPalette(55);
+    H->Draw(option.c_str());
+    C->SetLogz(1);
+    C->Update();
+    string PDF = DQMFolder + C->GetName() + ".pdf";
+    string PNG = DQMFolder + C->GetName() + ".png";
+    C->SaveAs(PDF.c_str());
+    C->SaveAs(PNG.c_str());
 }
