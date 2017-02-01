@@ -30,10 +30,10 @@ bool existFiles(string baseName){
     string DAQname = baseName + "_DAQ.root";
     string CAENname = baseName + "_CAEN.root";
 
-    ifstream DAQfile(DAQname.c_str());
-    ifstream CAENfile(CAENname.c_str());
+    TFile DAQfile(DAQname.c_str());
+    TFile CAENfile(CAENname.c_str());
 
-    return (DAQfile.good() && CAENfile.good());
+    return (DAQfile.IsOpen() || CAENfile.IsOpen());
 }
 
 // ****************************************************************************************************
