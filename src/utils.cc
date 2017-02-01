@@ -29,13 +29,11 @@ using namespace std;
 bool existFiles(string baseName){
     string DAQname = baseName + "_DAQ.root";
     string CAENname = baseName + "_CAEN.root";
-    string DIPname = baseName + "_DIP.root";
 
     ifstream DAQfile(DAQname.c_str());
     ifstream CAENfile(CAENname.c_str());
-    ifstream DIPfile(DIPname.c_str());
 
-    return (DAQfile.good() && CAENfile.good() && DIPfile.good());
+    return (DAQfile.good() && CAENfile.good());
 }
 
 // ****************************************************************************************************
