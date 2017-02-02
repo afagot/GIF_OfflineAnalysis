@@ -425,7 +425,11 @@ void GetNoiseRate(string baseName){
                     //Project the histograms along the X-axis to get the
                     //mean noise profile on the strips and chips
                     StripMeanNoiseProf_H[trolley][slot][p] = StripInstNoiseMap_H[trolley][slot][p]->ProfileX();
+                    string updateStripName = "Strip_Mean_Noise_T" + intTostring(t) + "_S" + intTostring(sl) + CharToString(partID[p]);
+                    StripMeanNoiseProf_H[trolley][slot][p]->SetName(updateStripName.c_str());
                     ChipMeanNoiseProf_H[trolley][slot][p] = ChipInstNoiseMap_H[trolley][slot][p]->ProfileX();
+                    string updateChipName = "Chip_Mean_Noise_T" + intTostring(t) + "_S" + intTostring(sl) + CharToString(partID[p]);
+                    ChipMeanNoiseProf_H[trolley][slot][p]->SetName(updateChipName.c_str());
 
                     //Write in the output file the mean noise rate per
                     //partition and its error defined as twice the RMS
