@@ -396,11 +396,6 @@ void GetNoiseRate(string baseName){
         ofstream listCSV(listName.c_str(),ios::out);
         listCSV << "HVstep\t";
 
-        //Create the output folder for the DQM plots
-        string DQMFolder = GetSavePath(baseName,HVstep);
-        string mkdirDQMFolder = "mkdir -p " + DQMFolder;
-        system(mkdirDQMFolder.c_str());
-
         //Loop over trolleys
         for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
             unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
@@ -489,53 +484,54 @@ void GetNoiseRate(string baseName){
 
                     //********************************* General histograms
 
-                    DrawTH1(BeamProf_C[trolley][slot][p],BeamProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
+                    DrawTH1(BeamProf_C[trolley][slot][p],BeamProf_H[trolley][slot][p],"Strip","# events","");
                     BeamProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(TimeProfile_C[trolley][slot][p],TimeProfile_H[trolley][slot][p],"Time stamp (ns)","# events","",DQMFolder);
+                    DrawTH1(TimeProfile_C[trolley][slot][p],TimeProfile_H[trolley][slot][p],"Time stamp (ns)","# events","");
                     TimeProfile_H[trolley][slot][p]->Write();
 
-                    DrawTH1(HitMultiplicity_C[trolley][slot][p],HitMultiplicity_H[trolley][slot][p],"Multiplicity","# events","",DQMFolder);
+                    DrawTH1(HitMultiplicity_C[trolley][slot][p],HitMultiplicity_H[trolley][slot][p],"Multiplicity","# events","");
                     HitMultiplicity_H[trolley][slot][p]->Write();
 
                     //******************************* Strip granularity histograms
 
-                    DrawTH1(StripHitProf_C[trolley][slot][p],StripHitProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
+                    DrawTH1(StripHitProf_C[trolley][slot][p],StripHitProf_H[trolley][slot][p],"Strip","# events","");
                     StripHitProf_H[trolley][slot][p]->Write();
 
-                    DrawTH2(StripInstNoiseMap_C[trolley][slot][p],StripInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ",DQMFolder);
+                    DrawTH2(StripInstNoiseMap_C[trolley][slot][p],StripInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ");
                     StripInstNoiseMap_H[trolley][slot][p]->Write();
 
-                    DrawTH1(StripMeanNoiseProf_C[trolley][slot][p],StripMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1",DQMFolder);
+                    DrawTH1(StripMeanNoiseProf_C[trolley][slot][p],StripMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1");
                     StripMeanNoiseProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(StripActivity_C[trolley][slot][p],StripActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1",DQMFolder);
+                    DrawTH1(StripActivity_C[trolley][slot][p],StripActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1");
                     StripActivity_H[trolley][slot][p]->Write();
 
                     StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                    DrawTH1(StripHomogeneity_C[trolley][slot][p],StripHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0",DQMFolder);
+                    DrawTH1(StripHomogeneity_C[trolley][slot][p],StripHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0");
                     StripHomogeneity_H[trolley][slot][p]->Write();
 
                     //******************************* Chip granularity histograms
 
-                    DrawTH1(ChipHitProf_C[trolley][slot][p],ChipHitProf_H[trolley][slot][p],"Strip","# events","",DQMFolder);
+                    DrawTH1(ChipHitProf_C[trolley][slot][p],ChipHitProf_H[trolley][slot][p],"Strip","# events","");
                     ChipHitProf_H[trolley][slot][p]->Write();
 
-                    DrawTH2(ChipInstNoiseMap_C[trolley][slot][p],ChipInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ",DQMFolder);
+                    DrawTH2(ChipInstNoiseMap_C[trolley][slot][p],ChipInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ");
                     ChipInstNoiseMap_H[trolley][slot][p]->Write();
 
-                    DrawTH1(ChipMeanNoiseProf_C[trolley][slot][p],ChipMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1",DQMFolder);
+                    DrawTH1(ChipMeanNoiseProf_C[trolley][slot][p],ChipMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1");
                     ChipMeanNoiseProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(ChipActivity_C[trolley][slot][p],ChipActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1",DQMFolder);
+                    DrawTH1(ChipActivity_C[trolley][slot][p],ChipActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1");
                     ChipActivity_H[trolley][slot][p]->Write();
 
                     ChipHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                    DrawTH1(ChipHomogeneity_C[trolley][slot][p],ChipHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0",DQMFolder);
+                    DrawTH1(ChipHomogeneity_C[trolley][slot][p],ChipHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0");
                     ChipHomogeneity_H[trolley][slot][p]->Write();
                }
             }
         }
+        listCSV << '\n';
         listCSV.close();
 
         outputCSV << '\n';
@@ -544,16 +540,8 @@ void GetNoiseRate(string baseName){
         outputfile.Close();
         caenFile.Close();
         dataFile.Close();
-
-        //Finally give the permission to the DCS to delete the file if necessary
-        string GivePermission = "chmod 775 " + fNameROOT;
-        system(GivePermission.c_str());
-        GivePermission = "chmod -R 775 " + DQMFolder + "*";
-        system(GivePermission.c_str());
-        GivePermission = "chmod 775 " + csvName;
-        system(GivePermission.c_str());
     } else {
-        MSG_INFO("[Offline-Rate] File " + daqName + " could not be found");
+        MSG_INFO("[Offline-Rate] File " + daqName + " could not be opened");
         MSG_INFO("[Offline-Rate] Skipping rate analysis");
     }
 }

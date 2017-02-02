@@ -118,7 +118,7 @@ struct RPCHit {
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
 bool SortStrips ( RPCHit A, RPCHit B );
 int GetPartition( int strip );
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, string DQMFolder);
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option, string DQMFolder);
+void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
+void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
 
 #endif // UTILS_H

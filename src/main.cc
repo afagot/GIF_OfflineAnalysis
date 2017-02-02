@@ -2,7 +2,7 @@
 // *    GIF OFFLINE TOOL v3
 // *
 // *    Program developped to extract from the raw data files
-// *    the rates, currents and DIP parameters.
+// *    the rates and currents.
 // *
 // *    main.cc
 // *
@@ -44,15 +44,11 @@ int main(int argc ,char *argv[]){
         string caenName = baseName + "_CAEN.root";
 
         //Start the needed analysis tools - check if the ROOT files exist
-        if(existFile(daqName))
-            GetNoiseRate(baseName);
-        else
-            MSG_ERROR("[Offline] DAQ file is missing for run " + baseName);
+        if(existFile(daqName)) GetNoiseRate(baseName);
+        else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
 
-        if(existFile(caenName))
-            GetCurrent(baseName);
-        else
-            MSG_ERROR("[Offline] CAEN data file is missing for run " + baseName);
+        if(existFile(caenName)) GetCurrent(baseName);
+        else  MSG_ERROR("[Offline] No CAEN file for run " + baseName);
 
         return 0;
     }

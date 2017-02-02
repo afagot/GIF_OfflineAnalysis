@@ -136,18 +136,15 @@ void GetCurrent(string baseName){
                 }
             }
         }
+        listCSV << '\n';
         listCSV.close();
 
         outputCSV << '\n';
         outputCSV.close();
 
         caenFile.Close();
-
-        //Finally give the permission to the DCS to delete the file if necessary
-        string GivePermission = "chmod 775 " + csvName;
-        system(GivePermission.c_str());
     } else {
-        MSG_INFO("[Offline-Current] File " + caenName + " could not be found");
+        MSG_INFO("[Offline-Current] File " + caenName + " could not be opened");
         MSG_INFO("[Offline-Current] Skipping current analysis");
     }
 }
