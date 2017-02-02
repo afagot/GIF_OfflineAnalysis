@@ -26,14 +26,10 @@ using namespace std;
 //  or not. This is the needed condition for the offline tool to start.
 // ****************************************************************************************************
 
-bool existFiles(string baseName){
-    string DAQname = baseName + "_DAQ.root";
-    string CAENname = baseName + "_CAEN.root";
+bool existFile(string ROOTName){
+    TFile ROOTFile(ROOTName.c_str());
 
-    TFile DAQfile(DAQname.c_str());
-    TFile CAENfile(CAENname.c_str());
-
-    return (DAQfile.IsOpen() || CAENfile.IsOpen());
+    return (ROOTFile.IsOpen());
 }
 
 // ****************************************************************************************************

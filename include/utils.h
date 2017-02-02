@@ -56,7 +56,7 @@ using namespace std;
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
 
-bool    existFiles(string baseName);
+bool    existFile(string ROOTName);
 int     CharToInt(char& C);
 string  CharToString(char& C);
 string  intTostring(int value);

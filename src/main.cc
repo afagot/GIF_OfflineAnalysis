@@ -36,19 +36,23 @@ int main(int argc ,char *argv[]){
         converter >> baseName;
         converter.clear();
 
-        baseName = baseName.substr(0,baseName.find_last_of("_"));
-
         //Write in the files of the RUN directory the path to the files
         //in the HVSCAN directory to know where to write the logs
         WritePath(baseName);
 
+        string daqName = baseName + "_DAQ.root";
+        string caenName = baseName + "_CAEN.root";
+
         //Start the needed analysis tools - check if the ROOT files exist
-        if(existFiles(baseName)) {
+        if(existFile(daqName))
             GetNoiseRate(baseName);
+        else
+            MSG_ERROR("[Offline] DAQ file is missing for run " + baseName);
+
+        if(existFile(caenName))
             GetCurrent(baseName);
-        } else {
-            MSG_ERROR("[Offline] a data file is missing for run " + baseName);
-        }
+        else
+            MSG_ERROR("[Offline] CAEN data file is missing for run " + baseName);
 
         return 0;
     }
