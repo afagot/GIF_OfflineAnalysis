@@ -59,7 +59,7 @@ const string __logpath = __rundir + "log-offline";
 bool    existFile(string ROOTName);
 int     CharToInt(char& C);
 string  CharToString(char& C);
-string  intTostring(int value);
+string  intToString(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
 string  GetLogTimeStamp();
@@ -102,7 +102,7 @@ struct RAWData {
     vector<float>  *TDCTS;      //List of the corresponding time stamps
 };
 
-void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot);
+void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase);
 
 //Hit in the RPC
 struct RPCHit {

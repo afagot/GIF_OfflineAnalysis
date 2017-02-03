@@ -134,22 +134,8 @@ void GetNoiseRate(string baseName){
         TH1F     *ChipActivity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
         TH1F     *ChipHomogeneity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
 
-        TCanvas *StripHitProf_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *StripInstNoiseMap_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *StripMeanNoiseProf_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *StripActivity_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *StripHomogeneity_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *BeamProf_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *TimeProfile_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *HitMultiplicity_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *ChipHitProf_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *ChipInstNoiseMap_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *ChipMeanNoiseProf_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *ChipActivity_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-        TCanvas *ChipHomogeneity_C[NTROLLEYS][NSLOTS][NPARTITIONS];
-
-        char hisid[50];                     //ID of the histogram
-        char hisname[50];                   //Name of the histogram
+        char hisname[50];                    //ID name of the histogram
+        char histitle[50];                   //Title of the histogram
 
         Infrastructure GIFInfra;
         SetInfrastructure(GIFInfra,Dimensions);
@@ -220,73 +206,60 @@ void GetNoiseRate(string baseName){
                     //***************************************** General histograms
 
                     //Beam profile
-                    SetIDName(rpcID,p,hisid,hisname,"Beam_Profile","Beam profile");
-                    BeamProf_H[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low_s, high_s);
-                    BeamProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Beam_Profile","Beam profile");
+                    BeamProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
 
                     //Time profile
-                    SetIDName(rpcID,p,hisid,hisname,"Time_Profile","Time profile");
-                    TimeProfile_H[trolley][slot][p] = new TH1F( hisid, hisname, (int)timeWidth/10, 0., timeWidth);
-                    TimeProfile_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
+                    TimeProfile_H[trolley][slot][p] = new TH1F( hisname, histitle, (int)timeWidth/10, 0., timeWidth);
 
                     //Hit multiplicity
-                    SetIDName(rpcID,p,hisid,hisname,"Hit_Multiplicity","Hit multiplicity");
-                    HitMultiplicity_H[trolley][slot][p] = new TH1I( hisid, hisname, nBinsMult, lowBin, highBin);
-                    HitMultiplicity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
+                    HitMultiplicity_H[trolley][slot][p] = new TH1I( hisname, histitle, nBinsMult, lowBin, highBin);
 
                     //****************************************** Strip granularuty level histograms
 
                     //Hit profile
-                    SetIDName(rpcID,p,hisid,hisname,"Strip_Hit_Profile","Strip hit profile");
-                    StripHitProf_H[trolley][slot][p] = new TH1I( hisid, hisname, nStrips, low_s, high_s);
-                    StripHitProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Hit_Profile","Strip hit profile");
+                    StripHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
 
                     //Instantaneous noise rate 2D map
-                    SetIDName(rpcID,p,hisid,hisname,"Strip_Instant_Noise_Map","Strip instantaneous noise rate map");
-                    StripInstNoiseMap_H[trolley][slot][p] = new TH2F( hisid, hisname, nStrips, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
-                    StripInstNoiseMap_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Instant_Noise_Map","Strip instantaneous noise rate map");
+                    StripInstNoiseMap_H[trolley][slot][p] = new TH2F( hisname, histitle, nStrips, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
 
                     //Mean noise rate profile
-                    SetIDName(rpcID,p,hisid,hisname,"Strip_Mean_Noise","Strip mean noise rate");
-                    StripMeanNoiseProf_H[trolley][slot][p] = new TProfile( hisid, hisname, nStrips, low_s, high_s);
-                    StripMeanNoiseProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
+                    StripMeanNoiseProf_H[trolley][slot][p] = new TProfile( hisname, histitle, nStrips, low_s, high_s);
 
                     //Strip activity
-                    SetIDName(rpcID,p,hisid,hisname,"Strip_Activity","Strip activity");
-                    StripActivity_H[trolley][slot][p] = new TH1F( hisid, hisname, nStrips, low_s, high_s);
-                    StripActivity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
+                    StripActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
 
                     //Noise homogeneity
-                    SetIDName(rpcID,p,hisid,hisname,"Strip_Homogeneity","Strip homogeneity");
-                    StripHomogeneity_H[trolley][slot][p] = new TH1F( hisid, hisname, 1, 0, 1);
-                    StripHomogeneity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Homogeneity","Strip homogeneity");
+                    StripHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
 
                     //****************************************** Chip granularuty level histograms
 
                     //Hit profile
-                    SetIDName(rpcID,p,hisid,hisname,"Chip_Hit_Profile","Chip hit profile");
-                    ChipHitProf_H[trolley][slot][p] = new TH1I( hisid, hisname, nStrips/8, low_s, high_s);
-                    ChipHitProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Hit_Profile","Chip hit profile");
+                    ChipHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips/8, low_s, high_s);
 
                     //Instantaneous noise rate 2D map
-                    SetIDName(rpcID,p,hisid,hisname,"Chip_Instant_Noise_Map","Chip instantaneous noise rate map");
-                    ChipInstNoiseMap_H[trolley][slot][p] = new TH2F( hisid, hisname, nStrips/8, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
-                    ChipInstNoiseMap_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Instant_Noise_Map","Chip instantaneous noise rate map");
+                    ChipInstNoiseMap_H[trolley][slot][p] = new TH2F( hisname, histitle, nStrips/8, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
 
                     //Mean noise rate profile
-                    SetIDName(rpcID,p,hisid,hisname,"Chip_Mean_Noise","Chip mean noise rate");
-                    ChipMeanNoiseProf_H[trolley][slot][p] = new TProfile( hisid, hisname, nStrips/8, low_s, high_s);
-                    ChipMeanNoiseProf_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
+                    ChipMeanNoiseProf_H[trolley][slot][p] = new TProfile( hisname, histitle, nStrips/8, low_s, high_s);
 
                     //Strip activity
-                    SetIDName(rpcID,p,hisid,hisname,"Chip_Activity","Chip activity");
-                    ChipActivity_H[trolley][slot][p] = new TH1F( hisid, hisname, nStrips/8, low_s, high_s);
-                    ChipActivity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
+                    ChipActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
 
                     //Noise homogeneity
-                    SetIDName(rpcID,p,hisid,hisname,"Chip_Homogeneity","Chip homogeneity");
-                    ChipHomogeneity_H[trolley][slot][p] = new TH1F( hisid, hisname, 1, 0, 1);
-                    ChipHomogeneity_C[trolley][slot][p] = new TCanvas(hisid,hisname);
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
+                    ChipHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
                 }
             }
         }
@@ -425,11 +398,18 @@ void GetNoiseRate(string baseName){
                     //Project the histograms along the X-axis to get the
                     //mean noise profile on the strips and chips
                     StripMeanNoiseProf_H[trolley][slot][p] = StripInstNoiseMap_H[trolley][slot][p]->ProfileX();
-                    string updateStripName = "Strip_Mean_Noise_T" + intTostring(t+1) + "_S" + intTostring(sl+1) + "_" + CharToString(partID[p]);
-                    StripMeanNoiseProf_H[trolley][slot][p]->SetName(updateStripName.c_str());
                     ChipMeanNoiseProf_H[trolley][slot][p] = ChipInstNoiseMap_H[trolley][slot][p]->ProfileX();
-                    string updateChipName = "Chip_Mean_Noise_T" + intTostring(t+1) + "_S" + intTostring(sl+1) + "_" + CharToString(partID[p]);
-                    ChipMeanNoiseProf_H[trolley][slot][p]->SetName(updateChipName.c_str());
+
+                    //Get the chamber ID in terms of trolley + slot position TXSX
+                    //To rename the TProfiles since the projection gives them the
+                    //attributes of the projected TH2
+                    string rpcID = "T"+ intToString(t+1) + "S" + intToString(sl+1);
+
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip Mean Noise");
+                    StripMeanNoiseProf_H[trolley][slot][p]->SetNameTitle(hisname,histitle);
+
+                    SetTitleName(rpcID,p,hisname,histitle,"Chiip_Mean_Noise","Chip Mean Noise");
+                    ChipMeanNoiseProf_H[trolley][slot][p]->SetNameTitle(hisname,histitle);
 
                     //Write in the output file the mean noise rate per
                     //partition and its error defined as twice the RMS
@@ -488,49 +468,36 @@ void GetNoiseRate(string baseName){
 
                     //********************************* General histograms
 
-                    DrawTH1(BeamProf_C[trolley][slot][p],BeamProf_H[trolley][slot][p],"Strip","# events","");
                     BeamProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(TimeProfile_C[trolley][slot][p],TimeProfile_H[trolley][slot][p],"Time stamp (ns)","# events","");
                     TimeProfile_H[trolley][slot][p]->Write();
 
-                    DrawTH1(HitMultiplicity_C[trolley][slot][p],HitMultiplicity_H[trolley][slot][p],"Multiplicity","# events","");
                     HitMultiplicity_H[trolley][slot][p]->Write();
 
                     //******************************* Strip granularity histograms
 
-                    DrawTH1(StripHitProf_C[trolley][slot][p],StripHitProf_H[trolley][slot][p],"Strip","# events","");
                     StripHitProf_H[trolley][slot][p]->Write();
 
-                    DrawTH2(StripInstNoiseMap_C[trolley][slot][p],StripInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ");
                     StripInstNoiseMap_H[trolley][slot][p]->Write();
 
-                    DrawTH1(StripMeanNoiseProf_C[trolley][slot][p],StripMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1");
                     StripMeanNoiseProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(StripActivity_C[trolley][slot][p],StripActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1");
                     StripActivity_H[trolley][slot][p]->Write();
 
                     StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                    DrawTH1(StripHomogeneity_C[trolley][slot][p],StripHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0");
                     StripHomogeneity_H[trolley][slot][p]->Write();
 
                     //******************************* Chip granularity histograms
 
-                    DrawTH1(ChipHitProf_C[trolley][slot][p],ChipHitProf_H[trolley][slot][p],"Strip","# events","");
                     ChipHitProf_H[trolley][slot][p]->Write();
 
-                    DrawTH2(ChipInstNoiseMap_C[trolley][slot][p],ChipInstNoiseMap_H[trolley][slot][p],"Strip","Noise rate (Hz/cm^{2})","# events","COLZ");
                     ChipInstNoiseMap_H[trolley][slot][p]->Write();
 
-                    DrawTH1(ChipMeanNoiseProf_C[trolley][slot][p],ChipMeanNoiseProf_H[trolley][slot][p],"Strip","Mean Noise rate (Hz/cm^{2})","HIST E1");
                     ChipMeanNoiseProf_H[trolley][slot][p]->Write();
 
-                    DrawTH1(ChipActivity_C[trolley][slot][p],ChipActivity_H[trolley][slot][p],"Strip","Relative strip activity","HIST E1");
                     ChipActivity_H[trolley][slot][p]->Write();
 
                     ChipHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
-                    DrawTH1(ChipHomogeneity_C[trolley][slot][p],ChipHomogeneity_H[trolley][slot][p],"Partition","Homogeneity","HIST TEXT0");
                     ChipHomogeneity_H[trolley][slot][p]->Write();
                }
             }
