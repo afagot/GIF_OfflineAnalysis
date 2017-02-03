@@ -26,14 +26,11 @@ using namespace std;
 //  or not. This is the needed condition for the offline tool to start.
 // ****************************************************************************************************
 
-bool existFiles(string baseName){
-    string DAQname = baseName + "_DAQ.root";
-    string CAENname = baseName + "_CAEN.root";
 
-    TFile DAQfile(DAQname.c_str());
-    TFile CAENfile(CAENname.c_str());
+bool existFile(string ROOTName){
+    TFile ROOTFile(ROOTName.c_str());
 
-    return (DAQfile.IsOpen() || CAENfile.IsOpen());
+    return (ROOTFile.IsOpen());
 }
 
 // ****************************************************************************************************
@@ -72,7 +69,7 @@ string CharToString(char& C){
 //  Function that casts an int into a string
 // ****************************************************************************************************
 
-string intTostring(int value){
+string intToString(int value){
     string word;
     stringstream ss;
     ss << value;
@@ -181,7 +178,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.nGaps       = geofile->intType(ID,"Gaps",0);
 
     for(unsigned int g = 0 ; g < rpc.nGaps; g++){
-        string gapID = "Gap" + intTostring(g+1);
+        string gapID = "Gap" + intToString(g+1);
         rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
 
         string areaID = "Area" + gapID;
@@ -231,10 +228,10 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
 // ****************************************************************************************************
 
 //Name of histograms
-void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot){
+void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase){
     string P[4] = {"A","B","C","D"};
-    sprintf(ID,"%s_%s_%s",IDroot.c_str(),rpcID.c_str(),P[partition].c_str());
-    sprintf(Name,"%s %s_%s",Nameroot.c_str(),rpcID.c_str(),P[partition].c_str());
+    sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
+    sprintf(Title,"%s %s_%s",Titlebase.c_str(),rpcID.c_str(),P[partition].c_str());
 }
 
 // ****************************************************************************************************
@@ -289,17 +286,13 @@ int GetPartition( int strip ) {
 // ****************************************************************************************************
 
 //Draw 1D histograms
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, string DQMFolder){
+void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option){
     C->cd(0);
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
     H->SetFillColor(kBlue);
     H->Draw(option.c_str());
     C->Update();
-    string PDF = DQMFolder + C->GetName() + ".pdf";
-    string PNG = DQMFolder + C->GetName() + ".png";
-    C->SaveAs(PDF.c_str());
-    C->SaveAs(PNG.c_str());
 }
 
 // ****************************************************************************************************
@@ -309,7 +302,7 @@ void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, st
 // ****************************************************************************************************
 
 //Draw 2D histograms
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option, string DQMFolder){
+void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option){
     C->cd(0);
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
@@ -318,8 +311,4 @@ void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, st
     H->Draw(option.c_str());
     C->SetLogz(1);
     C->Update();
-    string PDF = DQMFolder + C->GetName() + ".pdf";
-    string PNG = DQMFolder + C->GetName() + ".png";
-    C->SaveAs(PDF.c_str());
-    C->SaveAs(PNG.c_str());
 }

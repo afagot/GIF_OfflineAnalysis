@@ -55,10 +55,10 @@ using namespace std;
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
 
-bool    existFiles(string baseName);
+bool    existFile(string ROOTName);
 int     CharToInt(char& C);
 string  CharToString(char& C);
-string  intTostring(int value);
+string  intToString(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
 string  GetLogTimeStamp();
@@ -93,7 +93,7 @@ struct RAWData {
     vector<float>  *TDCTS;      //List of the corresponding time stamps
 };
 
-void SetIDName(string rpcID, unsigned int partition, char* ID, char* Name, string IDroot, string Nameroot);
+void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase);
 
 //Hit in the RPC
 struct RPCHit {
@@ -108,7 +108,7 @@ struct RPCHit {
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
 bool SortStrips ( RPCHit A, RPCHit B );
 int GetPartition( int strip );
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option, string DQMFolder);
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option, string DQMFolder);
+void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
+void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
 
 #endif // UTILS_H

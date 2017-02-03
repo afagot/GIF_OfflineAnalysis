@@ -19,7 +19,7 @@ CFLAGS = -ggdb -fPIC -DLINUX -Wall -funsigned-char \
 
 all: $(DAQ_BIN_DIR) $(DAQ_OBJ_DIR) offlineanalysis
 
-offlineanalysis: main.o NoiseRate.o Current.o  utils.o IniFile.o MsgSvc.o
+offlineanalysis: main.o NoiseRate.o Current.o utils.o IniFile.o MsgSvc.o
 		g++ $(CFLAGS) $(DAQ_OBJ_DIR)/main.o \
 		$(DAQ_OBJ_DIR)/utils.o \
 		$(DAQ_OBJ_DIR)/NoiseRate.o \
