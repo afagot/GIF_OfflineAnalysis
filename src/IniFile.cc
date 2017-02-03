@@ -1,8 +1,19 @@
-// *************************************************************************************************************
-// *   IniFile
-// *   Alexis Fagot
-// *   29/01/2015
-// *************************************************************************************************************
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    Inifile.cc
+// *
+// *    Macro to read Dimensions.ini files and extract
+// *    information from each RPC as number of partitions,
+// *    gaps, strips, and all ID names.
+// *    This file was originally developped for the GIF_DAQ.
+// *
+// *    Developped by : Alexis Fagot
+// *    29/01/2015
+//***************************************************************
 
 #include <iostream>
 #include <cstdlib>
@@ -46,7 +57,7 @@ bool IniFile::CheckIfGroup(string line,string& group){
             group = line.substr(1,line.length()-2);
         } else {
             Error = INI_ERROR_WRONG_GROUP_FORMAT;
-            MSG_ERROR("[Inifile]: Group error %i",Error);
+            MSG_ERROR("[Offline-Inifile] Group error " + to_string(Error));
         }
         return true;
     }
@@ -68,12 +79,12 @@ bool IniFile::CheckIfToken(string line,string& key,string& value){
             value = line.substr(p0,(line.size()-p0));
         } else {
             Error = INI_ERROR_MISSING_VALUE;
-            MSG_ERROR("[Inifile]: Token error %i",Error);
+            MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
         }
         return true;
     } else {
         Error = INI_ERROR_WRONG_FORMAT;
-        MSG_ERROR("[Inifile]: Token error %i",Error);
+        MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
         return false;
     }
 }
@@ -99,7 +110,7 @@ int IniFile::Read(){
         ini.close();
     } else {
         Error = INI_ERROR_CANNOT_OPEN_READ_FILE;
-        MSG_ERROR("[Inifile]: Read error %i",Error);
+        MSG_ERROR("[Offline-Inifile] Read error " + to_string(Error));
         return Error;
     }
 
@@ -124,15 +135,71 @@ int IniFile::Read(){
         }
     }
 
-    for(IniFileDataIter Iter = FileData.begin(); Iter != FileData.end(); Iter++)
-        cout << "[Inifile]: " << Iter->first << " = " << Iter->second << endl;
+//    for(IniFileDataIter Iter = FileData.begin(); Iter != FileData.end(); Iter++)
+//        cout << "[Offline-Inifile]: " << Iter->first << " = " << Iter->second << endl;
 
     return Error;
 }
 
 // *************************************************************************************************************
 
-float IniFile::GetValue(string groupname, const string keyname, const float defaultvalue ){
+
+long IniFile::intType(string groupname, string keyname, long defaultvalue ){
+    string key;
+    long intValue = defaultvalue;
+    string fileValue;
+
+    IniFileDataIter Iter;
+
+    if(groupname.size() > 0)
+        key = groupname + "." + keyname;
+
+    Iter = FileData.find(key);
+
+    if(Iter != FileData.end()){
+        int base = 0;
+        fileValue = Iter->second;
+        if(fileValue[1] == 'x')
+            base = 16;
+        else if(fileValue[1] == 'b'){
+            base = 2;                   //In the case of binary values, the function doesn't
+            fileValue.erase(0,2);       //understand 0b as a integer literals -> erase it
+        }
+
+        intValue = strtol(fileValue.c_str(),NULL,base);
+    }
+    else {
+        string defVal = longTostring(defaultvalue);
+        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
+    }
+
+    return intValue;
+}
+
+// *************************************************************************************************************
+
+string IniFile::stringType( string groupname, string keyname, string defaultvalue ){
+    string key;
+    string stringChain = defaultvalue;
+
+    IniFileDataIter Iter;
+
+    if(groupname.size() > 0)
+        key = groupname + "." + keyname;
+
+    Iter = FileData.find(key);
+
+    if(Iter != FileData.end())
+        stringChain = Iter->second;
+    else
+        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defaultvalue+")");
+
+    return stringChain;
+}
+
+// *************************************************************************************************************
+
+float IniFile::floatType( string groupname, string keyname, float defaultvalue ){
     string key;
     float floatValue = defaultvalue;
 
@@ -145,6 +212,10 @@ float IniFile::GetValue(string groupname, const string keyname, const float defa
 
     if(Iter != FileData.end())
         floatValue = strtof(Iter->second.c_str(),NULL);
+    else {
+        string defVal = floatTostring(defaultvalue);
+        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
+    }
 
     return floatValue;
 }

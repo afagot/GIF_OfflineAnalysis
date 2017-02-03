@@ -1,37 +1,55 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v3
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates and currents.
+// *
+// *    main.cc
+// *
+// *    Developped by : Alexis Fagot
+// *    22/04/2016
+//***************************************************************
+
+
 #include "../include/NoiseRate.h"
+#include "../include/Current.h"
+#include "../include/MsgSvc.h"
 
 #include <sstream>
 
 using namespace std;
 
 int main(int argc ,char *argv[]){
-    string triggertype[2] = {"random","beam"};
+    stringstream converter;
+    converter << argv[0];
+    string program;
+    converter >> program;
+    converter.clear();
 
-    if(argc != 3){
-        cout<<"[OfflineAnalysis]: USAGE is :"<< argv[0] <<" filename triggertype\n";
-        cout<<"[OfflineAnalysis]: triggertype = " << triggertype[0] << " or " << triggertype[1] << endl;
+    if(argc != 2){
+        MSG_WARNING("[Offline] expects to have 2 parameters");
+        MSG_WARNING("[Offline] USAGE is : " + program + " filebasename");
         return -1;
-    } else {// if(argv[2] == triggertype[0].c_str() || argv[2] == triggertype[1].c_str()){
-        stringstream converter;
-
+    } else if(argc == 2){
         converter << argv[1];
-        string fName;
-        converter >> fName;
+        string baseName;
+        converter >> baseName;
         converter.clear();
 
-        converter << argv[2];
-        string trigger;
-        converter >> trigger;
+        //Write in the files of the RUN directory the path to the files
+        //in the HVSCAN directory to know where to write the logs
+        WritePath(baseName);
 
-//        cout << fName << " " << trigger << endl;
+        string daqName = baseName + "_DAQ.root";
+        string caenName = baseName + "_CAEN.root";
 
-        GetNoiseRate(fName,trigger);
+        //Start the needed analysis tools - check if the ROOT files exist
+        if(existFile(daqName)) GetNoiseRate(baseName);
+        else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
+
+        if(existFile(caenName)) GetCurrent(baseName);
+        else  MSG_ERROR("[Offline] No CAEN file for run " + baseName);
 
         return 0;
-    }/* else {
-        cout<<"[OfflineAnalysis]: Wrong trigger type.\n";
-        cout<<"[OfflineAnalysis]: USAGE is :"<< argv[0] <<" filename triggertype\n";
-        cout<<"[OfflineAnalysis]: triggertype = " << triggertype[0] << " or " << triggertype[1] << endl;
-        return -2;
-    }*/
+    }
 }
