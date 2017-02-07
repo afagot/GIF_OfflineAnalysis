@@ -12,16 +12,15 @@
 // *    22/04/2016
 //***************************************************************
 
-#include "../include/Current.h"
-#include "../include/utils.h"
-#include "../include/MsgSvc.h"
+#include <fstream>
 
 #include "TFile.h"
-#include "TH1.h"
+#include "TH1F.h"
 
-#include <vector>
-#include <cmath>
-#include <cstdlib>
+#include "../include/MsgSvc.h"
+#include "../include/IniFile.h"
+#include "../include/Current.h"
+#include "../include/utils.h"
 
 using namespace std;
 

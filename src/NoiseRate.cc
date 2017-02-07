@@ -14,11 +14,24 @@
 // *    22/04/2016
 //***************************************************************
 
-#include "../include/NoiseRate.h"
-#include "../include/MsgSvc.h"
-
-#include <cmath>
+#include <iostream>
 #include <cstdlib>
+#include <fstream>
+#include <vector>
+#include <cmath>
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TString.h"
+#include "TH1F.h"
+#include "TH1I.h"
+#include "TH2F.h"
+#include "TProfile.h"
+
+#include "../include/NoiseRate.h"
+#include "../include/IniFile.h"
+#include "../include/MsgSvc.h"
+#include "../include/utils.h"
 
 //*******************************************************************************
 
@@ -68,6 +81,13 @@ void GetNoiseRate(string baseName){
     string daqName = baseName + "_DAQ.root";
     string caenName = baseName + "_CAEN.root";
 
+    //****************** CAEN ROOT FILE ******************************
+
+    //input CAEN ROOT data file containing the values of the HV eff for
+    //every HV step
+    TFile caenFile(caenName.c_str());
+    TH1F *HVeff[NTROLLEYS][NSLOTS];
+
     //****************** DAQ ROOT FILE *******************************
 
     //input ROOT data file containing the RAWData TTree that we'll
@@ -76,17 +96,25 @@ void GetNoiseRate(string baseName){
 
     if(dataFile.IsOpen()){
         TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-        RAWData data;
 
-        data.TDCCh = new vector<int>;
-        data.TDCTS = new vector<float>;
-        data.TDCCh->clear();
-        data.TDCTS->clear();
+        //Then get the HVstep number from the ID histogram
+        string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
 
-        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+        //****************** GEOMETRY ************************************
+
+        //Get the chambers geometry and the GIF infrastructure details
+        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
+        IniFile* Dimensions = new IniFile(dimpath.c_str());
+        Dimensions->Read();
+
+        Infrastructure GIFInfra;
+        SetInfrastructure(GIFInfra,Dimensions);
+
+        //****************** MAPPING *************************************
+
+        map<int,int> RPCChMap = TDCMapping(daqName);
+
+        //****************** PEAK TIME ***********************************
 
         //First open the RunParameters TTree from the dataFile
         //Then link a string to the branch corresponding to the beam
@@ -97,26 +125,24 @@ void GetNoiseRate(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
-        //Then get the HVstep number from the ID histogram
-        string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
+        float GOODTDCTIME[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+        float GOODTDC2SIG[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
 
-        //****************** CAEN ROOT FILE ******************************
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(GOODTDCTIME,GOODTDC2SIG,dataTree,RPCChMap,GIFInfra);
 
-        //input CAEN ROOT data file containing the values of the HV eff for
-        //every HV step
-        TFile caenFile(caenName.c_str());
-        TH1F *HVeff[NTROLLEYS][NSLOTS];
+        //****************** LINK RAW DATA *******************************
 
-        //****************** GEOMETRY ************************************
+        RAWData data;
 
-        //Get the chamber geometry
-        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
-        IniFile* Dimensions = new IniFile(dimpath.c_str());
-        Dimensions->Read();
+        data.TDCCh = new vector<unsigned int>;
+        data.TDCTS = new vector<float>;
+        data.TDCCh->clear();
+        data.TDCTS->clear();
 
-        //****************** MAPPING *************************************
-
-        map<int,int> RPCChMap = TDCMapping(daqName);
+        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
         //****************** HISTOGRAMS & CANVAS *************************
 
@@ -136,9 +162,6 @@ void GetNoiseRate(string baseName){
 
         char hisname[50];                    //ID name of the histogram
         char histitle[50];                   //Title of the histogram
-
-        Infrastructure GIFInfra;
-        SetInfrastructure(GIFInfra,Dimensions);
 
         for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
             unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
@@ -196,8 +219,8 @@ void GetNoiseRate(string baseName){
                     if(RunType->CompareTo("efficiency") == 0){
                         binWidth = 1./(BMNOISEWDW*1e-9*stripArea);
                         timeWidth = BMTDCWINDOW;
-                    } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0){
-                        binWidth = 1./(RDMTDCWINDOW*1e-9*stripArea);
+                    } else if(RunType->CompareTo("efficiency") != 0){
+                        binWidth = 1./(RDMNOISEWDW*1e-9*stripArea);
                         timeWidth = RDMTDCWINDOW;
                     }
 
@@ -277,8 +300,7 @@ void GetNoiseRate(string baseName){
             dataTree->GetEntry(i);
 
             //Loop over the TDC hits
-            for ( int h = 0; h < data.TDCNHits; h++ ) {
-
+            for(int h = 0; h < data.TDCNHits; h++){
                 RPCHit hit;
 
                 //Get rid of the noise hits outside of the connected channels
@@ -289,18 +311,28 @@ void GetNoiseRate(string baseName){
 
                 SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
-                //Count the number of hits outside the peak
-                bool earlyhit = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
-                bool intimehit = (hit.TimeStamp >= 255. && hit.TimeStamp < 315.);
-                bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
-
                 if(RunType->CompareTo("efficiency") == 0){
+                    float lowlimit = GOODTDCTIME[hit.Trolley][hit.Station-1][hit.Strip-1]
+                            - GOODTDC2SIG[hit.Trolley][hit.Station-1][hit.Strip-1];
+                    float highlimit = GOODTDCTIME[hit.Trolley][hit.Station-1][hit.Strip-1]
+                            + GOODTDC2SIG[hit.Trolley][hit.Station-1][hit.Strip-1];
+
+                    //Count the number of hits outside the peak
+                    bool earlyhit = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
+                    bool intimehit = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
+                    bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
+
                     if(earlyhit || latehit)
                         NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
                     else if(intimehit)
                         BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                } else if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0)
-                    NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
+                } else if(RunType->CompareTo("efficiency") != 0){
+                    //Reject the 100 first and last ns due to inhomogeneity of data
+                    bool rejected = (hit.TimeStamp < 100. || hit.TimeStamp > RDMTDCWINDOW-100.);
+
+                    if(!rejected)
+                        NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
+                }
 
                 //Fill the profiles
                 StripHitProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
@@ -331,13 +363,13 @@ void GetNoiseRate(string baseName){
                         //time window length in seconds and to the strip surface
                         float InstantNoise = 0.;
 
-                        if(RunType->CompareTo("rate") == 0 || RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("calibration") == 0 || RunType->CompareTo("impaired") == 0 || RunType->CompareTo("test") == 0)
-                            InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(RDMTDCWINDOW*1e-9*stripArea);
+                        if(RunType->CompareTo("efficiency") != 0)
+                            InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(RDMNOISEWDW*1e-9*stripArea);
                         else if (RunType->CompareTo("efficiency") == 0)
                             InstantNoise = (float)NHitsPerStrip[trolley][slot][st]/(BMNOISEWDW*1e-9*stripArea);
 
                         StripInstNoiseMap_H[trolley][slot][p]->Fill(st+1,InstantNoise);
-                        ChipInstNoiseMap_H[trolley][slot][p]->Fill(st+1,InstantNoise);
+                        ChipInstNoiseMap_H[trolley][slot][p]->Fill(st+1,InstantNoise/NSTRIPSCONN);
 
                         //Reinitialise the hit count for strip s
                         NHitsPerStrip[trolley][slot][st] = 0;
