@@ -1,6 +1,3 @@
-#ifndef _MSGSVC_CXX_
-#define _MSGSVC_CXX_
-
 //***************************************************************
 // *    GIF OFFLINE TOOL v3
 // *
@@ -18,10 +15,11 @@
 // *    29/01/2015
 //***************************************************************
 
-#include "../include/MsgSvc.h"
-#include "../include/utils.h"
 #include <iostream>
+#include <cstdlib>
 #include <fstream>
+
+#include "../include/MsgSvc.h"
 
 using namespace std;
 
@@ -58,7 +56,3 @@ void MSG_INFO(string message)   {MSG(message,INFO);}
 void MSG_DEBUG(string message)  {MSG(message,DEBUG);}
 void MSG_VERBOSE(string message){MSG(message,VERBOSE);}
 void MSG_ALWAYS(string message) {MSG(message,ALWAYS);}
-
-
-#endif
-

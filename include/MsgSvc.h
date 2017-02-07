@@ -20,15 +20,17 @@
 
 #include <string>
 
+#include "utils.h"
+
 using namespace std;
 
-#define FATAL   -3
-#define ERROR   -2
-#define WARNING -1
-#define INFO     0
-#define DEBUG    1
-#define VERBOSE  2
-#define ALWAYS   3
+const int FATAL   =-3;
+const int ERROR   =-2;
+const int WARNING =-1;
+const int INFO    = 0;
+const int DEBUG   = 1;
+const int VERBOSE = 2;
+const int ALWAYS  = 3;
 
 
 int MSG(string message, int level);

@@ -1,3 +1,6 @@
+#ifndef __INIFILE_H_
+#define __INIFILE_H_
+
 //***************************************************************
 // *    GIF OFFLINE TOOL v3
 // *
@@ -17,10 +20,6 @@
 
 #include <string>
 #include <map>
-#include "utils.h"
-
-#ifndef __INIFILE_H_
-#define __INIFILE_H_
 
 using namespace std;
 

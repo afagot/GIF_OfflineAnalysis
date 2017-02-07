@@ -17,9 +17,10 @@
 // *    22/04/2016
 //***************************************************************
 
-#include "utils.h"
-#include "TTree.h"
-#include "IniFile.h"
+#include <string>
+#include <map>
+
+using namespace std;
 
 string          GetBaseName(string fName);
 string          GetSavePath(string baseName, string stepID);

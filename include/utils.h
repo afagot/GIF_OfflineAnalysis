@@ -16,54 +16,42 @@
 // *    22/04/2016
 //***************************************************************
 
-#include <iostream>
-#include <cstdlib>
-#include <sstream>
-#include <fstream>
-#include <map>
 #include <string>
 #include <vector>
-#include <unistd.h>
-#include <iomanip>
 
-#include "TFile.h"
-#include "TBranch.h"
+#include "TTree.h"
+#include "TCanvas.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TProfile.h"
-#include "TCanvas.h"
-#include "THistPainter.h"
-#include "TColor.h"
-#include "TStyle.h"
-#include "TString.h"
 
 #include "IniFile.h"
 
-#define RDMTDCWINDOW   400.*25.
-#define BMTDCWINDOW    24.*25.
-#define BMNOISEWDW     300.
-
-#define NTROLLEYS      5
-#define NSLOTS         9
-#define NPARTITIONS    4
-
-#define NSTRIPSRPC     128
-#define NSTRIPSPART    48
-#define NSTRIPSCONN    16
-
 using namespace std;
+
+const float RDMTDCWINDOW    = 400.*25.;
+const float RDMNOISEWDW     = RDMTDCWINDOW - 200.;
+const float BMTDCWINDOW     = 24.*25.;
+const float BMNOISEWDW      = 300.;
+
+const unsigned int NTROLLEYS         = 5;
+const unsigned int NSLOTS            = 9;
+const unsigned int NPARTITIONS       = 4;
+
+const unsigned int NSTRIPSRPC        = 128;
+const unsigned int NSTRIPSPART       = 48;
+const unsigned int NSTRIPSCONN       = 16;
 
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
 
-bool    existFile(string ROOTName);
-int     CharToInt(char& C);
-string  CharToString(char& C);
-string  intToString(int value);
-string  longTostring(long value);
-string  floatTostring(float value);
-string  GetLogTimeStamp();
-void    WritePath(string basename);
+bool            existFile(string ROOTName);
+unsigned int    CharToInt(char& C);
+string          CharToString(char& C);
+string          intToString(int value);
+string          longTostring(long value);
+string          floatTostring(float value);
+string          GetLogTimeStamp();
+void            WritePath(string basename);
 
 //Infrastructure inside GIF++
 struct RPC{
@@ -96,26 +84,27 @@ void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 
 //Data in the root file
 struct RAWData {
-    int             iEvent;     //Event i
-    int             TDCNHits;   //Number of hits in event i
-    vector<int>    *TDCCh;      //List of channels giving hits per event
-    vector<float>  *TDCTS;      //List of the corresponding time stamps
+    unsigned int            iEvent;     //Event i
+    unsigned int            TDCNHits;   //Number of hits in event i
+    vector<unsigned int>   *TDCCh;      //List of channels giving hits per event
+    vector<float>          *TDCTS;      //List of the corresponding time stamps
 };
 
 void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase);
 
 //Hit in the RPC
 struct RPCHit {
-    int             Channel;    //RPC Channel (5 digit numbers like XX000 - XX128)
-    int             Trolley;    //1 or 3 (1st digit of the RPC channel)
-    int             Station;    //Place in the trolley (S1 to S4 - 2nd digit)
-    int             Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
-    int             Partition;  //Partition (1 to 4)
-    int             Connector;  //Connector (1 to 8)
+    unsigned int    Channel;    //RPC Channel (5 digit numbers like XX000 - XX128)
+    unsigned int    Trolley;    //1 or 3 (1st digit of the RPC channel)
+    unsigned int    Station;    //Place in the trolley (S1 to S4 - 2nd digit)
+    unsigned int    Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
+    unsigned int    Partition;  //Partition (1 to 4)
+    unsigned int    Connector;  //Connector (1 to 8)
     float           TimeStamp;  //TDC time stamp
 };
 
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS], float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS], TTree* mytree, RAWData mydata, map<int, int> RPCChMap, Infrastructure GIFInfra);
 bool SortStrips ( RPCHit A, RPCHit B );
 int GetPartition( int strip );
 void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);

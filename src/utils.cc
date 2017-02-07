@@ -13,7 +13,19 @@
 // *    22/04/2016
 //***************************************************************
 
-#include <cmath>
+#include <sstream>
+#include <ctime>
+#include <fstream>
+#include <cstdio>
+#include <map>
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TH1F.h"
+#include "TF1.h"
+#include "TStyle.h"
+#include "THistPainter.h"
+
 #include "../include/utils.h"
 
 using namespace std;
@@ -38,11 +50,11 @@ bool existFile(string ROOTName){
 //  Function that casts a char into an int
 // ****************************************************************************************************
 
-int CharToInt(char &C){
+unsigned int CharToInt(char &C){
     stringstream ss;
     ss << C;
 
-    int I;
+    unsigned int I;
     ss >> I;
     return I;
 }
@@ -280,6 +292,67 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
     Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
     Hit.TimeStamp   = TimeStamp;
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Set the beam time window
+void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
+                    float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS],
+                    TTree* mytree, RAWData mydata, map<int,int> RPCChMap, Infrastructure GIFInfra){
+    TH1F *tmpTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+
+    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
+        for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
+            for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
+                tmpTimeProfile[tr][sl][p] = new TH1F("tmpTProf","tmpTProf",BMTDCWINDOW/10.,0.,BMTDCWINDOW);
+            }
+        }
+    }
+
+    for ( unsigned int i = 0; i < mytree->GetEntries(); i++ ) {
+        mytree->GetEntry(i);
+
+        for ( unsigned int h = 0; h < mydata.TDCNHits; h++ ) {
+        //Loop over the TDC hits
+
+            RPCHit tmpHit;//Get rid of the noise hits outside of the connected channels
+            if(mydata.TDCCh->at(h) > 5127) continue;
+            if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
+
+            //Get rid of the noise hits in the ground channels of KODEL chambers
+
+            SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
+            tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
+        }
+    }
+
+    //Fit with a gaussian the "Good TDC Time"
+    TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);//Fit function (gaussian)
+
+    slicefit->SetParameter(0,50);                       	//Amplitude
+    slicefit->SetParLimits(0,1,100000);
+
+    slicefit->SetParameter(1,300);                          //Mean value
+    slicefit->SetParLimits(1,260,340);
+
+    slicefit->SetParameter(2,20);                           //RMS
+    slicefit->SetParLimits(2,1,40);
+
+    //Loop over RPCs
+    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
+        for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
+            for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
+                tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
+                PeakTime[tr][sl][p] = slicefit->GetParameter(1);
+                PeakWidth[tr][sl][p] = 2.*slicefit->GetParameter(2);
+            }
+        }
+    }
 }
 
 // ****************************************************************************************************

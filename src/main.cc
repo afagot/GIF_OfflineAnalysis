@@ -10,12 +10,12 @@
 // *    22/04/2016
 //***************************************************************
 
+#include <sstream>
+#include <string>
 
 #include "../include/NoiseRate.h"
 #include "../include/Current.h"
 #include "../include/MsgSvc.h"
-
-#include <sstream>
 
 using namespace std;
 
