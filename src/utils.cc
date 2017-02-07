@@ -304,25 +304,37 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 //Set the beam time window
 void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                     float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS],
-                    TTree* mytree, RAWData mydata, map<int,int> RPCChMap, Infrastructure GIFInfra){
+                    TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
+    RAWData mydata;
+
+    mydata.TDCCh = new vector<unsigned int>;
+    mydata.TDCTS = new vector<float>;
+    mydata.TDCCh->clear();
+    mydata.TDCTS->clear();
+
+    mytree->SetBranchAddress("EventNumber",    &mydata.iEvent);
+    mytree->SetBranchAddress("number_of_hits", &mydata.TDCNHits);
+    mytree->SetBranchAddress("TDC_channel",    &mydata.TDCCh);
+    mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
+
     TH1F *tmpTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
 
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++)
         for(unsigned int sl = 0; sl < NSLOTS; sl++)
-            for(unsigned int p = 0; p < NPARTITIONS;p++)
-                tmpTimeProfile[tr][sl][p] = new TH1F("tmpTProf","tmpTProf",BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+            for(unsigned int p = 0; p < NPARTITIONS; p++){
+                string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
+                tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+    }
 
-    for ( unsigned int i = 0; i < mytree->GetEntries(); i++ ) {
+    for(unsigned int i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
-        for ( unsigned int h = 0; h < mydata.TDCNHits; h++ ) {
-        //Loop over the TDC hits
+        for(int h = 0; h < mydata.TDCNHits; h++){
+            RPCHit tmpHit;
 
-            RPCHit tmpHit;//Get rid of the noise hits outside of the connected channels
+            //Get rid of the noise hits outside of the connected channels
             if(mydata.TDCCh->at(h) > 5127) continue;
             if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
-
-            //Get rid of the noise hits in the ground channels of KODEL chambers
 
             SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
             tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
@@ -332,24 +344,26 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     //Fit with a gaussian the "Good TDC Time"
     TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);//Fit function (gaussian)
 
-    slicefit->SetParameter(0,50);                       	//Amplitude
-    slicefit->SetParLimits(0,1,100000);
-
-    slicefit->SetParameter(1,300);                          //Mean value
-    slicefit->SetParLimits(1,260,340);
-
-    slicefit->SetParameter(2,20);                           //RMS
-    slicefit->SetParLimits(2,1,40);
-
     //Loop over RPCs
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
         for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
             for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
+                slicefit->SetParameter(0,50);      //Amplitude
+                slicefit->SetParLimits(0,1,100000);
+
+                slicefit->SetParameter(1,300);     //Mean value
+                slicefit->SetParLimits(1,260,340);
+
+                slicefit->SetParameter(2,20);      //RMS
+                slicefit->SetParLimits(2,1,40);
+
+                if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.)
+                    tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
+
                 PeakTime[tr][sl][p] = slicefit->GetParameter(1);
                 PeakWidth[tr][sl][p] = 2.*slicefit->GetParameter(2);
 
-                cout << "Peak at " << PeakTime[tr][sl][p] << "ns with RMS " << PeakWidth[tr][sl][p] << "ns\n";
+                delete tmpTimeProfile[tr][sl][p];
             }
         }
     }

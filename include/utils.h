@@ -84,8 +84,8 @@ void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 
 //Data in the root file
 struct RAWData {
-    unsigned int            iEvent;     //Event i
-    unsigned int            TDCNHits;   //Number of hits in event i
+    int            iEvent;     //Event i
+    int            TDCNHits;   //Number of hits in event i
     vector<unsigned int>   *TDCCh;      //List of channels giving hits per event
     vector<float>          *TDCTS;      //List of the corresponding time stamps
 };
@@ -104,7 +104,7 @@ struct RPCHit {
 };
 
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
-void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS], float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS], TTree* mytree, RAWData mydata, map<int, int> RPCChMap, Infrastructure GIFInfra);
+void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS], float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS], TTree* mytree, map<int, int> RPCChMap, Infrastructure GIFInfra);
 bool SortStrips ( RPCHit A, RPCHit B );
 int GetPartition( int strip );
 void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);

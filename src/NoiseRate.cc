@@ -14,6 +14,7 @@
 // *    22/04/2016
 //***************************************************************
 
+#include <iostream>
 #include <cstdlib>
 #include <fstream>
 #include <vector>
@@ -88,17 +89,6 @@ void GetNoiseRate(string baseName){
 
     if(dataFile.IsOpen()){
         TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-        RAWData data;
-
-        data.TDCCh = new vector<unsigned int>;
-        data.TDCTS = new vector<float>;
-        data.TDCCh->clear();
-        data.TDCTS->clear();
-
-        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
         //First open the RunParameters TTree from the dataFile
         //Then link a string to the branch corresponding to the beam
@@ -138,7 +128,21 @@ void GetNoiseRate(string baseName){
         float GOODTDCTIME[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
         float GOODTDC2SIG[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
 
-        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(GOODTDCTIME,GOODTDC2SIG,dataTree,data,RPCChMap,GIFInfra);
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(GOODTDCTIME,GOODTDC2SIG,dataTree,RPCChMap,GIFInfra);
+
+        //****************** LINK RAW DATA *******************************
+
+        RAWData data;
+
+        data.TDCCh = new vector<unsigned int>;
+        data.TDCTS = new vector<float>;
+        data.TDCCh->clear();
+        data.TDCTS->clear();
+
+        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
         //****************** HISTOGRAMS & CANVAS *************************
 
@@ -296,8 +300,7 @@ void GetNoiseRate(string baseName){
             dataTree->GetEntry(i);
 
             //Loop over the TDC hits
-            for(unsigned int h = 0; h < data.TDCNHits; h++){
-
+            for(int h = 0; h < data.TDCNHits; h++){
                 RPCHit hit;
 
                 //Get rid of the noise hits outside of the connected channels
