@@ -81,6 +81,13 @@ void GetNoiseRate(string baseName){
     string daqName = baseName + "_DAQ.root";
     string caenName = baseName + "_CAEN.root";
 
+    //****************** CAEN ROOT FILE ******************************
+
+    //input CAEN ROOT data file containing the values of the HV eff for
+    //every HV step
+    TFile caenFile(caenName.c_str());
+    TH1F *HVeff[NTROLLEYS][NSLOTS];
+
     //****************** DAQ ROOT FILE *******************************
 
     //input ROOT data file containing the RAWData TTree that we'll
@@ -90,24 +97,8 @@ void GetNoiseRate(string baseName){
     if(dataFile.IsOpen()){
         TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
 
-        //First open the RunParameters TTree from the dataFile
-        //Then link a string to the branch corresponding to the beam
-        //status and get the entry
-        //Convention : ON = beam trigger , OFF = Random trigger
-        TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
-        TString* RunType = new TString();
-        RunParameters->SetBranchAddress("RunType",&RunType);
-        RunParameters->GetEntry(0);
-
         //Then get the HVstep number from the ID histogram
         string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
-
-        //****************** CAEN ROOT FILE ******************************
-
-        //input CAEN ROOT data file containing the values of the HV eff for
-        //every HV step
-        TFile caenFile(caenName.c_str());
-        TH1F *HVeff[NTROLLEYS][NSLOTS];
 
         //****************** GEOMETRY ************************************
 
@@ -124,6 +115,15 @@ void GetNoiseRate(string baseName){
         map<int,int> RPCChMap = TDCMapping(daqName);
 
         //****************** PEAK TIME ***********************************
+
+        //First open the RunParameters TTree from the dataFile
+        //Then link a string to the branch corresponding to the beam
+        //status and get the entry
+        //Convention : ON = beam trigger , OFF = Random trigger
+        TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
+        TString* RunType = new TString();
+        RunParameters->SetBranchAddress("RunType",&RunType);
+        RunParameters->GetEntry(0);
 
         float GOODTDCTIME[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
         float GOODTDC2SIG[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};

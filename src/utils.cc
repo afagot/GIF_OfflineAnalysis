@@ -342,7 +342,7 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     }
 
     //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);//Fit function (gaussian)
+    TF1 *slicefit = new TF1("slicefit","gaus(0)+[3]",250.,350.);//Fit function (gaussian)
 
     //Loop over RPCs
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
@@ -356,6 +356,9 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
 
                 slicefit->SetParameter(2,20);      //RMS
                 slicefit->SetParLimits(2,1,40);
+
+                slicefit->SetParameter(3,10);      //Background offset
+                slicefit->SetParLimits(3,0,100000);
 
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.)
                     tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
