@@ -13,6 +13,7 @@
 // *    22/04/2016
 //***************************************************************
 
+#include <cstdlib>
 #include <sstream>
 #include <ctime>
 #include <fstream>
@@ -306,13 +307,10 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                     TTree* mytree, RAWData mydata, map<int,int> RPCChMap, Infrastructure GIFInfra){
     TH1F *tmpTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
 
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
-        for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
-            for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                tmpTimeProfile[tr][sl][p] = new TH1F("tmpTProf","tmpTProf",BMTDCWINDOW/10.,0.,BMTDCWINDOW);
-            }
-        }
-    }
+    for(unsigned int tr = 0; tr < NTROLLEYS; tr++)
+        for(unsigned int sl = 0; sl < NSLOTS; sl++)
+            for(unsigned int p = 0; p < NPARTITIONS;p++)
+                tmpTimeProfile[tr][sl][p] = new TH1F("tmpTProf","tmpTProf",BMTDCWINDOW/20.,0.,BMTDCWINDOW);
 
     for ( unsigned int i = 0; i < mytree->GetEntries(); i++ ) {
         mytree->GetEntry(i);
@@ -350,6 +348,8 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                 tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
                 PeakTime[tr][sl][p] = slicefit->GetParameter(1);
                 PeakWidth[tr][sl][p] = 2.*slicefit->GetParameter(2);
+
+                cout << "Peak at " << PeakTime[tr][sl][p] << "ns with RMS " << PeakWidth[tr][sl][p] << "ns\n";
             }
         }
     }
