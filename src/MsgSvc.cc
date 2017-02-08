@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    GIF OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -12,7 +12,7 @@
 // *    Nir Amram on 21/06/2010
 // *
 // *    Developped by : Alexis Fagot
-// *    29/01/2015
+// *    07/03/2017
 //***************************************************************
 
 #include <iostream>

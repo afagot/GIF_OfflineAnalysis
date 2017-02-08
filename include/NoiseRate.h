@@ -2,7 +2,7 @@
 #define NOISERATE_H
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    GIF OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -14,7 +14,7 @@
 // *    homogeneity.
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
 #include <string>
