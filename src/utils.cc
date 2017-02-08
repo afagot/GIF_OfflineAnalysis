@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    904 OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -10,10 +10,23 @@
 // *    and structures (used for the GIF layout definition).
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
-#include <cmath>
+#include <cstdlib>
+#include <sstream>
+#include <ctime>
+#include <fstream>
+#include <cstdio>
+#include <map>
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TH1F.h"
+#include "TF1.h"
+#include "TStyle.h"
+#include "THistPainter.h"
+
 #include "../include/utils.h"
 
 using namespace std;
@@ -39,11 +52,11 @@ bool existFile(string ROOTName){
 //  Function that casts a char into an int
 // ****************************************************************************************************
 
-int CharToInt(char &C){
+unsigned int CharToInt(char &C){
     stringstream ss;
     ss << C;
 
-    int I;
+    unsigned int I;
     ss >> I;
     return I;
 }
@@ -255,6 +268,79 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
     Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
     Hit.TimeStamp   = TimeStamp;
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Set the beam time window
+void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[NSLOTS][NPARTITIONS],
+                    TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
+    RAWData mydata;
+
+    mydata.TDCCh = new vector<unsigned int>;
+    mydata.TDCTS = new vector<float>;
+    mydata.TDCCh->clear();
+    mydata.TDCTS->clear();
+
+    mytree->SetBranchAddress("EventNumber",    &mydata.iEvent);
+    mytree->SetBranchAddress("number_of_hits", &mydata.TDCNHits);
+    mytree->SetBranchAddress("TDC_channel",    &mydata.TDCCh);
+    mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
+
+    TH1F *tmpTimeProfile[NSLOTS][NPARTITIONS];
+
+    for(unsigned int sl = 0; sl < NSLOTS; sl++)
+        for(unsigned int p = 0; p < NPARTITIONS; p++){
+            string name = "tmpTProf" + intToString(sl) +  intToString(p);
+            tmpTimeProfile[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+    }
+
+    for(unsigned int i = 0; i < mytree->GetEntries(); i++){
+        mytree->GetEntry(i);
+
+        for(int h = 0; h < mydata.TDCNHits; h++){
+            RPCHit tmpHit;
+
+            //Get rid of the noise hits outside of the connected channels
+            if(mydata.TDCCh->at(h) > 5127) continue;
+            if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
+
+            SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
+            tmpTimeProfile[tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
+        }
+    }
+
+    //Fit with a gaussian the "Good TDC Time"
+    TF1 *slicefit = new TF1("slicefit","gaus(0)+[3]",250.,350.);//Fit function (gaussian)
+
+    //Loop over RPCs
+    for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
+        for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
+            slicefit->SetParameter(0,50);      //Amplitude
+            slicefit->SetParLimits(0,1,100000);
+
+            slicefit->SetParameter(1,300);     //Mean value
+            slicefit->SetParLimits(1,260,340);
+
+            slicefit->SetParameter(2,20);      //RMS
+            slicefit->SetParLimits(2,1,40);
+
+            slicefit->SetParameter(3,10);      //Background offset
+            slicefit->SetParLimits(3,0,100000);
+
+            if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
+                tmpTimeProfile[sl][p]->Fit(slicefit,"QR");
+
+            PeakTime[sl][p] = slicefit->GetParameter(1);
+            PeakWidth[sl][p] = 2.*slicefit->GetParameter(2);
+
+            delete tmpTimeProfile[sl][p];
+        }
+    }
 }
 
 // ****************************************************************************************************

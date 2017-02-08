@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    904 OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -9,19 +9,18 @@
 // *    Current extraction from Scan_00XXXX_HVX_CAEN.root files
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
-#include "../include/Current.h"
-#include "../include/utils.h"
-#include "../include/MsgSvc.h"
+#include <fstream>
 
 #include "TFile.h"
-#include "TH1.h"
+#include "TH1F.h"
 
-#include <vector>
-#include <cmath>
-#include <cstdlib>
+#include "../include/MsgSvc.h"
+#include "../include/IniFile.h"
+#include "../include/Current.h"
+#include "../include/utils.h"
 
 using namespace std;
 

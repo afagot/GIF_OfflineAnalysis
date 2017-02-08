@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    904 OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates and currents.
@@ -7,15 +7,15 @@
 // *    main.cc
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
+#include <sstream>
+#include <string>
 
 #include "../include/NoiseRate.h"
 #include "../include/Current.h"
 #include "../include/MsgSvc.h"
-
-#include <sstream>
 
 using namespace std;
 

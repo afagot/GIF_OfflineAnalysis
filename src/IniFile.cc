@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    904 OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -12,16 +12,15 @@
 // *    This file was originally developped for the GIF_DAQ.
 // *
 // *    Developped by : Alexis Fagot
-// *    29/01/2015
+// *    07/03/2017
 //***************************************************************
 
-#include <iostream>
-#include <cstdlib>
-#include <fstream>
 #include <sstream>
+#include <fstream>
 
 #include "../include/IniFile.h"
 #include "../include/MsgSvc.h"
+#include "../include/utils.h"
 
 using namespace std;
 
@@ -134,9 +133,6 @@ int IniFile::Read(){
             }
         }
     }
-
-//    for(IniFileDataIter Iter = FileData.begin(); Iter != FileData.end(); Iter++)
-//        cout << "[Offline-Inifile]: " << Iter->first << " = " << Iter->second << endl;
 
     return Error;
 }

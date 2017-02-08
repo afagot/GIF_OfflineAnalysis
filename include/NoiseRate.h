@@ -2,7 +2,7 @@
 #define NOISERATE_H
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    904 OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -14,12 +14,13 @@
 // *    homogeneity.
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
-#include "utils.h"
-#include "TTree.h"
-#include "IniFile.h"
+#include <string>
+#include <map>
+
+using namespace std;
 
 string          GetBaseName(string fName);
 string          GetSavePath(string baseName, string stepID);
