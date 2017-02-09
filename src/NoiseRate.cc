@@ -314,9 +314,11 @@ void GetNoiseRate(string baseName){
                     bool latenoiserange     = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
 
                     //Fill the hits inside of the defined noise range
-                    if(earlynoiserange || latenoiserange)
+                    if(earlynoiserange || latenoiserange){
                         NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                    else if(peakrange)
+                        StripActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        ChipActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    } else if(peakrange)
                         BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
                     //Reject the 100 first and last ns due to inhomogeneity of data
@@ -388,8 +390,7 @@ void GetNoiseRate(string baseName){
                 unsigned int nStripsRPC  = 0;
                 float        RPCarea     = 0.;
                 float        MeanRPCRate = 0.;
-                float        MeanRPCRMS  = 0.;
-                float        MeanRPCErr  = 0.;
+                float        MeanRPCSDev = 0.;
 
                 for (unsigned int p = 0; p < nPartRPC; p++){
                     string partID = "ABCD";
@@ -430,29 +431,28 @@ void GetNoiseRate(string baseName){
                     //Write in the output file the mean noise rate per
                     //partition and its error defined as twice the RMS
                     //over the sqrt of the number of events
-                    float MeanPartRate  = StripMeanNoiseProf_H[trolley][slot][p]->GetMean();
-                    float MeanPartRMS   = StripMeanNoiseProf_H[trolley][slot][p]->GetRMS();
-                    float MeanPartErr   = MeanPartRMS/sqrt(nStripsPart-1);
-                    outputCSV << MeanPartRate << '\t' << MeanPartErr << '\t';
+                    float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H[trolley][slot][p]);
+                    float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[trolley][slot][p]);
+                    outputCSV << MeanPartRate << '\t' << MeanPartSDev << '\t';
 
                     //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
                     //The closer the homogeneity is to 1 the more homogeneus, the closer
                     //the homogeneity is to 0 the less homogeneous.
                     //This gives idea about noisy strips and dead strips.
-                    float strip_homog = exp(-MeanPartRMS/MeanPartRate);
+                    float strip_homog = exp(-MeanPartSDev/MeanPartRate);
                     StripHomogeneity_H[trolley][slot][p]->Fill(0.,strip_homog);
 
                     //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
-                    float ChipRMSMean = ChipMeanNoiseProf_H[trolley][slot][p]->GetRMS();
+                    float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H[trolley][slot][p]);
 
-                    float chip_homog = exp(-ChipRMSMean/MeanPartRate);
+                    float chip_homog = exp(-ChipStDevMean/MeanPartRate);
                     ChipHomogeneity_H[trolley][slot][p]->Fill(0.,chip_homog);
 
                     //Push the partition results into the chamber level
-                    nStripsRPC   += nStripsPart;
+                    nStripsRPC  += nStripsPart;
                     RPCarea     += stripArea * nStripsPart;
                     MeanRPCRate += MeanPartRate * stripArea * nStripsPart;
-                    MeanRPCRMS  += MeanPartRMS * stripArea * nStripsPart;
+                    MeanRPCSDev += MeanPartSDev * stripArea * nStripsPart;
 
                     //Draw and write the histograms into the output ROOT file
                     //********************************* General histograms
@@ -490,8 +490,7 @@ void GetNoiseRate(string baseName){
 
                 //Finalise the calculation of the chamber rate
                 MeanRPCRate /= RPCarea;
-                MeanRPCRMS  /= RPCarea;
-                MeanRPCErr   = MeanRPCRMS/sqrt(nStripsRPC-1);
+                MeanRPCSDev /= RPCarea;
 
                 //Write the header file
                 listCSV << "Rate-"
@@ -501,7 +500,7 @@ void GetNoiseRate(string baseName){
                         << "-TOT_err\t";
 
                 //Write the output file
-                outputCSV << MeanRPCRate << '\t' << MeanRPCErr << '\t';
+                outputCSV << MeanRPCRate << '\t' << MeanRPCSDev << '\t';
             }
         }
         listCSV << '\n';

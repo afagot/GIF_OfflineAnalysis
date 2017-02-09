@@ -400,6 +400,46 @@ int GetPartition( int strip ) {
 //
 // ****************************************************************************************************
 
+//Get mean of 1D histograms
+float GetTH1Mean(TH1* H){
+    int nBins = H->GetNbinsX();
+    float mean = 0.;
+
+    for(int b = 1; b <= nBins; b++) mean += H->GetBinContent(b);
+
+    mean /= (float)nBins;
+
+    return mean;
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Get standard deviation of 1D histograms
+float GetTH1StdDev(TH1* H){
+    int nBins = H->GetNbinsX();
+    float mean = GetTH1Mean(H);
+    float stddev = 0.;
+    float variance = 0.;
+
+    for(int b = 1; b <= nBins; b++)
+        variance += (H->GetBinContent(b)-mean)*(H->GetBinContent(b)-mean);
+
+    stddev = sqrt(variance/nBins);
+
+    return stddev;
+}
+
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
 //Draw 1D histograms
 void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option){
     C->cd(0);
