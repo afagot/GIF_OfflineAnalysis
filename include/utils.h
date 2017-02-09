@@ -40,6 +40,7 @@ const unsigned int NPARTITIONS       = 4;
 const unsigned int NSTRIPSRPC        = 128;
 const unsigned int NSTRIPSPART       = 48;
 const unsigned int NSTRIPSCONN       = 16;
+const unsigned int NSTRIPSCHIP       = 8;
 
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
