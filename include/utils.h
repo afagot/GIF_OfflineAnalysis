@@ -39,6 +39,7 @@ const unsigned int NPARTITIONS       = 4;
 const unsigned int NSTRIPSRPC        = 128;
 const unsigned int NSTRIPSPART       = 48;
 const unsigned int NSTRIPSCONN       = 16;
+const unsigned int NSTRIPSCHIP       = 8;
 
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
@@ -93,11 +94,13 @@ struct RPCHit {
     float           TimeStamp;  //TDC time stamp
 };
 
-void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
-void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[NSLOTS][NPARTITIONS], TTree* mytree, map<int, int> RPCChMap, Infrastructure GIFInfra);
-bool SortStrips ( RPCHit A, RPCHit B );
-int GetPartition( int strip );
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
+void  SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void  SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[NSLOTS][NPARTITIONS], TTree* mytree, map<int, int> RPCChMap, Infrastructure GIFInfra);
+bool  SortStrips ( RPCHit A, RPCHit B );
+int   GetPartition( int strip );
+float GetTH1Mean(TH1* H);
+float GetTH1StdDev(TH1* H);
+void  DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
+void  DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
 
 #endif // UTILS_H

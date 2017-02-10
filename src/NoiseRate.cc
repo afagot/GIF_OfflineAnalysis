@@ -125,10 +125,10 @@ void GetNoiseRate(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
-        float GOODTDCTIME[NSLOTS][NPARTITIONS] = {{0.}};
-        float GOODTDC2SIG[NSLOTS][NPARTITIONS] = {{0.}};
+        float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
+        float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
 
-        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(GOODTDCTIME,GOODTDC2SIG,dataTree,RPCChMap,GIFInfra);
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
 
         //****************** LINK RAW DATA *******************************
 
@@ -146,19 +146,18 @@ void GetNoiseRate(string baseName){
 
         //****************** HISTOGRAMS & CANVAS *************************
 
-        TH1I     *StripHitProf_H[NSLOTS][NPARTITIONS];
-        TH2F     *StripInstNoiseMap_H[NSLOTS][NPARTITIONS];
-        TProfile *StripMeanNoiseProf_H[NSLOTS][NPARTITIONS];
-        TH1F     *StripActivity_H[NSLOTS][NPARTITIONS];
-        TH1F     *StripHomogeneity_H[NSLOTS][NPARTITIONS];
-        TH1I     *BeamProf_H[NSLOTS][NPARTITIONS];
-        TH1F     *TimeProfile_H[NSLOTS][NPARTITIONS];
-        TH1I     *HitMultiplicity_H[NSLOTS][NPARTITIONS];
-        TH1I     *ChipHitProf_H[NSLOTS][NPARTITIONS];
-        TH2F     *ChipInstNoiseMap_H[NSLOTS][NPARTITIONS];
-        TProfile *ChipMeanNoiseProf_H[NSLOTS][NPARTITIONS];
-        TH1F     *ChipActivity_H[NSLOTS][NPARTITIONS];
-        TH1F     *ChipHomogeneity_H[NSLOTS][NPARTITIONS];
+        TH1I *BeamProf_H[NSLOTS][NPARTITIONS];
+        TH1I *NoiseProf_H[NSLOTS][NPARTITIONS];
+        TH1F *TimeProfile_H[NSLOTS][NPARTITIONS];
+        TH1I *HitMultiplicity_H[NSLOTS][NPARTITIONS];
+        TH1I *StripHitProf_H[NSLOTS][NPARTITIONS];
+        TH1F *StripMeanNoiseProf_H[NSLOTS][NPARTITIONS];
+        TH1F *StripActivity_H[NSLOTS][NPARTITIONS];
+        TH1F *StripHomogeneity_H[NSLOTS][NPARTITIONS];
+        TH1I *ChipHitProf_H[NSLOTS][NPARTITIONS];
+        TH1F *ChipMeanNoiseProf_H[NSLOTS][NPARTITIONS];
+        TH1F *ChipActivity_H[NSLOTS][NPARTITIONS];
+        TH1F *ChipHomogeneity_H[NSLOTS][NPARTITIONS];
 
         char hisname[50];                    //ID name of the histogram
         char histitle[50];                   //Title of the histogram
@@ -208,17 +207,10 @@ void GetNoiseRate(string baseName){
                 float highBin = (float)nBinsMult + lowBin;
 
                 //Noise rate bin size depending on the strip surface
-                float stripArea = GIFInfra.RPCs[s].stripGeo[p];
-                float binWidth = 1.;
                 float timeWidth = 1.;
 
-                if(RunType->CompareTo("efficiency") == 0){
-                    binWidth = 1./(BMNOISEWDW*1e-9*stripArea);
-                    timeWidth = BMTDCWINDOW;
-                } else if(RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("test") == 0){
-                    binWidth = 1./(RDMTDCWINDOW*1e-9*stripArea);
-                    timeWidth = RDMTDCWINDOW;
-                }
+                if(RunType->CompareTo("efficiency") == 0) timeWidth = BMTDCWINDOW;
+                else timeWidth = RDMTDCWINDOW;
 
                 //Initialisation of the histograms
 
@@ -227,6 +219,10 @@ void GetNoiseRate(string baseName){
                 //Beam profile
                 SetTitleName(rpcID,p,hisname,histitle,"Beam_Profile","Beam profile");
                 BeamProf_H[slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+
+                //Noise profile
+                SetTitleName(rpcID,p,hisname,histitle,"Noise_Profile","Noise profile");
+                NoiseProf_H[slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
 
                 //Time profile
                 SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
@@ -242,13 +238,9 @@ void GetNoiseRate(string baseName){
                 SetTitleName(rpcID,p,hisname,histitle,"Strip_Hit_Profile","Strip hit profile");
                 StripHitProf_H[slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
 
-                //Instantaneous noise rate 2D map
-                SetTitleName(rpcID,p,hisname,histitle,"Strip_Instant_Noise_Map","Strip instantaneous noise rate map");
-                StripInstNoiseMap_H[slot][p] = new TH2F( hisname, histitle, nStrips, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
-
                 //Mean noise rate profile
                 SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
-                StripMeanNoiseProf_H[slot][p] = new TProfile( hisname, histitle, nStrips, low_s, high_s);
+                StripMeanNoiseProf_H[slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
 
                 //Strip activity
                 SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
@@ -264,13 +256,9 @@ void GetNoiseRate(string baseName){
                 SetTitleName(rpcID,p,hisname,histitle,"Chip_Hit_Profile","Chip hit profile");
                 ChipHitProf_H[slot][p] = new TH1I( hisname, histitle, nStrips/8, low_s, high_s);
 
-                //Instantaneous noise rate 2D map
-                SetTitleName(rpcID,p,hisname,histitle,"Chip_Instant_Noise_Map","Chip instantaneous noise rate map");
-                ChipInstNoiseMap_H[slot][p] = new TH2F( hisname, histitle, nStrips/8, low_s, high_s, nBinsMult, lowBin*binWidth, highBin*binWidth);
-
                 //Mean noise rate profile
                 SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
-                ChipMeanNoiseProf_H[slot][p] = new TProfile( hisname, histitle, nStrips/8, low_s, high_s);
+                ChipMeanNoiseProf_H[slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
 
                 //Strip activity
                 SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
@@ -286,7 +274,6 @@ void GetNoiseRate(string baseName){
 
         //Tabel to count the hits in every chamber partitions - used to
         //compute the noise rate
-        int NHitsPerStrip[NSLOTS][NSTRIPSRPC] = { {0} };
         int Multiplicity[NSLOTS][NPARTITIONS] = { {0} };
 
         unsigned int nEntries = dataTree->GetEntries();
@@ -305,26 +292,30 @@ void GetNoiseRate(string baseName){
                 SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
                 if(RunType->CompareTo("efficiency") == 0){
-                    float lowlimit = GOODTDCTIME[hit.Station-1][hit.Strip-1]
-                            - GOODTDC2SIG[hit.Station-1][hit.Strip-1];
-                    float highlimit = GOODTDCTIME[hit.Station-1][hit.Strip-1]
-                            + GOODTDC2SIG[hit.Station-1][hit.Strip-1];
+                    //First define the accepted peak time range
+                    float lowlimit = PeakMeanTime[hit.Station-1][hit.Strip-1]
+                            - PeakSpread[hit.Station-1][hit.Strip-1];
+                    float highlimit = PeakMeanTime[hit.Station-1][hit.Strip-1]
+                            + PeakSpread[hit.Station-1][hit.Strip-1];
 
-                    //Count the number of hits outside the peak
-                    bool earlyhit = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
-                    bool intimehit = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
-                    bool latehit = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
+                    bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
-                    if(earlyhit || latehit)
-                        NHitsPerStrip[hit.Station-1][hit.Strip-1]++;
-                    else if(intimehit)
+                    //Define also the ranges used for the noise calculation
+                    bool earlynoiserange = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
+                    bool latenoiserange  = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
+
+                    //Fill the hits inside of the defined noise range
+                    if(earlynoiserange || latenoiserange){
+                        NoiseProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        StripActivity_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        ChipActivity_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    } else if(peakrange)
                         BeamProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
                     //Reject the 100 first and last ns due to inhomogeneity of data
                     bool rejected = (hit.TimeStamp < 100. || hit.TimeStamp > RDMTDCWINDOW-100.);
 
-                    if(!rejected)
-                        NHitsPerStrip[hit.Station-1][hit.Strip-1]++;
+                    if(!rejected) NoiseProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 }
 
                 //Fill the profiles
@@ -334,40 +325,15 @@ void GetNoiseRate(string baseName){
                 Multiplicity[hit.Station-1][hit.Partition-1]++;
             }
 
-            //** INSTANTANEOUS NOISE RATE ********************************
+            //********** MULTIPLICITY ************************************
 
             for(unsigned int sl=0; sl<nSlots; sl++){
-                unsigned int nStripsPart = GIFInfra.RPCs[sl].strips;
-                unsigned int nStripsSlot = nStripsPart * GIFInfra.RPCs[sl].nPartitions;
+                unsigned int nPartRPC = GIFInfra.RPCs[sl].nPartitions;
                 unsigned int slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
-                    for(unsigned int st=0; st<nStripsSlot; st++){
-                        //Partition
-                        int p = st/nStripsPart;
-
-                    //Get the strip geometry
-                    float stripArea = GIFInfra.RPCs[sl].stripGeo[p];
-
-                    //Get the instaneous noise by normalise the hit count to the
-                    //time window length in seconds and to the strip surface
-                    float InstantNoise = 0.;
-
-                    if(RunType->CompareTo("noise_reference") == 0 || RunType->CompareTo("test") == 0)
-                        InstantNoise = (float)NHitsPerStrip[slot][st]/(RDMTDCWINDOW*1e-9*stripArea);
-                    else if (RunType->CompareTo("efficiency") == 0)
-                        InstantNoise = (float)NHitsPerStrip[slot][st]/(BMNOISEWDW*1e-9*stripArea);
-
-                    StripInstNoiseMap_H[slot][p]->Fill(st+1,InstantNoise);
-                    ChipInstNoiseMap_H[slot][p]->Fill(st+1,InstantNoise);
-
-                    //Reinitialise the hit count for strip s
-                    NHitsPerStrip[slot][st] = 0;
-
-                    //Fill the multiplicity for this event
-                    if(st%nStripsPart == 0){
-                        HitMultiplicity_H[slot][p]->Fill(Multiplicity[slot][p]);
-                        Multiplicity[slot][p] = 0;
-                    }
+                for (unsigned int p = 0; p < nPartRPC; p++){
+                    HitMultiplicity_H[slot][p]->Fill(Multiplicity[slot][p]);
+                    Multiplicity[slot][p] = 0;
                 }
             }
         }
@@ -404,6 +370,13 @@ void GetNoiseRate(string baseName){
             //Write the header file
             listCSV << "HVeff-" << GIFInfra.RPCs[sl].name << '\t';
 
+            //Get the total chamber rate
+            //we need to now the total chamber surface (sum active areas)
+            unsigned int nStripsRPC  = 0;
+            float        RPCarea     = 0.;
+            float        MeanRPCRate = 0.;
+            float        MeanRPCSDev = 0.;
+
             for (unsigned int p = 0; p < nPartRPC; p++){
                 string partID = "ABCD";
                 //Write the header file
@@ -415,80 +388,63 @@ void GetNoiseRate(string baseName){
                         << "-" << partID[p]
                         << "_err\t";
 
-                //Project the histograms along the X-axis to get the
-                //mean noise profile on the strips and chips
-                StripMeanNoiseProf_H[slot][p] = StripInstNoiseMap_H[slot][p]->ProfileX();
-                ChipMeanNoiseProf_H[slot][p] = ChipInstNoiseMap_H[slot][p]->ProfileX();
+                //Get the mean noise on the strips and chips using the noise hit
+                //profile. Normalise the number of hits in each bin by the integrated
+                //time and the strip sruface (counts/s/cm2)
+                float normalisation = 0.;
 
-                //Get the chamber ID in terms of slot position SX
-                //To rename the TProfiles since the projection gives them the
-                //attributes of the projected TH2
-                string rpcID = "S" + intToString(sl+1);
+                //Get the strip geometry
+                float stripArea = GIFInfra.RPCs[sl].stripGeo[p];
 
-                SetTitleName(rpcID,p,histitle,histitle,"Strip_Mean_Noise","Strip Mean Noise");
-                StripMeanNoiseProf_H[slot][p]->SetNameTitle(histitle,histitle);
+                if(RunType->CompareTo("efficiency") == 0)
+                    normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
+                else if(RunType->CompareTo("efficiency") != 0)
+                    normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
-                SetTitleName(rpcID,p,histitle,histitle,"Chiip_Mean_Noise","Chip Mean Noise");
-                ChipMeanNoiseProf_H[slot][p]->SetNameTitle(histitle,histitle);
+                unsigned int nStripsPart = GIFInfra.RPCs[sl].strips;
+
+                for(unsigned int st = 1; st <= nStripsPart; st++){
+                    float stripRate = NoiseProf_H[slot][p]->GetBinContent(st)/normalisation;
+
+                    StripMeanNoiseProf_H[slot][p]->Fill(st,stripRate);
+
+                    //The chip rate only is incremented by a rate that is
+                    //normalised to the number of strip per chip
+                    ChipMeanNoiseProf_H[slot][p]->Fill(st,stripRate/NSTRIPSCHIP);
+                }
 
                 //Write in the output file the mean noise rate per
                 //partition and its error defined as twice the RMS
                 //over the sqrt of the number of events
-                float MeanNoiseRate = StripInstNoiseMap_H[slot][p]->ProjectionY()->GetMean();
-                float StripRMSMean = StripInstNoiseMap_H[slot][p]->ProjectionY()->GetRMS();
-                float ErrorMean = 2*StripRMSMean/sqrt(nEntries);
-                outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
-
-                //Get the activity of each strip defined as the mean noise rate
-                //the strip normalised to the mean rate of the partition it
-                //belongs too. This way, it is possible to keep track of the
-                //apparition of noisy strips and/or dead strips.
-                unsigned int nStripsPart = GIFInfra.RPCs[sl].strips;
-
-                for(unsigned int st = 0; st < nStripsPart; st++){
-                    //Extract the noise for each strip
-                    float StripNoiseRate = StripMeanNoiseProf_H[slot][p]->GetBinContent(st+1);
-                    float ErrorStripRate = StripMeanNoiseProf_H[slot][p]->GetBinError(st+1);
-
-                    //Get the strip activity
-                    float StripActivity = StripNoiseRate / MeanNoiseRate;
-                    float ErrorStripAct = StripActivity*(ErrorStripRate/StripNoiseRate + ErrorMean/MeanNoiseRate);
-
-                    //Fill the histogram using SetBin methods (to set the error as well)
-                    StripActivity_H[slot][p]->SetBinContent(st+1,StripActivity);
-                    StripActivity_H[slot][p]->SetBinError(st+1,ErrorStripAct);
-
-                    //Extract the noise for each Chip
-                    float ChipNoiseRate = ChipMeanNoiseProf_H[slot][p]->GetBinContent(st+1);
-                    float ErrorChipRate = ChipMeanNoiseProf_H[slot][p]->GetBinError(st+1);
-
-                    //Get the chip activity
-                    float ChipActivity = ChipNoiseRate / MeanNoiseRate;
-                    float ErrorChipAct = ChipActivity*(ErrorChipRate/ChipNoiseRate + ErrorMean/MeanNoiseRate);
-
-                    //Fill the histogram using SetBin methods (to set the error as well)
-                    ChipActivity_H[slot][p]->SetBinContent(st+1,ChipActivity);
-                    ChipActivity_H[slot][p]->SetBinError(st+1,ErrorChipAct);
-                }
+                float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H[slot][p]);
+                float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[slot][p]);
+                outputCSV << MeanPartRate << '\t' << MeanPartSDev << '\t';
 
                 //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
                 //The closer the homogeneity is to 1 the more homogeneus, the closer
                 //the homogeneity is to 0 the less homogeneous.
                 //This gives idea about noisy strips and dead strips.
-                float strip_homog = exp(-StripRMSMean/MeanNoiseRate);
+                float strip_homog = exp(-MeanPartSDev/MeanPartRate);
                 StripHomogeneity_H[slot][p]->Fill(0.,strip_homog);
 
                 //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
-                float ChipRMSMean = ChipInstNoiseMap_H[slot][p]->ProjectionY()->GetRMS();
+                float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H[slot][p]);
 
-                float chip_homog = exp(-ChipRMSMean/MeanNoiseRate);
+                float chip_homog = exp(-ChipStDevMean/MeanPartRate);
                 ChipHomogeneity_H[slot][p]->Fill(0.,chip_homog);
 
-                //Draw and write the histograms into the output ROOT file
+                //Push the partition results into the chamber level
+                nStripsRPC  += nStripsPart;
+                RPCarea     += stripArea * nStripsPart;
+                MeanRPCRate += MeanPartRate * stripArea * nStripsPart;
+                MeanRPCSDev += MeanPartSDev * stripArea * nStripsPart;
 
+                //Draw and write the histograms into the output ROOT file
                 //********************************* General histograms
 
                 BeamProf_H[slot][p]->Write();
+
+                NoiseProf_H[slot][p]->Write();
 
                 TimeProfile_H[slot][p]->Write();
 
@@ -497,8 +453,6 @@ void GetNoiseRate(string baseName){
                 //******************************* Strip granularity histograms
 
                 StripHitProf_H[slot][p]->Write();
-
-                StripInstNoiseMap_H[slot][p]->Write();
 
                 StripMeanNoiseProf_H[slot][p]->Write();
 
@@ -511,8 +465,6 @@ void GetNoiseRate(string baseName){
 
                 ChipHitProf_H[slot][p]->Write();
 
-                ChipInstNoiseMap_H[slot][p]->Write();
-
                 ChipMeanNoiseProf_H[slot][p]->Write();
 
                 ChipActivity_H[slot][p]->Write();
@@ -520,6 +472,20 @@ void GetNoiseRate(string baseName){
                 ChipHomogeneity_H[slot][p]->GetYaxis()->SetRangeUser(0.,1.);
                 ChipHomogeneity_H[slot][p]->Write();
             }
+
+            //Finalise the calculation of the chamber rate
+            MeanRPCRate /= RPCarea;
+            MeanRPCSDev /= RPCarea;
+
+            //Write the header file
+            listCSV << "Rate-"
+                    << GIFInfra.RPCs[sl].name
+                    << "-TOT\tRate-"
+                    << GIFInfra.RPCs[sl].name
+                    << "-TOT_err\t";
+
+            //Write the output file
+            outputCSV << MeanRPCRate << '\t' << MeanRPCSDev << '\t';
         }
         listCSV << '\n';
         listCSV.close();
