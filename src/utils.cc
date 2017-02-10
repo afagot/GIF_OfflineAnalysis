@@ -256,7 +256,7 @@ void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title,
 //Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Channel     = Channel;                      //RPC channel according to mapping (4 digits)
-    Hit.Station     = (Channel%10000)/1000;         //From 1 to 9 (1st digit)
+    Hit.Station     = Channel/1000;                 //From 1 to 9 (1st digit)
     Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
@@ -336,8 +336,7 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
                 tmpTimeProfile[sl][p]->Fit(slicefit,"QR");
 
             PeakTime[sl][p] = slicefit->GetParameter(1);
-            PeakWidth[sl][p] = 2.*slicefit->GetParameter(2);
-
+            PeakWidth[sl][p] = 6.*slicefit->GetParameter(2);
             delete tmpTimeProfile[sl][p];
         }
     }
