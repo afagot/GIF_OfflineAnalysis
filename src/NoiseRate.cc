@@ -302,10 +302,10 @@ void GetNoiseRate(string baseName){
 
                 if(RunType->CompareTo("efficiency") == 0){
                     //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Strip-1]
-                            - PeakSpread[hit.Trolley][hit.Station-1][hit.Strip-1];
-                    float highlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Strip-1]
-                            + PeakSpread[hit.Trolley][hit.Station-1][hit.Strip-1];
+                    float lowlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
+                            - PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
+                    float highlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
+                            + PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
 
                     bool peakrange          = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
