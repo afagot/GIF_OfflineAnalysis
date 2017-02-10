@@ -56,7 +56,7 @@ map<int,int> TDCMapping(string baseName){
 
     //File that contains the path to the mapping file located
     //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
+    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/Mapping.csv";
 
     //Open mapping file
     ifstream mappingfile(mapping.c_str(), ios::in);
@@ -286,7 +286,7 @@ void GetNoiseRate(string baseName){
                 RPCHit hit;
 
                 //Get rid of the noise hits outside of the connected channels
-                if(data.TDCCh->at(h) > 127) continue;
+                if(data.TDCCh->at(h) < 3000 || data.TDCCh->at(h) > 3127) continue;
                 if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
 
                 SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
@@ -440,6 +440,7 @@ void GetNoiseRate(string baseName){
                 MeanRPCSDev += MeanPartSDev * stripArea * nStripsPart;
 
                 //Draw and write the histograms into the output ROOT file
+
                 //********************************* General histograms
 
                 BeamProf_H[slot][p]->Write();
