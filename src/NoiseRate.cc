@@ -421,11 +421,11 @@ void GetNoiseRate(string baseName){
                     for(unsigned int st = 1; st <= nStripsPart; st++){
                         float stripRate = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/normalisation;
 
-                        StripMeanNoiseProf_H[trolley][slot][p]->Fill(st,stripRate);
+                        StripMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate);
 
                         //The chip rate only is incremented by a rate that is
                         //normalised to the number of strip per chip
-                        ChipMeanNoiseProf_H[trolley][slot][p]->Fill(st,stripRate/NSTRIPSCHIP);
+                        ChipMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
                     }
 
                     //Write in the output file the mean noise rate per
