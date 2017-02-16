@@ -398,10 +398,7 @@ void GetNoiseRate(string baseName){
                     listCSV << "Rate-"
                             << GIFInfra.Trolleys[t].RPCs[sl].name
                             << "-" << partID[p]
-                            << "\tRate-"
-                            << GIFInfra.Trolleys[t].RPCs[sl].name
-                            << "-" << partID[p]
-                            << "_err\t";
+                            << "\t";
 
                     //Get the mean noise on the strips and chips using the noise hit
                     //profile. Normalise the number of hits in each bin by the integrated
@@ -429,16 +426,15 @@ void GetNoiseRate(string baseName){
                     }
 
                     //Write in the output file the mean noise rate per
-                    //partition and its error defined as twice the RMS
-                    //over the sqrt of the number of events
+                    //partition
                     float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H[trolley][slot][p]);
-                    float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[trolley][slot][p]);
-                    outputCSV << MeanPartRate << '\t' << MeanPartSDev << '\t';
+                    outputCSV << MeanPartRate << '\t';
 
                     //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
                     //The closer the homogeneity is to 1 the more homogeneus, the closer
                     //the homogeneity is to 0 the less homogeneous.
                     //This gives idea about noisy strips and dead strips.
+                    float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[trolley][slot][p]);
                     float strip_homog = exp(-MeanPartSDev/MeanPartRate);
                     StripHomogeneity_H[trolley][slot][p]->Fill(0.,strip_homog);
 
