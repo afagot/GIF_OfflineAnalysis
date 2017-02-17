@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v3
+// *    GIF OFFLINE TOOL v4
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -10,7 +10,7 @@
 // *    and structures (used for the GIF layout definition).
 // *
 // *    Developped by : Alexis Fagot
-// *    22/04/2016
+// *    07/03/2017
 //***************************************************************
 
 #include <cstdlib>
@@ -201,15 +201,8 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     string partID = "ABCD";
 
     for(unsigned int p = 0; p < rpc.nPartitions; p++){
-        string minorID  = "Minor-"  + CharToString(partID[p]);
-        string majorID  = "Major-"  + CharToString(partID[p]);
-        string heightID = "Height-" + CharToString(partID[p]);
-
-        float minor  = geofile->floatType(ID,minorID,1.);
-        float major  = geofile->floatType(ID,majorID,1.);
-        float height = geofile->floatType(ID,heightID,1.);
-
-        float area = ((minor + major) * height)/2.;
+        string areaID  = "ActiveArea-"  + CharToString(partID[p]);
+        float area = geofile->floatType(ID,areaID,1.);
         rpc.stripGeo.push_back(area);
     }
 }
@@ -393,6 +386,46 @@ bool SortStrips ( RPCHit A, RPCHit B ) {
 int GetPartition( int strip ) {
     return strip/NSTRIPSPART;
 }
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Get mean of 1D histograms
+float GetTH1Mean(TH1* H){
+    int nBins = H->GetNbinsX();
+    float mean = 0.;
+
+    for(int b = 1; b <= nBins; b++) mean += H->GetBinContent(b);
+
+    mean /= (float)nBins;
+
+    return mean;
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Get standard deviation of 1D histograms
+float GetTH1StdDev(TH1* H){
+    int nBins = H->GetNbinsX();
+    float mean = GetTH1Mean(H);
+    float stddev = 0.;
+    float variance = 0.;
+
+    for(int b = 1; b <= nBins; b++)
+        variance += (H->GetBinContent(b)-mean)*(H->GetBinContent(b)-mean);
+
+    stddev = sqrt(variance/nBins);
+
+    return stddev;
+}
+
 
 // ****************************************************************************************************
 // *    int CharToInt(char &C)
