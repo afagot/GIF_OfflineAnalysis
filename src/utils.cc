@@ -202,15 +202,8 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     string partID = "ABCD";
 
     for(unsigned int p = 0; p < rpc.nPartitions; p++){
-        string minorID  = "Minor-"  + CharToString(partID[p]);
-        string majorID  = "Major-"  + CharToString(partID[p]);
-        string heightID = "Height-" + CharToString(partID[p]);
-
-        float minor  = geofile->floatType(ID,minorID,1.);
-        float major  = geofile->floatType(ID,majorID,1.);
-        float height = geofile->floatType(ID,heightID,1.);
-
-        float area = ((minor + major) * height)/2.;
+        string areaID  = "ActiveArea-"  + CharToString(partID[p]);
+        float area = geofile->floatType(ID,areaID,1.);
         rpc.stripGeo.push_back(area);
     }
 }

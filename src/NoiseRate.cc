@@ -383,10 +383,7 @@ void GetNoiseRate(string baseName){
                 listCSV << "Rate-"
                         << GIFInfra.RPCs[sl].name
                         << "-" << partID[p]
-                        << "\tRate-"
-                        << GIFInfra.RPCs[sl].name
-                        << "-" << partID[p]
-                        << "_err\t";
+                        << "\t";
 
                 //Get the mean noise on the strips and chips using the noise hit
                 //profile. Normalise the number of hits in each bin by the integrated
@@ -406,24 +403,23 @@ void GetNoiseRate(string baseName){
                 for(unsigned int st = 1; st <= nStripsPart; st++){
                     float stripRate = NoiseProf_H[slot][p]->GetBinContent(st)/normalisation;
 
-                    StripMeanNoiseProf_H[slot][p]->Fill(st,stripRate);
+                    StripMeanNoiseProf_H[slot][p]->Fill(p*nStripsPart+st,stripRate);
 
                     //The chip rate only is incremented by a rate that is
                     //normalised to the number of strip per chip
-                    ChipMeanNoiseProf_H[slot][p]->Fill(st,stripRate/NSTRIPSCHIP);
+                    ChipMeanNoiseProf_H[slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
                 }
 
                 //Write in the output file the mean noise rate per
-                //partition and its error defined as twice the RMS
-                //over the sqrt of the number of events
+                //partition
                 float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H[slot][p]);
-                float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[slot][p]);
-                outputCSV << MeanPartRate << '\t' << MeanPartSDev << '\t';
+                outputCSV << MeanPartRate << '\t';
 
                 //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
                 //The closer the homogeneity is to 1 the more homogeneus, the closer
                 //the homogeneity is to 0 the less homogeneous.
                 //This gives idea about noisy strips and dead strips.
+                float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[slot][p]);
                 float strip_homog = exp(-MeanPartSDev/MeanPartRate);
                 StripHomogeneity_H[slot][p]->Fill(0.,strip_homog);
 

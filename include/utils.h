@@ -76,8 +76,8 @@ void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 
 //Data in the root file
 struct RAWData {
-    int            iEvent;     //Event i
-    int            TDCNHits;   //Number of hits in event i
+    int                     iEvent;     //Event i
+    int                     TDCNHits;   //Number of hits in event i
     vector<unsigned int>   *TDCCh;      //List of channels giving hits per event
     vector<float>          *TDCTS;      //List of the corresponding time stamps
 };
