@@ -494,7 +494,7 @@ void GetNoiseRate(string baseName){
                         << "-TOT\t";
 
                 //Write the output file
-                outputCSV << MeanRPCRate << '\t' << MeanRPCSDev << '\t';
+                outputCSV << MeanRPCRate << '\t';
             }
         }
         listCSV << '\n';
