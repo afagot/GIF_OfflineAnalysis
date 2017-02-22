@@ -491,9 +491,7 @@ void GetNoiseRate(string baseName){
                 //Write the header file
                 listCSV << "Rate-"
                         << GIFInfra.Trolleys[t].RPCs[sl].name
-                        << "-TOT\tRate-"
-                        << GIFInfra.Trolleys[t].RPCs[sl].name
-                        << "-TOT_err\t";
+                        << "-TOT\t";
 
                 //Write the output file
                 outputCSV << MeanRPCRate << '\t' << MeanRPCSDev << '\t';
