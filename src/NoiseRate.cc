@@ -171,18 +171,20 @@ void GetNoiseRate(string baseName){
                 unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
                 unsigned int nGaps = GIFInfra.Trolleys[t].RPCs[s].nGaps;
 
+                //Get the chamber ID name
+                string rpcID = GIFInfra.Trolleys[t].RPCs[s].name;
+
                 //Get the HVeff histogram by having the highest gap HVeff
                 string HVeffHisto = "";
                 float HVmax = 0.;
 
                 for(unsigned int g=0; g<nGaps; g++){
-                    string rpc = GIFInfra.Trolleys[t].RPCs[s].name;
                     string tmpHisto;
 
                     if(GIFInfra.Trolleys[t].RPCs[s].gaps[g] == "empty")
-                        tmpHisto = "HVeff_" + rpc;
+                        tmpHisto = "HVeff_" + rpcID;
                     else
-                        tmpHisto = "HVeff_" + rpc + "-" + GIFInfra.Trolleys[t].RPCs[s].gaps[g];
+                        tmpHisto = "HVeff_" + rpcID + "-" + GIFInfra.Trolleys[t].RPCs[s].gaps[g];
 
                     if(caenFile.GetListOfKeys()->Contains(tmpHisto.c_str())){
                         float tmpHVeff = ((TH1F*)caenFile.Get(tmpHisto.c_str()))->GetMean();
@@ -195,10 +197,6 @@ void GetNoiseRate(string baseName){
 
                 if(HVeffHisto != "")
                     HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
-
-                //Get the chamber ID in terms of trolley + slot position TXSX
-                string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
-                        "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
 
                 for (unsigned int p = 0; p < nPartRPC; p++){
                     //Set bining
