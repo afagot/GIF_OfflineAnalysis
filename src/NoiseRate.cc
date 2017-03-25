@@ -281,19 +281,14 @@ void GetNoiseRate(string baseName){
                     //Fill the hits inside of the defined noise range
                     if(earlynoiserange || latenoiserange){
                         NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                        StripActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                        ChipActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                     } else if(peakrange)
                         BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
                     //Reject the 200 first ns due to inhomogeneity of data
                     bool rejected = (hit.TimeStamp < 200.);
 
-                    if(!rejected){
+                    if(!rejected)
                         NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                        StripActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                        ChipActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                    }
                 }
 
                 //Fill the profiles
@@ -367,21 +362,24 @@ void GetNoiseRate(string baseName){
                     //time and the strip sruface (counts/s/cm2)
                     float normalisation = 0.;
 
+                    //Get the number of noise hits
+                    int nNoise = NoiseProf_H[trolley][slot][p]->GetEntries();
+
                     //Get the strip geometry
                     float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
 
                     if(RunType->CompareTo("efficiency") == 0)
-                        normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
+                        normalisation = nNoise*BMNOISEWDW*1e-9*stripArea;
                     else if(RunType->CompareTo("efficiency") != 0)
-                        normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
+                        normalisation = nNoise*RDMNOISEWDW*1e-9*stripArea;
 
                     //Get the average number of hits per strip to normalise the activity
                     //histogram (this number is the same for both Strip and Chip histos).
-                    float averageNhit = GetTH1Mean(StripActivity_H[trolley][slot][p]);
-
                     unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+                    float averageNhit = nNoise/nStripsPart;
 
                     for(unsigned int st = 1; st <= nStripsPart; st++){
+                        //Fill noise rates
                         float stripRate = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/normalisation;
 
                         StripMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate);
@@ -390,15 +388,14 @@ void GetNoiseRate(string baseName){
                         //normalised to the number of strip per chip
                         ChipMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
 
-                        //Normalise activities
-                        float sActivity = StripActivity_H[trolley][slot][p]->GetBinContent(st)/averageNhit;
-                        StripActivity_H[trolley][slot][p]->SetBinContent(st,sActivity);
+                        //Fill activities
+                        float stripAct = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/averageNhit;
 
-                        if(st%8 == 0){
-                            int ch = st/8;
-                            float cActivity = ChipActivity_H[trolley][slot][p]->GetBinContent(ch)/averageNhit;
-                            StripActivity_H[trolley][slot][p]->SetBinContent(ch,cActivity);
-                        }
+                        StripActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct);
+
+                        //The chip activity only is incremented by an activity
+                        //that is normalised to the number of strip per chip
+                        ChipActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct/NSTRIPSCHIP);
                     }
 
                     //Write in the output file the mean noise rate per
