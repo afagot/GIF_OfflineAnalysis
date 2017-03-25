@@ -375,6 +375,10 @@ void GetNoiseRate(string baseName){
                     else if(RunType->CompareTo("efficiency") != 0)
                         normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
+                    //Get the average number of hits per strip to normalise the activity
+                    //histogram (this number is the same for both Strip and Chip histos).
+                    float averageNhit = GetTH1Mean(StripActivity_H[trolley][slot][p]);
+
                     unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
 
                     for(unsigned int st = 1; st <= nStripsPart; st++){
@@ -385,6 +389,16 @@ void GetNoiseRate(string baseName){
                         //The chip rate only is incremented by a rate that is
                         //normalised to the number of strip per chip
                         ChipMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
+
+                        //Normalise activities
+                        float sActivity = StripActivity_H[trolley][slot][p]->GetBinContent(st)/averageNhit;
+                        StripActivity_H[trolley][slot][p]->SetBinContent(st,sActivity);
+
+                        if(st%8 == 0){
+                            int ch = st/8;
+                            float cActivity = ChipActivity_H[trolley][slot][p]->GetBinContent(ch)/averageNhit;
+                            StripActivity_H[trolley][slot][p]->SetBinContent(ch,cActivity);
+                        }
                     }
 
                     //Write in the output file the mean noise rate per
