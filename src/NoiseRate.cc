@@ -79,14 +79,6 @@ map<int,int> TDCMapping(string baseName){
 void GetNoiseRate(string baseName){
 
     string daqName = baseName + "_DAQ.root";
-    string caenName = baseName + "_CAEN.root";
-
-    //****************** CAEN ROOT FILE ******************************
-
-    //input CAEN ROOT data file containing the values of the HV eff for
-    //every HV step
-    TFile caenFile(caenName.c_str());
-    TH1F *HVeff[NTROLLEYS][NSLOTS];
 
     //****************** DAQ ROOT FILE *******************************
 
@@ -169,34 +161,9 @@ void GetNoiseRate(string baseName){
             for (unsigned int s = 0; s < nSlotsTrolley; s++){
                 unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
                 unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
-                unsigned int nGaps = GIFInfra.Trolleys[t].RPCs[s].nGaps;
 
                 //Get the chamber ID name
                 string rpcID = GIFInfra.Trolleys[t].RPCs[s].name;
-
-                //Get the HVeff histogram by having the highest gap HVeff
-                string HVeffHisto = "";
-                float HVmax = 0.;
-
-                for(unsigned int g=0; g<nGaps; g++){
-                    string tmpHisto;
-
-                    if(GIFInfra.Trolleys[t].RPCs[s].gaps[g] == "empty")
-                        tmpHisto = "HVeff_" + rpcID;
-                    else
-                        tmpHisto = "HVeff_" + rpcID + "-" + GIFInfra.Trolleys[t].RPCs[s].gaps[g];
-
-                    if(caenFile.GetListOfKeys()->Contains(tmpHisto.c_str())){
-                        float tmpHVeff = ((TH1F*)caenFile.Get(tmpHisto.c_str()))->GetMean();
-                        if(tmpHVeff > HVmax){
-                            HVmax = tmpHVeff;
-                            HVeffHisto = tmpHisto;
-                        }
-                    }
-                }
-
-                if(HVeffHisto != "")
-                    HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
 
                 for (unsigned int p = 0; p < nPartRPC; p++){
                     //Set bining
@@ -319,11 +286,14 @@ void GetNoiseRate(string baseName){
                     } else if(peakrange)
                         BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
-                    //Reject the 100 first and last ns due to inhomogeneity of data
-                    bool rejected = (hit.TimeStamp < 100. || hit.TimeStamp > RDMTDCWINDOW-100.);
+                    //Reject the 200 first ns due to inhomogeneity of data
+                    bool rejected = (hit.TimeStamp < 200.);
 
-                    if(!rejected)
+                    if(!rejected){
                         NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        StripActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        ChipActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    }
                 }
 
                 //Fill the profiles
@@ -376,12 +346,6 @@ void GetNoiseRate(string baseName){
             for (unsigned int sl = 0; sl < nSlotsTrolley; sl++){
                 unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
                 unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
-
-                float HighVoltage = HVeff[trolley][slot]->GetMean();
-                outputCSV << HighVoltage << '\t';
-
-                //Write the header file
-                listCSV << "HVeff-" << GIFInfra.Trolleys[t].RPCs[sl].name << '\t';
 
                 //Get the total chamber rate
                 //we need to now the total chamber surface (sum active areas)
@@ -502,7 +466,6 @@ void GetNoiseRate(string baseName){
         outputCSV.close();
 
         outputfile.Close();
-        caenFile.Close();
         dataFile.Close();
     } else {
         MSG_INFO("[Offline-Rate] File " + daqName + " could not be opened");
