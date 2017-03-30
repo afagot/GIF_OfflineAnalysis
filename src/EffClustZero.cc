@@ -173,18 +173,18 @@ void GetEffClustZero(string baseName){
                     unsigned int slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
                     for (unsigned int p = 0; p < nPartRPC; p++){
-                        if(RPCHits[sl][p].size() > 0){
-                            sort(RPCHits[sl][p].begin(),RPCHits[sl][p].end(),SortStrips);
+                        if(RPCHits[slot][p].size() > 0){
+                            sort(RPCHits[slot][p].begin(),RPCHits[slot][p].end(),SortStrips);
 
                             RPCCluster tmpCluster;
-                            tmpCluster.Station = slot;
+                            tmpCluster.Station = slot + 1;
                             tmpCluster.Partition = p;
 
                             //Default previous strip value
                             unsigned int previousstrip = 0;
 
                             //Loop over the hits
-                            for(vector<RPCHit>::iterator it = RPCHits[sl][p].begin(); it != RPCHits[sl][p].end(); it++){
+                            for(vector<RPCHit>::iterator it = RPCHits[slot][p].begin(); it != RPCHits[slot][p].end(); it++){
                                 //If a hit is present in the next strip
                                 if((*it).Strip == (previousstrip+1)) tmpCluster.Size++;
 
@@ -194,8 +194,8 @@ void GetEffClustZero(string baseName){
                                 else{
                                     //if you start a new cluster, save size and push to list
                                     if(previousstrip != 0){
-                                        RPCClusters[sl][p].push_back(tmpCluster);
-                                        ClusterSize0_H[sl][p]->Fill(tmpCluster.Size);
+                                        RPCClusters[slot][p].push_back(tmpCluster);
+                                        ClusterSize0_H[slot][p]->Fill(tmpCluster.Size);
                                     }
                                     tmpCluster.Size = 1;
                                     tmpCluster.FirstStrip = (*it).Strip;
@@ -207,17 +207,18 @@ void GetEffClustZero(string baseName){
 
                             //Save the last cluster if any
                             if(previousstrip != 0){
-                                RPCClusters[sl][p].push_back(tmpCluster);
-                                ClusterSize0_H[sl][p]->Fill(tmpCluster.Size);
+                                RPCClusters[slot][p].push_back(tmpCluster);
+                                ClusterSize0_H[slot][p]->Fill(tmpCluster.Size);
                             }
 
                             //Save multiplicity
-                            if(RPCClusters[sl][p].size() > 0){
-                                ClusterMult0_H[sl][p]->Fill(RPCClusters[sl][p].size());
-                                Efficiency0_H[sl][p]->Fill(1);
+                            if(RPCClusters[slot][p].size() > 0){
+                                ClusterMult0_H[slot][p]->Fill(RPCClusters[slot][p].size());
+                                Efficiency0_H[slot][p]->Fill(1);
                             } else
-                                Efficiency0_H[sl][p]->Fill(0);
-                        }
+                                Efficiency0_H[slot][p]->Fill(0);
+                        } else
+                            Efficiency0_H[slot][p]->Fill(0);
                     }
                 }
             }
