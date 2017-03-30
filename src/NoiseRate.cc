@@ -328,11 +328,6 @@ void GetNoiseRate(string baseName){
         ofstream listCSV(listName.c_str(),ios::out);
         listCSV << "HVstep\t";
 
-        //Create the output folder for the DQM plots
-        string DQMFolder = GetSavePath(baseName,HVstep);
-        string mkdirDQMFolder = "mkdir -p " + DQMFolder;
-        system(mkdirDQMFolder.c_str());
-
         for (unsigned int sl = 0; sl < nSlots; sl++){
             unsigned int nPartRPC = GIFInfra.RPCs[sl].nPartitions;
             unsigned int slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;

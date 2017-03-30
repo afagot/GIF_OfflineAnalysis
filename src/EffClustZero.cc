@@ -222,6 +222,11 @@ void GetEffClustZero(string baseName){
                 }
             }
 
+            //************** OUTPUT FILES *********************************
+            //create a ROOT output file to save the histograms
+            string fNameROOT = baseName + "_DAQ-L0_EffCl.root";
+            TFile outputfile(fNameROOT.c_str(), "recreate");
+
             //Write histograms into ROOT file
             for (unsigned int s = 0; s < nSlots; s++){
                 unsigned int nPartRPC = GIFInfra.RPCs[s].nPartitions;
@@ -233,6 +238,7 @@ void GetEffClustZero(string baseName){
                     ClusterMult0_H[slot][p]->Write();
                 }
             }
+            outputfile.Close();
         }
         dataFile.Close();
     } else {
