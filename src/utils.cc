@@ -259,7 +259,6 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     }
 
     Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
-    Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
     Hit.TimeStamp   = TimeStamp;
 }
 

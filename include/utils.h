@@ -90,7 +90,17 @@ struct RPCHit {
     unsigned int    Station;    //Place in the cosmic stand (S1 to S9 - 1st digit)
     unsigned int    Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
     unsigned int    Partition;  //Partition (1 to 4)
-    unsigned int    Connector;  //Connector (1 to 8)
+    float           TimeStamp;  //TDC time stamp
+};
+
+//Cluster of hits in a partition of the RPC
+struct RPCCluster {
+    unsigned int    Station;    //Station
+    unsigned int    Partition;  //Partition
+    unsigned int    FirstStrip; //First strip of the cluster
+    unsigned int    LastStrip;  //Last strip of the cluster
+    float           Center;     //Central strip ( (First + Last) / 2 )
+    unsigned int    Size;       //Cluster size
     float           TimeStamp;  //TDC time stamp
 };
 

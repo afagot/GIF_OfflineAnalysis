@@ -14,6 +14,7 @@
 #include <string>
 
 #include "../include/NoiseRate.h"
+#include "../include/EffClustZero.h"
 #include "../include/Current.h"
 #include "../include/MsgSvc.h"
 
@@ -44,8 +45,10 @@ int main(int argc ,char *argv[]){
         string caenName = baseName + "_CAEN.root";
 
         //Start the needed analysis tools - check if the ROOT files exist
-        if(existFile(daqName)) GetNoiseRate(baseName);
-        else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
+        if(existFile(daqName)){
+            GetNoiseRate(baseName);
+            GetEffClustZero(baseName);
+        } else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
 
         if(existFile(caenName)) GetCurrent(baseName);
         else  MSG_ERROR("[Offline] No CAEN file for run " + baseName);
