@@ -228,17 +228,17 @@ void GetEffClustZero(string baseName){
             string fNameROOT = baseName + "_DAQ-L0_EffCl.root";
             TFile outputfile(fNameROOT.c_str(), "recreate");
 
-            //output csv file
-            string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl.csv";
-            ofstream outputCSV(csvName.c_str(),ios::app);
-            //Print the HV step as first column
-            outputCSV << HVstep << '\t';
-
             //output csv file to save the list of parameters saved into the
             //Offline-Rate.csv file - it represents the header of that file
             string listName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl-Header.csv";
             ofstream listCSV(listName.c_str(),ios::out);
             listCSV << "HVstep\t";
+
+            //output csv file
+            string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl.csv";
+            ofstream outputCSV(csvName.c_str(),ios::app);
+            //Print the HV step as first column
+            outputCSV << HVstep << '\t';
 
             //Write histograms into ROOT file
             for (unsigned int s = 0; s < nSlots; s++){
@@ -247,9 +247,11 @@ void GetEffClustZero(string baseName){
 
                 for (unsigned int p = 0; p < nPartRPC; p++){
                     string partID = "ABCD";
-                    string partName = GIFInfra.RPCs[slot].name + "-" + partID[p];
+                    string partName = GIFInfra.RPCs[s].name + "-" + partID[p];
                     //Write the header file
-                    listCSV << "Eff-" << partName << '\t'
+                    listCSV << "Peak-" << partName << '\t'
+                            << "Peak-" << partName << "_RMS\t"
+                            << "Eff-" << partName << '\t'
                             << "Eff-" << partName << "_Err\t"
                             << "ClS-" << partName << '\t'
                             << "ClS-" << partName << "_Err\t"
@@ -259,6 +261,8 @@ void GetEffClustZero(string baseName){
 
                     //Get efficiency, cluster size and multiplicity
                     //and evaluate the streamer probability (cls > 5)
+                    float peak = PeakMeanTime[slot][p];
+                    float peakRMS = PeakSpread[slot][p];
                     float eff = Efficiency0_H[slot][p]->GetMean();
                     float effErr = Efficiency0_H[slot][p]->GetMeanError();
                     float cls = ClusterSize0_H[slot][p]->GetMean();
@@ -271,7 +275,8 @@ void GetEffClustZero(string baseName){
                     float strProb = nStreamers/nClusters;
 
                     //Write in the output CSV file
-                    outputCSV << eff << '\t' << effErr << '\t'
+                    outputCSV << peak << '\t' << peakRMS << '\t'
+                              << eff << '\t' << effErr << '\t'
                               << cls << '\t' << clsErr << '\t'
                               << clm << '\t' << clmErr << '\t'
                               << strProb << '\t';
