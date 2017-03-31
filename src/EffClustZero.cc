@@ -228,22 +228,70 @@ void GetEffClustZero(string baseName){
             string fNameROOT = baseName + "_DAQ-L0_EffCl.root";
             TFile outputfile(fNameROOT.c_str(), "recreate");
 
+            //output csv file
+            string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl.csv";
+            ofstream outputCSV(csvName.c_str(),ios::app);
+            //Print the HV step as first column
+            outputCSV << HVstep << '\t';
+
+            //output csv file to save the list of parameters saved into the
+            //Offline-Rate.csv file - it represents the header of that file
+            string listName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl-Header.csv";
+            ofstream listCSV(listName.c_str(),ios::out);
+            listCSV << "HVstep\t";
+
             //Write histograms into ROOT file
             for (unsigned int s = 0; s < nSlots; s++){
                 unsigned int nPartRPC = GIFInfra.RPCs[s].nPartitions;
                 unsigned int slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
                 for (unsigned int p = 0; p < nPartRPC; p++){
+                    string partID = "ABCD";
+                    string partName = GIFInfra.RPCs[slot].name + "-" + partID[p];
+                    //Write the header file
+                    listCSV << "Eff-" << partName << '\t'
+                            << "Eff-" << partName << "_Err\t"
+                            << "ClS-" << partName << '\t'
+                            << "ClS-" << partName << "_Err\t"
+                            << "ClM-" << partName << '\t'
+                            << "ClM-" << partName << "_Err\t"
+                            << "StrProb-" << partName << '\t';
+
+                    //Get efficiency, cluster size and multiplicity
+                    //and evaluate the streamer probability (cls > 5)
+                    float eff = Efficiency0_H[slot][p]->GetMean();
+                    float effErr = Efficiency0_H[slot][p]->GetMeanError();
+                    float cls = ClusterSize0_H[slot][p]->GetMean();
+                    float clsErr = ClusterSize0_H[slot][p]->GetMeanError();
+                    float clm = ClusterMult0_H[slot][p]->GetMean();
+                    float clmErr = ClusterMult0_H[slot][p]->GetMeanError();
+
+                    float nClusters = ClusterSize0_H[slot][p]->Integral();
+                    float nStreamers = ClusterSize0_H[slot][p]->Integral(6.,40.);
+                    float strProb = nStreamers/nClusters;
+
+                    //Write in the output CSV file
+                    outputCSV << eff << '\t' << effErr << '\t'
+                              << cls << '\t' << clsErr << '\t'
+                              << clm << '\t' << clmErr << '\t'
+                              << strProb << '\t';
+
                     Efficiency0_H[slot][p]->Write();
                     ClusterSize0_H[slot][p]->Write();
                     ClusterMult0_H[slot][p]->Write();
                 }
             }
+            listCSV << '\n';
+            listCSV.close();
+
+            outputCSV << '\n';
+            outputCSV.close();
+
             outputfile.Close();
         }
         dataFile.Close();
     } else {
-        MSG_INFO("[Offline-Efficiency] File " + daqName + " could not be opened");
-        MSG_INFO("[Offline-Efficiency] Skipping efficiency analysis");
+        MSG_INFO("[Offline-L0-EffCl] File " + daqName + " could not be opened");
+        MSG_INFO("[Offline-L0-EffCl] Skipping L0 analysis");
     }
 }
