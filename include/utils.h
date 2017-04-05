@@ -110,6 +110,8 @@ bool  SortStrips ( RPCHit A, RPCHit B );
 int   GetPartition( int strip );
 float GetTH1Mean(TH1* H);
 float GetTH1StdDev(TH1* H);
+void  SetTH1(TH1* H, string xtitle, string ytitle);
+void  SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
 void  DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
 void  DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
 

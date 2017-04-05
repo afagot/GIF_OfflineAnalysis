@@ -190,54 +190,66 @@ void GetNoiseRate(string baseName){
                     //Beam profile
                     SetTitleName(rpcID,p,hisname,histitle,"Beam_Profile","Beam profile");
                     BeamProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(BeamProf_H[trolley][slot][p],"Strip","Number of hits");
 
                     //Noise profile
                     SetTitleName(rpcID,p,hisname,histitle,"Noise_Profile","Noise profile");
                     NoiseProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(NoiseProf_H[trolley][slot][p],"Strip","Number of hits");
 
                     //Time profile
                     SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
                     TimeProfile_H[trolley][slot][p] = new TH1F( hisname, histitle, (int)timeWidth/20, 0., timeWidth);
+                    SetTH1(TimeProfile_H[trolley][slot][p],"Time [ns]","Number of hits");
 
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
                     HitMultiplicity_H[trolley][slot][p] = new TH1I( hisname, histitle, nBinsMult, lowBin, highBin);
+                    SetTH1(HitMultiplicity_H[trolley][slot][p],"Multiplicity","Number of events");
 
                     //****************************************** Strip granularuty level histograms
 
                     //Hit profile
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Hit_Profile","Strip hit profile");
                     StripHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripHitProf_H[trolley][slot][p],"Strip","Number of hits");
 
                     //Mean noise rate profile
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
                     StripMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripMeanNoiseProf_H[trolley][slot][p],"Strip","Rate [Hz/cm^{2}]");
 
                     //Strip activity
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
                     StripActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripActivity_H[trolley][slot][p],"Strip","Activity (normalized strip profil)");
 
                     //Noise homogeneity
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Homogeneity","Strip homogeneity");
                     StripHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
+                    SetTH1(StripHomogeneity_H[trolley][slot][p],"","Homogeneity");
 
                     //****************************************** Chip granularuty level histograms
 
                     //Hit profile
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Hit_Profile","Chip hit profile");
                     ChipHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipHitProf_H[trolley][slot][p],"Chip","Number of hits");
 
                     //Mean noise rate profile
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
                     ChipMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipMeanNoiseProf_H[trolley][slot][p],"Chip","Rate [Hz/cm^{2}]");
 
                     //Strip activity
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
                     ChipActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipMeanNoiseProf_H[trolley][slot][p],"Chip","Activity (normalized chip profil)");
 
                     //Noise homogeneity
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
                     ChipHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
+                    SetTH1(ChipHomogeneity_H[trolley][slot][p],"","Homogeneity");
                 }
             }
         }

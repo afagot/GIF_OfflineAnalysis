@@ -426,6 +426,30 @@ float GetTH1StdDev(TH1* H){
     return stddev;
 }
 
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Draw 1D histograms
+void SetTH1(TH1* H, string xtitle, string ytitle){
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+}
+
+// ****************************************************************************************************
+// *    int CharToInt(char &C)
+//
+//
+// ****************************************************************************************************
+
+//Draw 2D histograms
+void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+    H->SetXTitle(ztitle.c_str());
+}
 
 // ****************************************************************************************************
 // *    int CharToInt(char &C)
