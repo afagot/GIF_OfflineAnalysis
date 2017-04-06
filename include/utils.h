@@ -28,61 +28,71 @@
 
 using namespace std;
 
-const float RDMTDCWINDOW    = 400.*25.;
-const float RDMNOISEWDW     = RDMTDCWINDOW - 200.;
-const float BMTDCWINDOW     = 24.*25.;
-const float BMNOISEWDW      = 300.;
+//****************************************************************************
 
-const unsigned int NSLOTS            = 9;
-const unsigned int NPARTITIONS       = 4;
+//List of global variables used as default values
+//in case of problems to read Dimensions.ini
+const float RDMTDCWINDOW = 400.*25.;
+const float RDMNOISEWDW  = RDMTDCWINDOW - 200.;
+const float BMTDCWINDOW  = 24.*25.;
+const float BMNOISEWDW   = 300.;
 
-const unsigned int NSTRIPSRPC        = 128;
-const unsigned int NSTRIPSPART       = 48;
-const unsigned int NSTRIPSCONN       = 16;
-const unsigned int NSTRIPSCHIP       = 8;
+const unsigned int NTROLLEYS   = 5;
+const unsigned int NSLOTS      = 9;
+const unsigned int NPARTITIONS = 4;
+
+const unsigned int NSTRIPSRPC  = 128;
+const unsigned int NSTRIPSPART = 48;
+const unsigned int NSTRIPSCONN = 16;
+const unsigned int NSTRIPSCHIP = 8;
+
+//****************************************************************************
+
+//Path to file where is saved the current data
+//file path. Saving this path into the file allows
+//to write all the logs in the log.txt file that
+//is inside the scan directory.
 
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
 
-bool            existFile(string ROOTName);
-unsigned int    CharToInt(char& C);
-string          CharToString(char& C);
-string          intToString(int value);
-string          longTostring(long value);
-string          floatTostring(float value);
-string          GetLogTimeStamp();
-void            WritePath(string basename);
+//****************************************************************************
 
-//Infrastructure inside 904
+//Structures representing the infrastructure inside GIF++
+//-> The infrastructure contains trolleys
+//-> Trolleys contains RPCs
+//-> RPCs contain gaps and have partitions
+
 struct RPC{
-    string          name;
-    unsigned int    nPartitions;
-    unsigned int    nGaps;
-    vector<string>  gaps;
-    vector<float>   gapGeo;
-    unsigned int    strips;
-    vector<float>   stripGeo;
+    string          name;        //RPC name as in webDCS database
+    unsigned int    nGaps;       //Number of gaps in the RPC
+    vector<string>  gaps;        //List of gap labels (BOT, TOP, etc...)
+    vector<float>   gapGeo;      //List of gap active areas
+    unsigned int    nPartitions; //Number of partitions in the RPC
+    unsigned int    strips;      //Number of strips per partition
+    vector<float>   stripGeo;    //List of strip active areas
 };
-
-void SetRPC(RPC& rpc, string ID, IniFile* geofile);
 
 struct Infrastructure {
-    unsigned int nSlots;
-    string       SlotsID;
-    vector<RPC>  RPCs;
+    unsigned int nSlots;  //Number of active RPCs in the considered trolley
+    string       SlotsID; //Active RPC IDs written into a string
+    vector<RPC>  RPCs;    //List of active RPCs (struct)
 };
 
-void SetInfrastructure(Infrastructure& infra, IniFile* geofile);
+//****************************************************************************
 
-//Data in the root file
+//Structures to interpret the data inside of the root file
+//->RAWData represents the data structure inside the root
+//  file itself
+//->RPCHit is used to translate the TDC data into physical
+//  data, assigning each hit to a RPC strip
+
 struct RAWData {
-    int                     iEvent;     //Event i
-    int                     TDCNHits;   //Number of hits in event i
-    vector<unsigned int>   *TDCCh;      //List of channels giving hits per event
-    vector<float>          *TDCTS;      //List of the corresponding time stamps
+    int                     iEvent;   //Event i
+    int                     TDCNHits; //Number of hits in event i
+    vector<unsigned int>   *TDCCh;    //List of channels giving hits per event
+    vector<float>          *TDCTS;    //List of the corresponding time stamps
 };
-
-void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase);
 
 //Hit in the RPC
 struct RPCHit {
@@ -104,15 +114,31 @@ struct RPCCluster {
     float           TimeStamp;  //TDC time stamp
 };
 
-void  SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
-void  SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[NSLOTS][NPARTITIONS], TTree* mytree, map<int, int> RPCChMap, Infrastructure GIFInfra);
-bool  SortStrips ( RPCHit A, RPCHit B );
-int   GetPartition( int strip );
-float GetTH1Mean(TH1* H);
-float GetTH1StdDev(TH1* H);
-void  SetTH1(TH1* H, string xtitle, string ytitle);
-void  SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
-void  DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option);
-void  DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option);
+//****************************************************************************
+
+//Functions (more details in utils.cc)
+
+unsigned int CharToInt(char& C);
+string       CharToString(char& C);
+string       intToString(int value);
+string       longTostring(long value);
+string       floatTostring(float value);
+bool         existFile(string ROOTName);
+string       GetLogTimeStamp();
+void         WritePath(string basename);
+map<int,int> TDCMapping(string baseName);
+void         SetRPC(RPC& rpc, string ID, IniFile* geofile);
+void         SetInfrastructure(Infrastructure& infra, IniFile* geofile);
+void         SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void         SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
+                            float (&PeakWidth)[NSLOTS][NPARTITIONS],
+                            TTree* mytree, map<int, int> RPCChMap, Infrastructure GIFInfra);
+bool         SortStrips (RPCHit A, RPCHit B);
+void         SetTitleName(string rpcID, unsigned int partition,
+                          char* Name, char* Title, string Namebase, string Titlebase);
+float        GetTH1Mean(TH1* H);
+float        GetTH1StdDev(TH1* H);
+void         SetTH1(TH1* H, string xtitle, string ytitle);
+void         SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
 
 #endif // UTILS_H

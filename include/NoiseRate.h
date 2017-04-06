@@ -22,9 +22,6 @@
 
 using namespace std;
 
-string          GetBaseName(string fName);
-string          GetSavePath(string baseName, string stepID);
-map<int,int>    TDCMapping(string baseName);
-void            GetNoiseRate(string baseName);
+void GetNoiseRate(string baseName);
 
 #endif // NOISERATE_H

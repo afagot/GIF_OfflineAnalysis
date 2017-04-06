@@ -28,23 +28,9 @@
 #include "THistPainter.h"
 
 #include "../include/utils.h"
+#include "../include/MsgSvc.h"
 
 using namespace std;
-
-
-// ****************************************************************************************************
-// *    bool existFiles(string baseName)
-//
-//  Function that test if the 3 root files created during the data taking exist in the scan directory
-//  or not. This is the needed condition for the offline tool to start.
-// ****************************************************************************************************
-
-
-bool existFile(string ROOTName){
-    TFile ROOTFile(ROOTName.c_str());
-
-    return (ROOTFile.IsOpen());
-}
 
 // ****************************************************************************************************
 // *    int CharToInt(char &C)
@@ -122,6 +108,19 @@ string floatTostring(float value){
 }
 
 // ****************************************************************************************************
+// *    bool existFiles(string baseName)
+//
+//  Function that test if the root files created during the data taking exist in the scan directory
+//  or not. This is the needed condition for the offline tool to start.
+// ****************************************************************************************************
+
+bool existFile(string ROOTName){
+    TFile ROOTFile(ROOTName.c_str());
+
+    return (ROOTFile.IsOpen());
+}
+
+// ****************************************************************************************************
 // *    string GetLogTimeStamp()
 //
 //  Function that gets the system time. The output format of this function has been optimised to be
@@ -142,6 +141,7 @@ string GetLogTimeStamp(){
     int s = Time->tm_sec;
 
     //Set the Date
+    //Format is YYYY-MM-DD.hh:mm:ss.
     string Date;
 
     stream << setfill('0') << setw(4) << Y << "-"
@@ -179,10 +179,47 @@ void WritePath(string baseName){
 }
 
 // ****************************************************************************************************
+// *    map<int,int> TDCMapping(string baseName)
+//
+//  Returns the map to translate TDC channels into RPC strips.
+// ****************************************************************************************************
+
+map<int,int> TDCMapping(string baseName){
+    //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
+    int RPCCh;
+
+    //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
+    int TDCCh;
+
+    //2D Map of the TDC Channels and their corresponding RPC strips
+    map<int,int> Map;
+
+    //File that contains the path to the mapping file located
+    //in the scan directory
+    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
+
+    //Open mapping file
+    ifstream mappingfile(mapping.c_str(), ios::in);
+    if(mappingfile){
+        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
+            mappingfile >> RPCCh >> TDCCh;
+            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+        }
+        mappingfile.close();
+    } else {
+        MSG_ERROR("[Offline] Couldn't open file " + mapping);
+        exit(EXIT_FAILURE);
+    }
+
+    return Map;
+}
+
+// ****************************************************************************************************
 // *    void SetRPC(RPC &rpc, string ID, IniFile *geofile)
 //
 //  Set up the RPC structure needed which is the innermost part of the GIF++ infrasctructure. The RPCs
-//  Are contained inside the Trolleys. For details about RPC members, see file utils.h.
+//  are contained inside the Trolleys. Informations are readout from Dimensions.ini . For details about
+//  RPC members, see file utils.h.
 // ****************************************************************************************************
 
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){
@@ -209,9 +246,11 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetInfrastructure(Infrastructure &infra, IniFile *geofile)
 //
-//
+//  Set up the Infrastructure structure needed that represents 904's setup at the moment of data
+//  taking, i.e. the active RPC chambers. Informations are readout from Dimensions.ini . For details
+//  about Trolley members, see file utils.h.
 // ****************************************************************************************************
 
 void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
@@ -228,29 +267,15 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra)
 //
-//
+//  Uses the mapping to set up every hit and assign it to the right strip in each active RPC.
 // ****************************************************************************************************
 
-//Name of histograms
-void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase){
-    string P[4] = {"A","B","C","D"};
-    sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
-    sprintf(Title,"%s %s_%s",Titlebase.c_str(),rpcID.c_str(),P[partition].c_str());
-}
-
-// ****************************************************************************************************
-// *    int CharToInt(char &C)
-//
-//
-// ****************************************************************************************************
-
-//Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
-    Hit.Channel     = Channel;                      //RPC channel according to mapping (4 digits)
-    Hit.Station     = Channel/1000;                 //From 1 to 9 (1st digit)
-    Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
+    Hit.Channel     = Channel;      //RPC channel according to mapping (4 digits)
+    Hit.Station     = Channel/1000; //From 1 to 9 (1st digit)
+    Hit.Strip       = Channel%1000; //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
     for(unsigned int i = 0; i < Infra.nSlots; i++){
@@ -258,14 +283,18 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
                 nStripsPart = Infra.RPCs[i].strips;
     }
 
-    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
+    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1; //From 1 to 4
     Hit.TimeStamp   = TimeStamp;
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
+// *                        float (&PeakWidth)[NSLOTS][NPARTITIONS],
+// *                        TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra)
 //
-//
+//  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
+//  of the muon peak and its spread. Then saves the result in 2 3D tables (#D bescause it follows the
+//  dimensions of the GIF++ infrastructure : Trolley, RPC slots and Partitions).
 // ****************************************************************************************************
 
 //Set the beam time window
@@ -310,15 +339,16 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
     TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);//Fit function (gaussian)
 
     //Loop over RPCs
-    for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
-        for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
-            slicefit->SetParameter(0,50);      //Amplitude
+    for(unsigned int sl = 0; sl < NSLOTS; sl++){
+        for(unsigned int p = 0; p < NPARTITIONS; p++){
+            //Amplitude
+            slicefit->SetParameter(0,50);
             slicefit->SetParLimits(0,1,100000);
-
-            slicefit->SetParameter(1,300);     //Mean value
+            //Mean value
+            slicefit->SetParameter(1,300);
             slicefit->SetParLimits(1,260,340);
-
-            slicefit->SetParameter(2,20);      //RMS
+            //RMS
+            slicefit->SetParameter(2,20);
             slicefit->SetParLimits(2,1,40);
 
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
@@ -332,31 +362,36 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    bool SortStrips (RPCHit A, RPCHit B)
 //
-//
+//  Tells if Strip A < Strip B.
 // ****************************************************************************************************
 
 //Function use to sort hits by increasing strip number
-bool SortStrips ( RPCHit A, RPCHit B ) {
+bool SortStrips (RPCHit A, RPCHit B){
     return ( A.Strip < B.Strip );
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTitleName(string rpcID, unsigned int partition,
+// *                      char* Name, char* Title, string Namebase, string Titlebase)
 //
-//
+//  Builds the name and title of ROOT objects.
 // ****************************************************************************************************
 
-//Return the partition corresponding to the strip
-int GetPartition( int strip ) {
-    return strip/NSTRIPSPART;
+//Name of histograms
+void SetTitleName(string rpcID, unsigned int partition,
+                  char* Name, char* Title, string Namebase, string Titlebase){
+
+    string P[4] = {"A","B","C","D"};
+    sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
+    sprintf(Title,"%s %s_%s",Titlebase.c_str(),rpcID.c_str(),P[partition].c_str());
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    float GetTH1Mean(TH1* H)
 //
-//
+//  Returns the mean along the Y axis of a TH1 (value not given by the ROOT statbox).
 // ****************************************************************************************************
 
 //Get mean of 1D histograms
@@ -372,9 +407,10 @@ float GetTH1Mean(TH1* H){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    float GetTH1StdDev(TH1* H)
 //
-//
+//  Returns the spread of the distribution of values along the Y axis of a TH1 (value not given by
+//  the ROOT statbox).
 // ****************************************************************************************************
 
 //Get standard deviation of 1D histograms
@@ -393,9 +429,9 @@ float GetTH1StdDev(TH1* H){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTH1(TH1* H, string xtitle, string ytitle)
 //
-//
+//  Sets the title of X and Y axis of a TH1.
 // ****************************************************************************************************
 
 //Draw 1D histograms
@@ -405,9 +441,9 @@ void SetTH1(TH1* H, string xtitle, string ytitle){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle)
 //
-//
+//  Sets the title of X, Y and Z axis of a TH1.
 // ****************************************************************************************************
 
 //Draw 2D histograms
@@ -415,38 +451,4 @@ void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
     H->SetXTitle(ztitle.c_str());
-}
-
-// ****************************************************************************************************
-// *    int CharToInt(char &C)
-//
-//
-// ****************************************************************************************************
-
-//Draw 1D histograms
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option){
-    C->cd(0);
-    H->SetXTitle(xtitle.c_str());
-    H->SetYTitle(ytitle.c_str());
-    H->SetFillColor(kBlue);
-    H->Draw(option.c_str());
-    C->Update();
-}
-
-// ****************************************************************************************************
-// *    int CharToInt(char &C)
-//
-//
-// ****************************************************************************************************
-
-//Draw 2D histograms
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option){
-    C->cd(0);
-    H->SetXTitle(xtitle.c_str());
-    H->SetYTitle(ytitle.c_str());
-    H->SetXTitle(ztitle.c_str());
-    gStyle->SetPalette(55);
-    H->Draw(option.c_str());
-    C->SetLogz(1);
-    C->Update();
 }
