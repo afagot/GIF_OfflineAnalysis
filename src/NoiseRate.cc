@@ -325,9 +325,9 @@ void GetNoiseRate(string baseName){
                 float stripArea = GIFInfra.RPCs[sl].stripGeo[p];
 
                 if(RunType->CompareTo("efficiency") == 0)
-                    normalisation = nNoise*BMNOISEWDW*1e-9*stripArea;
+                    normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
                 else if(RunType->CompareTo("efficiency") != 0)
-                    normalisation = nNoise*RDMNOISEWDW*1e-9*stripArea;
+                    normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
                 //Get the average number of hits per strip to normalise the activity
                 //histogram (this number is the same for both Strip and Chip histos).

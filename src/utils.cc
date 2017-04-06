@@ -196,7 +196,7 @@ map<int,int> TDCMapping(string baseName){
 
     //File that contains the path to the mapping file located
     //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
+    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/Mapping.csv";
 
     //Open mapping file
     ifstream mappingfile(mapping.c_str(), ios::in);
