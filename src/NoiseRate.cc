@@ -35,47 +35,6 @@
 
 //*******************************************************************************
 
-string GetSavePath(string baseName, string stepID){
-    string path;
-    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
-    MSG_INFO("[Offline] DQM files in " + path);
-    return path;
-}
-
-//*******************************************************************************
-
-map<int,int> TDCMapping(string baseName){
-    //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
-    int RPCCh;
-
-    //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
-    int TDCCh;
-
-    //2D Map of the TDC Channels and their corresponding RPC strips
-    map<int,int> Map;
-
-    //File that contains the path to the mapping file located
-    //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
-
-    //Open mapping file
-    ifstream mappingfile(mapping.c_str(), ios::in);
-    if(mappingfile){
-        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-            mappingfile >> RPCCh >> TDCCh;
-            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
-        }
-        mappingfile.close();
-    } else {
-        MSG_ERROR("[Offline] Couldn't open file " + mapping);
-        exit(EXIT_FAILURE);
-    }
-
-    return Map;
-}
-
-//*******************************************************************************
-
 void GetNoiseRate(string baseName){
 
     string daqName = baseName + "_DAQ.root";
@@ -151,8 +110,8 @@ void GetNoiseRate(string baseName){
         TH1F *ChipActivity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
         TH1F *ChipHomogeneity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
 
-        char hisname[50];                    //ID name of the histogram
-        char histitle[50];                   //Title of the histogram
+        char hisname[50];  //ID name of the histogram
+        char histitle[50]; //Title of the histogram
 
         for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
             unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
@@ -439,19 +398,14 @@ void GetNoiseRate(string baseName){
                     //********************************* General histograms
 
                     BeamProf_H[trolley][slot][p]->Write();
-
                     NoiseProf_H[trolley][slot][p]->Write();
-
                     TimeProfile_H[trolley][slot][p]->Write();
-
                     HitMultiplicity_H[trolley][slot][p]->Write();
 
                     //******************************* Strip granularity histograms
 
                     StripHitProf_H[trolley][slot][p]->Write();
-
                     StripMeanNoiseProf_H[trolley][slot][p]->Write();
-
                     StripActivity_H[trolley][slot][p]->Write();
 
                     StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
@@ -460,9 +414,7 @@ void GetNoiseRate(string baseName){
                     //******************************* Chip granularity histograms
 
                     ChipHitProf_H[trolley][slot][p]->Write();
-
                     ChipMeanNoiseProf_H[trolley][slot][p]->Write();
-
                     ChipActivity_H[trolley][slot][p]->Write();
 
                     ChipHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
