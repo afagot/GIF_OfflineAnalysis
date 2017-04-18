@@ -264,7 +264,7 @@ void GetEffClustZero(string baseName){
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
                     float eff = Efficiency0_H[slot][p]->GetMean();
-                    float effErr = Efficiency0_H[slot][p]->GetMeanError();
+                    float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();
                     float clsErr = ClusterSize0_H[slot][p]->GetMeanError();
                     float clm = ClusterMult0_H[slot][p]->GetMean();
