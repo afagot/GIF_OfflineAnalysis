@@ -123,14 +123,17 @@ void GetEffClustZero(string baseName){
                     //Efficiency
                     SetTitleName(rpcID,p,hisname,histitle,"L0_Efficiency","L0 efficiency");
                     Efficiency0_H[slot][p] = new TH1I( hisname, histitle, 2, -0.5, 1.5);
+                    SetTH1(Efficiency0_H[slot][p],"Is efficient?","Number of events");
 
                     //Cluster size
                     SetTitleName(rpcID,p,hisname,histitle,"L0_Cluster_Size","L0 cluster size");
                     ClusterSize0_H[slot][p] = new TH1I( hisname, histitle, nStrips, 0.5, nStrips+0.5);
+                    SetTH1(ClusterSize0_H[slot][p],"Cluster size", "Number of clusters");
 
                     //Cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"L0_Cluster_Mult","L0 cluster multiplicity");
                     ClusterMult0_H[slot][p] = new TH1I( hisname, histitle, nStrips, 0.5, nStrips+0.5);
+                    SetTH1(ClusterMult0_H[slot][p],"Cluster multiplicity", "Number of events");
                 }
             }
 

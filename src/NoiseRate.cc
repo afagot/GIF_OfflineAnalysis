@@ -37,47 +37,6 @@ using namespace std;
 
 //*******************************************************************************
 
-string GetSavePath(string baseName, string stepID){
-    string path;
-    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
-    MSG_INFO("[Offline] DQM files in " + path);
-    return path;
-}
-
-//*******************************************************************************
-
-map<int,int> TDCMapping(string baseName){
-    //# RPC Channel (S000 to S127: S = slots, up to 127 strips)
-    int RPCCh;
-
-    //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
-    int TDCCh;
-
-    //2D Map of the TDC Channels and their corresponding RPC strips
-    map<int,int> Map;
-
-    //File that contains the path to the mapping file located
-    //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/Mapping.csv";
-
-    //Open mapping file
-    ifstream mappingfile(mapping.c_str(), ios::in);
-    if(mappingfile){
-        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-            mappingfile >> RPCCh >> TDCCh;
-            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
-        }
-        mappingfile.close();
-    } else {
-        MSG_ERROR("[Offline] Couldn't open file " + mapping);
-        exit(EXIT_FAILURE);
-    }
-
-    return Map;
-}
-
-//*******************************************************************************
-
 void GetNoiseRate(string baseName){
 
     string daqName = baseName + "_DAQ.root";
@@ -153,8 +112,8 @@ void GetNoiseRate(string baseName){
         TH1F *ChipActivity_H[NSLOTS][NPARTITIONS];
         TH1F *ChipHomogeneity_H[NSLOTS][NPARTITIONS];
 
-        char hisname[50];                    //ID name of the histogram
-        char histitle[50];                   //Title of the histogram
+        char hisname[50];  //ID name of the histogram
+        char histitle[50]; //Title of the histogram
 
         unsigned int nSlots = GIFInfra.nSlots;
 
@@ -291,7 +250,7 @@ void GetNoiseRate(string baseName){
                     else if(peakrange)
                         BeamProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
-                    //Reject the 100 first and last ns due to inhomogeneity of data
+                    //Reject the 200 first ns due to inhomogeneity of data
                     bool rejected = (hit.TimeStamp < 200.);
 
                     if(!rejected)
@@ -366,9 +325,9 @@ void GetNoiseRate(string baseName){
                 float stripArea = GIFInfra.RPCs[sl].stripGeo[p];
 
                 if(RunType->CompareTo("efficiency") == 0)
-                    normalisation = nNoise*BMNOISEWDW*1e-9*stripArea;
+                    normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
                 else if(RunType->CompareTo("efficiency") != 0)
-                    normalisation = nNoise*RDMNOISEWDW*1e-9*stripArea;
+                    normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
                 //Get the average number of hits per strip to normalise the activity
                 //histogram (this number is the same for both Strip and Chip histos).
@@ -425,19 +384,14 @@ void GetNoiseRate(string baseName){
                 //********************************* General histograms
 
                 BeamProf_H[slot][p]->Write();
-
                 NoiseProf_H[slot][p]->Write();
-
                 TimeProfile_H[slot][p]->Write();
-
                 HitMultiplicity_H[slot][p]->Write();
 
                 //******************************* Strip granularity histograms
 
                 StripHitProf_H[slot][p]->Write();
-
                 StripMeanNoiseProf_H[slot][p]->Write();
-
                 StripActivity_H[slot][p]->Write();
 
                 StripHomogeneity_H[slot][p]->GetYaxis()->SetRangeUser(0.,1.);
@@ -446,9 +400,7 @@ void GetNoiseRate(string baseName){
                 //******************************* Chip granularity histograms
 
                 ChipHitProf_H[slot][p]->Write();
-
                 ChipMeanNoiseProf_H[slot][p]->Write();
-
                 ChipActivity_H[slot][p]->Write();
 
                 ChipHomogeneity_H[slot][p]->GetYaxis()->SetRangeUser(0.,1.);

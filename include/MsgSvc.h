@@ -24,6 +24,8 @@
 
 using namespace std;
 
+//Different codes returned by the messaging function
+
 const int FATAL   =-3;
 const int ERROR   =-2;
 const int WARNING =-1;
@@ -32,8 +34,12 @@ const int DEBUG   = 1;
 const int VERBOSE = 2;
 const int ALWAYS  = 3;
 
+//Generic messaging function
 
 int MSG(string message, int level);
+
+//Different messaging functions calling the generic
+//with the assiaciated level
 
 void MSG_FATAL(string message);
 void MSG_ERROR(string message);
