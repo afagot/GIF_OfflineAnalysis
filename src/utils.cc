@@ -298,7 +298,9 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 // ****************************************************************************************************
 
 //Set the beam time window
-void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[NSLOTS][NPARTITIONS],
+void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
+                    float (&PeakWidth)[NSLOTS][NPARTITIONS],
+                    float (&Bckgrd)[NSLOTS][NPARTITIONS],
                     TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
     RAWData mydata;
 
@@ -336,7 +338,7 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
     }
 
     //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);//Fit function (gaussian)
+    TF1 *slicefit = new TF1("slicefit","gaus(0) + [3]",200.,400.);//Fit function (gaussian)
 
     //Loop over RPCs
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
@@ -350,13 +352,15 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
             //RMS
             slicefit->SetParameter(2,20);
             slicefit->SetParLimits(2,1,40);
+            //Offset
+            slicefit->SetParameter(3,20);
+            slicefit->SetParLimits(3,0,1000);
 
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
                 tmpTimeProfile[sl][p]->Fit(slicefit,"QR");
 
             PeakTime[sl][p] = slicefit->GetParameter(1);
             PeakWidth[sl][p] = 4.*slicefit->GetParameter(2);
-            if(PeakWidth[sl][p] > 50.) PeakWidth[sl][p] = 50.;
             delete tmpTimeProfile[sl][p];
         }
     }

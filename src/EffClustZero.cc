@@ -79,8 +79,9 @@ void GetEffClustZero(string baseName){
 
             float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
             float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
+            float Bckgrd[NSLOTS][NPARTITIONS] = {{0.}};
 
-            SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakMeanTime,PeakSpread,Bckgrd,dataTree,RPCChMap,GIFInfra);
 
             //****************** LINK RAW DATA *******************************
 
@@ -266,6 +267,7 @@ void GetEffClustZero(string baseName){
                     //and evaluate the streamer probability (cls > 5)
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
+                    float offset = Bckgrd[slot][p];
                     float eff = Efficiency0_H[slot][p]->GetMean();
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();
@@ -278,7 +280,7 @@ void GetEffClustZero(string baseName){
                     float strProb = nStreamers/nClusters;
 
                     //Write in the output CSV file
-                    outputCSV << peak << '\t' << peakRMS << '\t'
+                    outputCSV << peak << '\t' << peakRMS << '\t' << offset << '\t'
                               << eff << '\t' << effErr << '\t'
                               << cls << '\t' << clsErr << '\t'
                               << clm << '\t' << clmErr << '\t'
