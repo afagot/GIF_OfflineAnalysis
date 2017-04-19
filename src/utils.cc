@@ -300,7 +300,6 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 //Set the beam time window
 void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
                     float (&PeakWidth)[NSLOTS][NPARTITIONS],
-                    float (&Bckgrd)[NSLOTS][NPARTITIONS],
                     TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
     RAWData mydata;
 
@@ -340,9 +339,6 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
     //Fit with a gaussian the muon peak
     TF1 *peakfit = new TF1("peakfit","gaus(0)",200.,400.);
 
-    //Fit with a constant the noise
-    TF1 *noisefit = new TF1("noisefit","[0]",330.,600.);
-
     //Loop over RPCs
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
         for(unsigned int p = 0; p < NPARTITIONS; p++){
@@ -351,20 +347,17 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
             peakfit->SetParLimits(0,1,100000);
             //Mean value
             peakfit->SetParameter(1,300);
-            peakfit->SetParLimits(1,260,340);
+            peakfit->SetParLimits(1,280,320);
             //RMS
             peakfit->SetParameter(2,7);
             peakfit->SetParLimits(2,1,10);
-            //Offset
-            noisefit->SetParameter(0,20);
-            noisefit->SetParLimits(0,0,10000);
 
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
                 tmpTimeProfile[sl][p]->Fit(peakfit,"QR");
 
             PeakTime[sl][p] = peakfit->GetParameter(1);
             PeakWidth[sl][p] = 4.*peakfit->GetParameter(2);
-            Bckgrd[sl][p] = noisefit->GetParameter(0);
+            if(PeakWidth[sl][p] > 50.) PeakWidth[sl][p] = 50.;
             delete tmpTimeProfile[sl][p];
         }
     }

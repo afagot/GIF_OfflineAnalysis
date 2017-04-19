@@ -132,7 +132,6 @@ void         SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 void         SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
 void         SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
                             float (&PeakWidth)[NSLOTS][NPARTITIONS],
-                            float (&Bckgrd)[NSLOTS][NPARTITIONS],
                             TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra);
 bool         SortStrips (RPCHit A, RPCHit B);
 void         SetTitleName(string rpcID, unsigned int partition,

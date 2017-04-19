@@ -80,9 +80,8 @@ void GetNoiseRate(string baseName){
 
         float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
         float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
-        float Bckgrd[NSLOTS][NPARTITIONS] = {{0.}};
 
-        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(PeakMeanTime,PeakSpread,Bckgrd,dataTree,RPCChMap,GIFInfra);
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
 
         //****************** LINK RAW DATA *******************************
 

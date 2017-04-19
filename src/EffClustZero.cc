@@ -79,9 +79,8 @@ void GetEffClustZero(string baseName){
 
             float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
             float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
-            float BckgrdNoise[NSLOTS][NPARTITIONS] = {{0.}};
 
-            SetBeamWindow(PeakMeanTime,PeakSpread,BckgrdNoise,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
 
             //****************** LINK RAW DATA *******************************
 
@@ -145,6 +144,7 @@ void GetEffClustZero(string baseName){
             //noise hits within the peak time range and correct
             //the efficiency accordingly.
             int inTimeHits[NSLOTS][NPARTITIONS] = {{0}};
+            int noiseHits[NSLOTS][NPARTITIONS] = {{0}};
 
             unsigned int nEntries = dataTree->GetEntries();
 
@@ -176,7 +176,8 @@ void GetEffClustZero(string baseName){
                     if(peakrange){
                         RPCHits[hit.Station-1][hit.Partition-1].push_back(hit);
                         inTimeHits[hit.Station-1][hit.Partition-1]++;
-                    }
+                    } else if(hit.TimeStamp >= 100.)
+                        noiseHits[hit.Station-1][hit.Partition-1]++;
                 }
 
                 //Get effiency and cluster size
@@ -277,7 +278,8 @@ void GetEffClustZero(string baseName){
                     //with respect to the actual muon data. The efficiency
                     //will then be corrected using this factor to "substract"
                     //the fake efficiency caused by the noise
-                    float integralNoise = 2*PeakSpread[slot][p]*BckgrdNoise[slot][p];
+                    float meanNoiseHitPerns = (float)noiseHits[slot][p]/(BMTDCWINDOW-100.-2*PeakSpread[slot][p]);
+                    float integralNoise = 2*PeakSpread[slot][p]*meanNoiseHitPerns;
                     float integralPeak = (float)inTimeHits[slot][p];
 
                     float DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
@@ -286,7 +288,7 @@ void GetEffClustZero(string baseName){
                     //and evaluate the streamer probability (cls > 5)
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
-                    float noise = BckgrdNoise[slot][p];
+                    float noise = meanNoiseHitPerns*BMTDCWINDOW/10.;
                     float eff = Efficiency0_H[slot][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();
