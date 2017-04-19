@@ -356,6 +356,7 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS], float (&PeakWidth)[N
 
             PeakTime[sl][p] = slicefit->GetParameter(1);
             PeakWidth[sl][p] = 4.*slicefit->GetParameter(2);
+            if(PeakWidth[sl][p] > 50.) PeakWidth[sl][p] = 50.;
             delete tmpTimeProfile[sl][p];
         }
     }
