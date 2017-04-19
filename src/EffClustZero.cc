@@ -79,9 +79,9 @@ void GetEffClustZero(string baseName){
 
             float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
             float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
-            float Bckgrd[NSLOTS][NPARTITIONS] = {{0.}};
+            float BckgrdNoise[NSLOTS][NPARTITIONS] = {{0.}};
 
-            SetBeamWindow(PeakMeanTime,PeakSpread,Bckgrd,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakMeanTime,PeakSpread,BckgrdNoise,dataTree,RPCChMap,GIFInfra);
 
             //****************** LINK RAW DATA *******************************
 
@@ -140,6 +140,12 @@ void GetEffClustZero(string baseName){
 
             //****************** MACRO ***************************************
 
+            //Table to keep track of the number of in time hits.
+            //Will be used later to estimated the proportion of
+            //noise hits within the peak time range and correct
+            //the efficiency accordingly.
+            int inTimeHits[NSLOTS][NPARTITIONS] = {{0}};
+
             unsigned int nEntries = dataTree->GetEntries();
 
             for(unsigned int i = 0; i < nEntries; i++){
@@ -167,8 +173,10 @@ void GetEffClustZero(string baseName){
 
                     bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
-                    if(peakrange)
+                    if(peakrange){
                         RPCHits[hit.Station-1][hit.Partition-1].push_back(hit);
+                        inTimeHits[hit.Station-1][hit.Partition-1]++;
+                    }
                 }
 
                 //Get effiency and cluster size
@@ -255,6 +263,8 @@ void GetEffClustZero(string baseName){
                     //Write the header file
                     listCSV << "Peak-" << partName << '\t'
                             << "Peak-" << partName << "_RMS\t"
+                            << "Noise-" << partName << "\t"
+                            << "DataRatio-" << partName << "\t"
                             << "Eff-" << partName << '\t'
                             << "Eff-" << partName << "_Err\t"
                             << "ClS-" << partName << '\t'
@@ -263,12 +273,21 @@ void GetEffClustZero(string baseName){
                             << "ClM-" << partName << "_Err\t"
                             << "StrProb-" << partName << '\t';
 
+                    //For each cases, evaluate the proportion of noise
+                    //with respect to the actual muon data. The efficiency
+                    //will then be corrected using this factor to "substract"
+                    //the fake efficiency caused by the noise
+                    float integralNoise = 2*PeakSpread[slot][p]*BckgrdNoise[slot][p];
+                    float integralPeak = (float)inTimeHits[slot][p];
+
+                    float DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
+
                     //Get efficiency, cluster size and multiplicity
                     //and evaluate the streamer probability (cls > 5)
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
-                    float offset = Bckgrd[slot][p];
-                    float eff = Efficiency0_H[slot][p]->GetMean();
+                    float noise = BckgrdNoise[slot][p];
+                    float eff = Efficiency0_H[slot][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();
                     float clsErr = ClusterSize0_H[slot][p]->GetMeanError();
@@ -280,7 +299,8 @@ void GetEffClustZero(string baseName){
                     float strProb = nStreamers/nClusters;
 
                     //Write in the output CSV file
-                    outputCSV << peak << '\t' << peakRMS << '\t' << offset << '\t'
+                    outputCSV << peak << '\t' << peakRMS << '\t'
+                              << noise << '\t' << DataNoiseRatio << '\t'
                               << eff << '\t' << effErr << '\t'
                               << cls << '\t' << clsErr << '\t'
                               << clm << '\t' << clmErr << '\t'

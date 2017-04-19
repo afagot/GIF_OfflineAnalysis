@@ -337,31 +337,34 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
         }
     }
 
-    //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0) + [3]",200.,400.);//Fit function (gaussian)
+    //Fit with a gaussian the muon peak
+    TF1 *peakfit = new TF1("peakfit","gaus(0)",200.,400.);
+
+    //Fit with a constant the noise
+    TF1 *noisefit = new TF1("noisefit","[0]",330.,600.);
 
     //Loop over RPCs
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
         for(unsigned int p = 0; p < NPARTITIONS; p++){
             //Amplitude
-            slicefit->SetParameter(0,50);
-            slicefit->SetParLimits(0,1,100000);
+            peakfit->SetParameter(0,50);
+            peakfit->SetParLimits(0,1,100000);
             //Mean value
-            slicefit->SetParameter(1,300);
-            slicefit->SetParLimits(1,260,340);
+            peakfit->SetParameter(1,300);
+            peakfit->SetParLimits(1,260,340);
             //RMS
-            slicefit->SetParameter(2,20);
-            slicefit->SetParLimits(2,1,40);
+            peakfit->SetParameter(2,7);
+            peakfit->SetParLimits(2,1,10);
             //Offset
-            slicefit->SetParameter(3,20);
-            slicefit->SetParLimits(3,0,1000);
+            noisefit->SetParameter(0,20);
+            noisefit->SetParLimits(0,0,10000);
 
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
-                tmpTimeProfile[sl][p]->Fit(slicefit,"QR");
+                tmpTimeProfile[sl][p]->Fit(peakfit,"QR");
 
-            PeakTime[sl][p] = slicefit->GetParameter(1);
-            PeakWidth[sl][p] = 4.*slicefit->GetParameter(2);
-            Bckgrd[sl][p] = slicefit->GetParameter(3);
+            PeakTime[sl][p] = peakfit->GetParameter(1);
+            PeakWidth[sl][p] = 4.*peakfit->GetParameter(2);
+            Bckgrd[sl][p] = noisefit->GetParameter(0);
             delete tmpTimeProfile[sl][p];
         }
     }
