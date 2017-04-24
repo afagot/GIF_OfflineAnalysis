@@ -288,7 +288,7 @@ void GetEffClustZero(string baseName){
                     //and evaluate the streamer probability (cls > 5)
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
-                    float noise = meanNoiseHitPerns*BMTDCWINDOW/10.;
+                    float noise = meanNoiseHitPerns*10.;
                     float eff = Efficiency0_H[slot][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();

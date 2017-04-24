@@ -315,11 +315,12 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
 
     TH1F *tmpTimeProfile[NSLOTS][NPARTITIONS];
     float noiseHits[NSLOTS][NPARTITIONS] = {{0.}};
+    int binWidth = 10;
 
     for(unsigned int sl = 0; sl < NSLOTS; sl++)
         for(unsigned int p = 0; p < NPARTITIONS; p++){
             string name = "tmpTProf" + intToString(sl) +  intToString(p);
-            tmpTimeProfile[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+            tmpTimeProfile[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/binWidth,0.,BMTDCWINDOW);
     }
 
     //Looop over the entries to get the hits and fill the time distribution + count the
@@ -361,14 +362,14 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
 
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
         for(unsigned int p = 0; p < NPARTITIONS; p++){
-            noiseHits[sl][p] = 10. * noiseHits[sl][p] / timeWdw;
+            noiseHits[sl][p] = (float)binWidth * noiseHits[sl][p] / timeWdw;
 
             tmpTimeProfile[sl][p]->Draw();
 
             string PNG = "Before-" + intToString(sl) + "-" + intToString(p) + ".png";
             c->SaveAs(PNG.c_str());
 
-            for(unsigned int b = 1; b <= BMTDCWINDOW/20; b++){
+            for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
                 float binContent = (float)tmpTimeProfile[sl][p]->GetBinContent(b);
                 float correctedContent = (binContent < noiseHits[sl][p]) ? 0. : binContent-noiseHits[sl][p];
                 tmpTimeProfile[sl][p]->SetBinContent(b,correctedContent);
@@ -381,7 +382,7 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
     }
 
     //Fit with a gaussian the muon peak
-    TF1 *peakfit = new TF1("peakfit","gaus(0)",200.,400.);
+    TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit,highlimit);
 
     //Loop over RPCs
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
@@ -404,8 +405,7 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
             c->SaveAs(PNG.c_str());
 
             PeakTime[sl][p] = peakfit->GetParameter(1);
-            PeakWidth[sl][p] = 4.*peakfit->GetParameter(2);
-            if(PeakWidth[sl][p] > 50.) PeakWidth[sl][p] = 50.;
+            PeakWidth[sl][p] = 3.*peakfit->GetParameter(2);
             delete tmpTimeProfile[sl][p];
         }
     }
