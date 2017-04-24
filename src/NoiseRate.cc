@@ -156,7 +156,7 @@ void GetNoiseRate(string baseName){
 
                 //Time profile
                 SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
-                TimeProfile_H[slot][p] = new TH1F( hisname, histitle, (int)timeWidth/10, 0., timeWidth);
+                TimeProfile_H[slot][p] = new TH1F( hisname, histitle, (int)timeWidth/TIMEBIN, 0., timeWidth);
                 SetTH1(TimeProfile_H[slot][p],"Time [ns]","Number of hits");
 
                 //Hit multiplicity
@@ -240,20 +240,15 @@ void GetNoiseRate(string baseName){
 
                     bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
-                    //Define also the ranges used for the noise calculation
-                    bool earlynoiserange = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
-                    bool latenoiserange  = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
-
                     //Fill the hits inside of the defined noise range
-                    if(earlynoiserange || latenoiserange)
-                        NoiseProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                    else if(peakrange)
+                    if(peakrange)
                         BeamProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    else if(hit.TimeStamp >= TIMEREJECT)
+                        NoiseProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
-                    //Reject the 200 first ns due to inhomogeneity of data
-                    bool rejected = (hit.TimeStamp < 200.);
-
-                    if(!rejected)
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    if(hit.TimeStamp >= TIMEREJECT)
                         NoiseProf_H[hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 }
 
@@ -324,9 +319,10 @@ void GetNoiseRate(string baseName){
                 //Get the strip geometry
                 float stripArea = GIFInfra.RPCs[sl].stripGeo[p];
 
-                if(RunType->CompareTo("efficiency") == 0)
-                    normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
-                else if(RunType->CompareTo("efficiency") != 0)
+                if(RunType->CompareTo("efficiency") == 0){
+                    float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread[slot][p];
+                    normalisation = nEntries*noiseWindow*1e-9*stripArea;
+                } else if(RunType->CompareTo("efficiency") != 0)
                     normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
                 //Get the average number of hits per strip to normalise the activity
@@ -352,6 +348,23 @@ void GetNoiseRate(string baseName){
                     //The chip activity only is incremented by an activity
                     //that is normalised to the number of strip per chip
                     ChipActivity_H[slot][p]->Fill(p*nStripsPart+st,stripAct/NSTRIPSCHIP);
+
+                    //Get profit of the loop over strips to subtract the
+                    //average background from the beam profile. This average
+                    //calculated strip by strip is obtained using a proportionnality
+                    //rule on the number of hits measured during the noise
+                    //window and the time width of the peak
+                    if(RunType->CompareTo("efficiency") == 0){
+                        int nNoiseHits = NoiseProf_H[slot][p]->GetBinContent(st);
+                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread[slot][p];
+                        float peakWindow = 2*PeakSpread[sl][p];
+                        float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
+
+                        int nPeakHits = BeamProf_H[slot][p]->GetBinContent(st);
+
+                        float correctedContent = (nPeakHits<nNoisePeak) ? 0. : (float)nPeakHits-nNoisePeak;
+                        BeamProf_H[slot][p]->SetBinContent(st,correctedContent);
+                    }
                 }
 
                 //Write in the output file the mean noise rate per

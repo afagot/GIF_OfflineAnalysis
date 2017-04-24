@@ -176,7 +176,7 @@ void GetEffClustZero(string baseName){
                     if(peakrange){
                         RPCHits[hit.Station-1][hit.Partition-1].push_back(hit);
                         inTimeHits[hit.Station-1][hit.Partition-1]++;
-                    } else if(hit.TimeStamp >= 100.)
+                    } else if(hit.TimeStamp >= TIMEREJECT)
                         noiseHits[hit.Station-1][hit.Partition-1]++;
                 }
 
@@ -278,7 +278,7 @@ void GetEffClustZero(string baseName){
                     //with respect to the actual muon data. The efficiency
                     //will then be corrected using this factor to "substract"
                     //the fake efficiency caused by the noise
-                    float meanNoiseHitPerns = (float)noiseHits[slot][p]/(BMTDCWINDOW-100.-2*PeakSpread[slot][p]);
+                    float meanNoiseHitPerns = (float)noiseHits[slot][p]/(BMTDCWINDOW-TIMEREJECT-2*PeakSpread[slot][p]);
                     float integralNoise = 2*PeakSpread[slot][p]*meanNoiseHitPerns;
                     float integralPeak = (float)inTimeHits[slot][p];
 
@@ -288,7 +288,7 @@ void GetEffClustZero(string baseName){
                     //and evaluate the streamer probability (cls > 5)
                     float peak = PeakMeanTime[slot][p];
                     float peakRMS = PeakSpread[slot][p];
-                    float noise = meanNoiseHitPerns*10.;
+                    float noise = meanNoiseHitPerns*TIMEBIN;
                     float eff = Efficiency0_H[slot][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cls = ClusterSize0_H[slot][p]->GetMean();

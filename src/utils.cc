@@ -323,12 +323,11 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
             tmpTimeProfile[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/binWidth,0.,BMTDCWINDOW);
     }
 
-    //Looop over the entries to get the hits and fill the time distribution + count the
+    //Loop over the entries to get the hits and fill the time distribution + count the
     //noise hits in the window around the peak
 
     float lowlimit = 260.;
     float highlimit = 340.;
-    float timeReject = 100.;
 
     for(unsigned int i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
@@ -347,44 +346,33 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
             //per bin of 10ns and subtract it later from the time distribution
             bool peakrange = (tmpHit.TimeStamp >= lowlimit && tmpHit.TimeStamp < highlimit);
 
-            if(tmpHit.TimeStamp >= timeReject && !peakrange)
+            if(tmpHit.TimeStamp >= TIMEREJECT && !peakrange)
                 noiseHits[tmpHit.Station-1][tmpHit.Partition-1]++;
         }
     }
 
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
     //distribution
-
-    TCanvas* c = new TCanvas("c","c");
-    c->cd(0);
-
-    float timeWdw = BMTDCWINDOW - timeReject - (highlimit-lowlimit);
+    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
 
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
         for(unsigned int p = 0; p < NPARTITIONS; p++){
-            noiseHits[sl][p] = (float)binWidth * noiseHits[sl][p] / timeWdw;
+            if(tmpTimeProfile[sl][p]->GetEntries() > 0.){
+                noiseHits[sl][p] = (float)binWidth * noiseHits[sl][p] / timeWdw;
 
-            tmpTimeProfile[sl][p]->Draw();
-
-            string PNG = "Before-" + intToString(sl) + "-" + intToString(p) + ".png";
-            c->SaveAs(PNG.c_str());
-
-            for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
-                float binContent = (float)tmpTimeProfile[sl][p]->GetBinContent(b);
-                float correctedContent = (binContent < noiseHits[sl][p]) ? 0. : binContent-noiseHits[sl][p];
-                tmpTimeProfile[sl][p]->SetBinContent(b,correctedContent);
+                for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                    float binContent = (float)tmpTimeProfile[sl][p]->GetBinContent(b);
+                    float correctedContent = (binContent < noiseHits[sl][p]) ? 0. : binContent-noiseHits[sl][p];
+                    tmpTimeProfile[sl][p]->SetBinContent(b,correctedContent);
+                }
             }
-
-            tmpTimeProfile[sl][p]->Draw();
-            PNG = "After-" + intToString(sl) + "-" + intToString(p) + ".png";
-            c->SaveAs(PNG.c_str());
         }
     }
 
-    //Fit with a gaussian the muon peak
+    //Fit with a gaussian the muon peak and extract the peak center as well as its width
+    //defined as 3 standard deviation (99.7% of the peak area)
     TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit,highlimit);
 
-    //Loop over RPCs
     for(unsigned int sl = 0; sl < NSLOTS; sl++){
         for(unsigned int p = 0; p < NPARTITIONS; p++){
             //Amplitude
@@ -400,12 +388,10 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
                 tmpTimeProfile[sl][p]->Fit(peakfit,"QR");
 
-            tmpTimeProfile[sl][p]->Draw();
-            string PNG = "Fit-" + intToString(sl) + "-" + intToString(p) + ".png";
-            c->SaveAs(PNG.c_str());
-
+            //Save the peak center and width from gaussian fit
             PeakTime[sl][p] = peakfit->GetParameter(1);
             PeakWidth[sl][p] = 3.*peakfit->GetParameter(2);
+
             delete tmpTimeProfile[sl][p];
         }
     }
