@@ -201,7 +201,7 @@ void GetNoiseRate(string baseName){
                 //Strip activity
                 SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
                 ChipActivity_H[slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
-                SetTH1(ChipMeanNoiseProf_H[slot][p],"Chip","Activity (normalized chip profil)");
+                SetTH1(ChipActivity_H[slot][p],"Chip","Activity (normalized chip profil)");
 
                 //Noise homogeneity
                 SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
@@ -328,7 +328,7 @@ void GetNoiseRate(string baseName){
                 //Get the average number of hits per strip to normalise the activity
                 //histogram (this number is the same for both Strip and Chip histos).
                 unsigned int nStripsPart = GIFInfra.RPCs[sl].strips;
-                float averageNhit = nNoise/nStripsPart;
+                float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
 
                 for(unsigned int st = 1; st <= nStripsPart; st++){
                     //Fill noise rates
