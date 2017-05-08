@@ -77,21 +77,24 @@ void GetCurrent(string baseName){
                 for(unsigned int g = 0; g < nGapsRPC; g++){
                     string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
                     float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
-                    string ImonHisto, HVeffHisto, ADCHisto;
+                    string ImonHisto, JmonTitle, HVeffHisto, ADCHisto;
 
                     //Histogram names
                     if(gapID == "empty"){
                         HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
                         ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name;
                         ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name;
                     } else {
                         HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                         ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                         ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                     }
 
                     listCSV << HVeffHisto << '\t'
                             << ImonHisto << '\t' << ImonHisto << "_err\t"
+                            << JmonTitle << '\t' << JmonTitle << "_err\t"
                             << ADCHisto << '\t' << ADCHisto << "_err\t";
 
                     //Save the effective voltages
@@ -107,13 +110,19 @@ void GetCurrent(string baseName){
                     //Save the corresponding gap imons
                     if(caenFile.GetListOfKeys()->Contains(ImonHisto.c_str())){
                         TH1F* Imon = (TH1F*)caenFile.Get(ImonHisto.c_str());
-                        float current = Imon->GetMean()/areagap;
-                        float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries())/areagap;
+                        float current = Imon->GetMean();
+                        float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries());
+                        float density = current/areagap;
+                        float densityErr = currentErr/areagap;
                         outputCSV << current << '\t' << currentErr << '\t';
+                        outputCSV << density << '\t' << densityErr << '\t';
                     } else {
                         float current = 0.;
                         float currentErr = 0.;
+                        float density = 0.;
+                        float densityErr = 0.;
                         outputCSV << current << '\t' << currentErr << '\t';
+                        outputCSV << density << '\t' << densityErr << '\t';
                     }
 
                     //Save the corresponding gap ADC currents
