@@ -32,10 +32,11 @@ using namespace std;
 
 //List of global variables used as default values
 //in case of problems to read Dimensions.ini
-const float RDMTDCWINDOW = 400.*25.;
-const float RDMNOISEWDW  = RDMTDCWINDOW - 200.;
+const float TIMEREJECT   = 100.;
+const float TIMEBIN      = 10.;
 const float BMTDCWINDOW  = 24.*25.;
-const float BMNOISEWDW   = 300.;
+const float RDMTDCWINDOW = 400.*25.;
+const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
 
 const unsigned int NTROLLEYS   = 5;
 const unsigned int NSLOTS      = 9;

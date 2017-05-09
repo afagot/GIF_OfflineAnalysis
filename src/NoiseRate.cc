@@ -158,8 +158,8 @@ void GetNoiseRate(string baseName){
 
                     //Time profile
                     SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
-                    TimeProfile_H[trolley][slot][p] = new TH1F( hisname, histitle, (int)timeWidth/20, 0., timeWidth);
-                    SetTH1(TimeProfile_H[trolley][slot][p],"Time [ns]","Number of hits");
+                    TimeProfile_H[trolley][slot][p] = new TH1F( hisname, histitle, (int)timeWidth/TIMEBIN, 0., timeWidth);
+                    SetTH1(TimeProfile_H[trolley][slot][p],"Time (ns)","Number of hits");
 
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
@@ -176,7 +176,7 @@ void GetNoiseRate(string baseName){
                     //Mean noise rate profile
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
                     StripMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
-                    SetTH1(StripMeanNoiseProf_H[trolley][slot][p],"Strip","Rate [Hz/cm^{2}]");
+                    SetTH1(StripMeanNoiseProf_H[trolley][slot][p],"Strip","Rate (Hz/cm^{2})");
 
                     //Strip activity
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
@@ -198,12 +198,12 @@ void GetNoiseRate(string baseName){
                     //Mean noise rate profile
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
                     ChipMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
-                    SetTH1(ChipMeanNoiseProf_H[trolley][slot][p],"Chip","Rate [Hz/cm^{2}]");
+                    SetTH1(ChipMeanNoiseProf_H[trolley][slot][p],"Chip","Rate (Hz/cm^{2})");
 
                     //Strip activity
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
                     ChipActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
-                    SetTH1(ChipMeanNoiseProf_H[trolley][slot][p],"Chip","Activity (normalized chip profil)");
+                    SetTH1(ChipActivity_H[trolley][slot][p],"Chip","Activity (normalized chip profil)");
 
                     //Noise homogeneity
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
@@ -232,8 +232,6 @@ void GetNoiseRate(string baseName){
                 if(data.TDCCh->at(h) > 5127) continue;
                 if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
 
-                //Get rid of the noise hits in the ground channels of KODEL chambers
-
                 SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
 
                 if(RunType->CompareTo("efficiency") == 0){
@@ -245,20 +243,15 @@ void GetNoiseRate(string baseName){
 
                     bool peakrange          = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
-                    //Define also the ranges used for the noise calculation
-                    bool earlynoiserange    = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
-                    bool latenoiserange     = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
-
                     //Fill the hits inside of the defined noise range
-                    if(earlynoiserange || latenoiserange){
-                        NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-                    } else if(peakrange)
+                    if(peakrange)
                         BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    else if(hit.TimeStamp >= TIMEREJECT)
+                        NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 } else if(RunType->CompareTo("efficiency") != 0){
-                    //Reject the 200 first ns due to inhomogeneity of data
-                    bool rejected = (hit.TimeStamp < 200.);
-
-                    if(!rejected)
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    if(hit.TimeStamp >= TIMEREJECT)
                         NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
                 }
 
@@ -339,15 +332,16 @@ void GetNoiseRate(string baseName){
                     //Get the strip geometry
                     float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
 
-                    if(RunType->CompareTo("efficiency") == 0)
-                        normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
-                    else if(RunType->CompareTo("efficiency") != 0)
+                    if(RunType->CompareTo("efficiency") == 0){
+                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread[trolley][slot][p];
+                        normalisation = nEntries*noiseWindow*1e-9*stripArea;
+                    } else if(RunType->CompareTo("efficiency") != 0)
                         normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
 
                     //Get the average number of hits per strip to normalise the activity
                     //histogram (this number is the same for both Strip and Chip histos).
                     unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
-                    float averageNhit = nNoise/nStripsPart;
+                    float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
 
                     for(unsigned int st = 1; st <= nStripsPart; st++){
                         //Fill noise rates
@@ -367,6 +361,23 @@ void GetNoiseRate(string baseName){
                         //The chip activity only is incremented by an activity
                         //that is normalised to the number of strip per chip
                         ChipActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct/NSTRIPSCHIP);
+
+                        //Get profit of the loop over strips to subtract the
+                        //average background from the beam profile. This average
+                        //calculated strip by strip is obtained using a proportionnality
+                        //rule on the number of hits measured during the noise
+                        //window and the time width of the peak
+                        if(RunType->CompareTo("efficiency") == 0){
+                            int nNoiseHits = NoiseProf_H[trolley][slot][p]->GetBinContent(st);
+                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread[trolley][slot][p];
+                            float peakWindow = 2*PeakSpread[trolley][slot][p];
+                            float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
+
+                            int nPeakHits = BeamProf_H[trolley][slot][p]->GetBinContent(st);
+
+                            float correctedContent = (nPeakHits<nNoisePeak) ? 0. : (float)nPeakHits-nNoisePeak;
+                            BeamProf_H[trolley][slot][p]->SetBinContent(st,correctedContent);
+                        }
                     }
 
                     //Write in the output file the mean noise rate per

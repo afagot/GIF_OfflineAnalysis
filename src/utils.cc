@@ -341,6 +341,8 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
 
     TH1F *tmpTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    float noiseHits[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+    int binWidth = TIMEBIN;
 
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++)
         for(unsigned int sl = 0; sl < NSLOTS; sl++)
@@ -348,6 +350,12 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                 string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
                 tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
     }
+
+    //Loop over the entries to get the hits and fill the time distribution + count the
+    //noise hits in the window around the peak
+
+    float lowlimit = 260.;
+    float highlimit = 340.;
 
     for(unsigned int i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
@@ -361,11 +369,38 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
 
             SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
             tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
+
+            //Count the noise outside of the peak area to have an estimation of the noise
+            //per bin of 10ns and subtract it later from the time distribution
+            bool peakrange = (tmpHit.TimeStamp >= lowlimit && tmpHit.TimeStamp < highlimit);
+
+            if(tmpHit.TimeStamp >= TIMEREJECT && !peakrange)
+                noiseHits[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]++;
+        }
+    }
+
+    //Compute the average number of noise hits per 10ns bin and subtract it to the time
+    //distribution
+    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
+
+    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
+        for(unsigned int sl = 0; sl < NSLOTS; sl++){
+            for(unsigned int p = 0; p < NPARTITIONS; p++){
+                if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.){
+                    noiseHits[tr][sl][p] = (float)binWidth * noiseHits[tr][sl][p] / timeWdw;
+
+                    for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                        float binContent = (float)tmpTimeProfile[tr][sl][p]->GetBinContent(b);
+                        float correctedContent = (binContent < noiseHits[tr][sl][p]) ? 0. : binContent-noiseHits[tr][sl][p];
+                        tmpTimeProfile[tr][sl][p]->SetBinContent(b,correctedContent);
+                    }
+                }
+            }
         }
     }
 
     //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0)+[3]",250.,350.);
+    TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);
 
     //Loop over RPCs
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
@@ -380,15 +415,12 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                 //RMS
                 slicefit->SetParameter(2,20);
                 slicefit->SetParLimits(2,1,40);
-                //Background offset
-                slicefit->SetParameter(3,10);
-                slicefit->SetParLimits(3,0,100000);
 
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.)
                     tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
 
                 PeakTime[tr][sl][p] = slicefit->GetParameter(1);
-                PeakWidth[tr][sl][p] = 2.*slicefit->GetParameter(2);
+                PeakWidth[tr][sl][p] = 3.*slicefit->GetParameter(2);
 
                 delete tmpTimeProfile[tr][sl][p];
             }
