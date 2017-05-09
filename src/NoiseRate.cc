@@ -357,7 +357,7 @@ void GetNoiseRate(string baseName){
                     if(RunType->CompareTo("efficiency") == 0){
                         int nNoiseHits = NoiseProf_H[slot][p]->GetBinContent(st);
                         float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread[slot][p];
-                        float peakWindow = 2*PeakSpread[sl][p];
+                        float peakWindow = 2*PeakSpread[slot][p];
                         float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
 
                         int nPeakHits = BeamProf_H[slot][p]->GetBinContent(st);
