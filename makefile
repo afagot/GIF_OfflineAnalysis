@@ -19,8 +19,9 @@ CFLAGS = -ggdb -fPIC -DLINUX -Wall -funsigned-char \
 
 all: $(DAQ_BIN_DIR) $(DAQ_OBJ_DIR) offlineanalysis
 
-offlineanalysis: main.o NoiseRate.o Current.o IniFile.o MsgSvc.o utils.o
+offlineanalysis: main.o EffLevelZero.o NoiseRate.o Current.o IniFile.o MsgSvc.o utils.o
 		g++ $(CFLAGS) $(DAQ_OBJ_DIR)/main.o \
+		$(DAQ_OBJ_DIR)/EffLevelZero.o \
 		$(DAQ_OBJ_DIR)/NoiseRate.o \
 		$(DAQ_OBJ_DIR)/Current.o \
 		$(DAQ_OBJ_DIR)/IniFile.o \
@@ -32,6 +33,8 @@ offlineanalysis: main.o NoiseRate.o Current.o IniFile.o MsgSvc.o utils.o
 
 main.o:
 	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/main.cc -o $(DAQ_OBJ_DIR)/main.o
+EffLevelZero.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/EffLevelZero.cc -o $(DAQ_OBJ_DIR)/EffLevelZero.o
 NoiseRate.o:
 	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/NoiseRate.cc -o $(DAQ_OBJ_DIR)/NoiseRate.o
 Current.o:
