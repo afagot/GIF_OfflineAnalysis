@@ -348,7 +348,7 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
         for(unsigned int sl = 0; sl < NSLOTS; sl++)
             for(unsigned int p = 0; p < NPARTITIONS; p++){
                 string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
-                tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+                tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/TIMEBIN,0.,BMTDCWINDOW);
     }
 
     //Loop over the entries to get the hits and fill the time distribution + count the
@@ -372,18 +372,22 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
     //distribution
 
+    float center[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+    float lowlimit[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+    float highlimit[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
         for(unsigned int sl = 0; sl < NSLOTS; sl++){
             for(unsigned int p = 0; p < NPARTITIONS; p++){
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.){
-                    float center = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
-                    float lowlimit = center - 40.;
-                    float highlimit = center + 40.;
+                    center[tr][sl][p] = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
+                    lowlimit[tr][sl][p] = center[tr][sl][p] - 40.;
+                    highlimit[tr][sl][p] = center[tr][sl][p] + 40.;
 
-                    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
+                    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit[tr][sl][p]-lowlimit[tr][sl][p]);
 
-                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT,lowlimit);
-                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit,BMTDCWINDOW);
+                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit[tr][sl][p]/TIMEBIN);
+                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit[tr][sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
 
                     noiseHits[tr][sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
 
@@ -397,19 +401,19 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
         }
     }
 
-    //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0)",250.,350.);
-
     //Loop over RPCs
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
         for(unsigned int sl = 0; sl < NSLOTS; sl++ ){
             for(unsigned int p = 0; p < NPARTITIONS; p++){
+                //Fit with a gaussian the "Good TDC Time"
+                TF1 *slicefit = new TF1("slicefit","gaus(0)",lowlimit[tr][sl][p],highlimit[tr][sl][p]);
+
                 //Amplitude
                 slicefit->SetParameter(0,50);
                 slicefit->SetParLimits(0,1,100000);
                 //Mean value
-                slicefit->SetParameter(1,300);
-                slicefit->SetParLimits(1,260,340);
+                slicefit->SetParameter(1,center[tr][sl][p]);
+                slicefit->SetParLimits(1,lowlimit[tr][sl][p],highlimit[tr][sl][p]);
                 //RMS
                 slicefit->SetParameter(2,20);
                 slicefit->SetParLimits(2,1,40);
