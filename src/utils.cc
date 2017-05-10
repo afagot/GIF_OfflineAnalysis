@@ -354,9 +354,6 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     //Loop over the entries to get the hits and fill the time distribution + count the
     //noise hits in the window around the peak
 
-    float lowlimit = 260.;
-    float highlimit = 340.;
-
     for(unsigned int i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
@@ -369,25 +366,26 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
 
             SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
             tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
-
-            //Count the noise outside of the peak area to have an estimation of the noise
-            //per bin of 10ns and subtract it later from the time distribution
-            bool peakrange = (tmpHit.TimeStamp >= lowlimit && tmpHit.TimeStamp < highlimit);
-
-            if(tmpHit.TimeStamp >= TIMEREJECT && !peakrange)
-                noiseHits[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]++;
         }
     }
 
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
     //distribution
-    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
 
     for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
         for(unsigned int sl = 0; sl < NSLOTS; sl++){
             for(unsigned int p = 0; p < NPARTITIONS; p++){
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.){
-                    noiseHits[tr][sl][p] = (float)binWidth * noiseHits[tr][sl][p] / timeWdw;
+                    float center = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
+                    float lowlimit = center - 40.;
+                    float highlimit = center + 40.;
+
+                    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
+
+                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT,lowlimit);
+                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit,BMTDCWINDOW);
+
+                    noiseHits[tr][sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
 
                     for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
                         float binContent = (float)tmpTimeProfile[tr][sl][p]->GetBinContent(b);
