@@ -149,7 +149,6 @@ void GetEffLevelZero(string baseName){
                     RPCHit hit;
 
                     //Get rid of the noise hits outside of the connected channels
-                    if(data.TDCCh->at(h) < 3000 || data.TDCCh->at(h) > 3127) continue;
                     if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
 
                     SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
@@ -235,6 +234,7 @@ void GetEffLevelZero(string baseName){
 
                         float DataNoiseRatio = 1.;
                         if(integralNoise != 0.) DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
+                        if(DataNoiseRatio < 0.) DataNoiseRatio = 0.;
 
                         //Get efficiency, cluster size and multiplicity
                         //and evaluate the streamer probability (cls > 5)
