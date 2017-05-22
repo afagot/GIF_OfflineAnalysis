@@ -233,7 +233,8 @@ void GetEffLevelZero(string baseName){
                         float integralNoise = 2*PeakSpread[trolley][slot][p]*meanNoiseHitPerns;
                         float integralPeak = (float)inTimeHits[trolley][slot][p];
 
-                        float DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
+                        float DataNoiseRatio = 1.;
+                        if(integralNoise != 0.) DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
 
                         //Get efficiency, cluster size and multiplicity
                         //and evaluate the streamer probability (cls > 5)
