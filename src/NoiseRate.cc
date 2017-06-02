@@ -440,6 +440,8 @@ void GetNoiseRate(string baseName){
                     StripHitProf_H[trolley][slot][p]->Write();
                     StripMeanNoiseProf_H[trolley][slot][p]->Write();
                     StripActivity_H[trolley][slot][p]->Write();
+                    MaskMeanNoiseProf_H[trolley][slot][p]->Write();
+                    MaskActivity_H[trolley][slot][p]->Write();
 
                     StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
                     StripHomogeneity_H[trolley][slot][p]->Write();

@@ -75,7 +75,7 @@ void GetEffLevelZero(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
-        if(RunType->CompareTo("efficiency") == 0) {
+        if(RunType->CompareTo("efficiency") == 0){
 
             muonPeak PeakMeanTime;
             muonPeak PeakSpread;
