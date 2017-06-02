@@ -358,7 +358,7 @@ void GetNoiseRate(string baseName){
 
                     for(Uint st = 1; st <= nStripsPart; st++){
                         //Get full RPCCh info usinf format TSCCC
-                        Uint RPCCh = t*1e4 + sl*1e3 + st;
+                        Uint RPCCh = trolley*1e4 + slot*1e3 + st;
 
                         //Fill noise rates
                         float stripRate = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/normalisation;
