@@ -62,7 +62,7 @@ void GetEffLevelZero(string baseName){
 
         //****************** MAPPING *************************************
 
-        map<int,int> RPCChMap = TDCMapping(daqName);
+        Mapping RPCChMap = TDCMapping(daqName);
 
         //****************** PEAK TIME ***********************************
 
@@ -77,8 +77,8 @@ void GetEffLevelZero(string baseName){
 
         if(RunType->CompareTo("efficiency") == 0) {
 
-            float PeakMeanTime[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
-            float PeakSpread[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+            muonPeak PeakMeanTime;
+            muonPeak PeakSpread;
 
             SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
 
@@ -86,7 +86,7 @@ void GetEffLevelZero(string baseName){
 
             RAWData data;
 
-            data.TDCCh = new vector<unsigned int>;
+            data.TDCCh = new vector<Uint>;
             data.TDCTS = new vector<float>;
             data.TDCCh->clear();
             data.TDCTS->clear();
@@ -104,18 +104,18 @@ void GetEffLevelZero(string baseName){
             char histitle[50];                   //Title of the histogram
 
 
-            for(unsigned int tr = 0; tr < GIFInfra.nTrolleys; tr++){
-                unsigned int nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
-                unsigned int trolley = CharToInt(GIFInfra.TrolleysID[tr]);
+            for(Uint tr = 0; tr < GIFInfra.nTrolleys; tr++){
+                Uint nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
+                Uint trolley = CharToInt(GIFInfra.TrolleysID[tr]);
 
-                for(unsigned int sl = 0; sl < nSlotsTrolley; sl++){
-                    unsigned int nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
-                    unsigned int slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
+                for(Uint sl = 0; sl < nSlotsTrolley; sl++){
+                    Uint nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
+                    Uint slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
 
                     //Get the chamber ID in terms of slot position SX
                     string rpcID = GIFInfra.Trolleys[tr].RPCs[sl].name;
 
-                    for (unsigned int p = 0; p < nPartRPC; p++){
+                    for (Uint p = 0; p < nPartRPC; p++){
 
                         //Initialisation of the histogram
 
@@ -136,9 +136,9 @@ void GetEffLevelZero(string baseName){
             int inTimeHits[NTROLLEYS][NSLOTS][NPARTITIONS] = {{0}};
             int noiseHits[NTROLLEYS][NSLOTS][NPARTITIONS] = {{0}};
 
-            unsigned int nEntries = dataTree->GetEntries();
+            Uint nEntries = dataTree->GetEntries();
 
-            for(unsigned int i = 0; i < nEntries; i++){
+            for(Uint i = 0; i < nEntries; i++){
                 dataTree->GetEntry(i);
 
                 //Vectors to store the hits and reconstruct clusters
@@ -149,35 +149,36 @@ void GetEffLevelZero(string baseName){
                     RPCHit hit;
 
                     //Get rid of the noise hits outside of the connected channels
-                    if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
+                    if(RPCChMap.link[data.TDCCh->at(h)] == 0) continue;
 
-                    SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                    SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                    Uint T = hit.Trolley;
+                    Uint S = hit.Station-1;
+                    Uint P = hit.Partition-1;
 
                     //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
-                            - PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
-                    float highlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
-                            + PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
+                    float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
+                    float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
 
                     bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
                     if(peakrange){
-                        RPCHits[hit.Trolley][hit.Station-1][hit.Partition-1].push_back(hit);
-                        inTimeHits[hit.Trolley][hit.Station-1][hit.Partition-1]++;
+                        RPCHits[T][S][P].push_back(hit);
+                        inTimeHits[T][S][P]++;
                     } else if(hit.TimeStamp >= TIMEREJECT)
-                        noiseHits[hit.Trolley][hit.Station-1][hit.Partition-1]++;
+                        noiseHits[T][S][P]++;
                 }
 
                 //Get effiency and cluster size
-                for(unsigned int tr = 0; tr < GIFInfra.nTrolleys; tr++){
-                    unsigned int nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
-                    unsigned int trolley = CharToInt(GIFInfra.TrolleysID[tr]);
+                for(Uint tr = 0; tr < GIFInfra.nTrolleys; tr++){
+                    Uint nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
+                    Uint trolley = CharToInt(GIFInfra.TrolleysID[tr]);
 
-                    for(unsigned int sl=0; sl<nSlotsTrolley; sl++){
-                        unsigned int nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
-                        unsigned int slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
+                    for(Uint sl=0; sl<nSlotsTrolley; sl++){
+                        Uint nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
+                        Uint slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
 
-                        for (unsigned int p = 0; p < nPartRPC; p++){
+                        for (Uint p = 0; p < nPartRPC; p++){
                             if(RPCHits[trolley][slot][p].size() > 0)
                                 Efficiency0_H[trolley][slot][p]->Fill(1);
                             else
@@ -205,15 +206,15 @@ void GetEffLevelZero(string baseName){
             outputCSV << HVstep << '\t';
 
             //Write histograms into ROOT file
-            for(unsigned int tr = 0; tr < GIFInfra.nTrolleys; tr++){
-                unsigned int nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
-                unsigned int trolley = CharToInt(GIFInfra.TrolleysID[tr]);
+            for(Uint tr = 0; tr < GIFInfra.nTrolleys; tr++){
+                Uint nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
+                Uint trolley = CharToInt(GIFInfra.TrolleysID[tr]);
 
-                for(unsigned int sl=0; sl<nSlotsTrolley; sl++){
-                    unsigned int nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
-                    unsigned int slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
+                for(Uint sl=0; sl<nSlotsTrolley; sl++){
+                    Uint nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
+                    Uint slot = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
 
-                    for (unsigned int p = 0; p < nPartRPC; p++){
+                    for (Uint p = 0; p < nPartRPC; p++){
                         string partID = "ABCD";
                         string partName = GIFInfra.Trolleys[tr].RPCs[sl].name + "-" + partID[p];
                         //Write the header file
@@ -228,8 +229,9 @@ void GetEffLevelZero(string baseName){
                         //with respect to the actual muon data. The efficiency
                         //will then be corrected using this factor to "substract"
                         //the fake efficiency caused by the noise
-                        float meanNoiseHitPerns = (float)noiseHits[trolley][slot][p]/(BMTDCWINDOW-TIMEREJECT-2*PeakSpread[trolley][slot][p]);
-                        float integralNoise = 2*PeakSpread[trolley][slot][p]*meanNoiseHitPerns;
+                        float meanNoiseHitPerns = (float)noiseHits[trolley][slot][p]/
+                                (BMTDCWINDOW-TIMEREJECT-2*PeakSpread.rpc[trolley][slot][p]);
+                        float integralNoise = 2*PeakSpread.rpc[trolley][slot][p]*meanNoiseHitPerns;
                         float integralPeak = (float)inTimeHits[trolley][slot][p];
 
                         float DataNoiseRatio = 1.;
@@ -238,8 +240,8 @@ void GetEffLevelZero(string baseName){
 
                         //Get efficiency, cluster size and multiplicity
                         //and evaluate the streamer probability (cls > 5)
-                        float peak = PeakMeanTime[trolley][slot][p];
-                        float peakRMS = PeakSpread[trolley][slot][p];
+                        float peak = PeakMeanTime.rpc[trolley][slot][p];
+                        float peakRMS = PeakSpread.rpc[trolley][slot][p];
                         float noise = meanNoiseHitPerns*TIMEBIN;
                         float eff = Efficiency0_H[trolley][slot][p]->GetMean()*DataNoiseRatio;
                         float effErr = sqrt(eff*(1.-eff)/nEntries);

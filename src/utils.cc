@@ -38,11 +38,11 @@ using namespace std;
 //  Function that casts a char into an int
 // ****************************************************************************************************
 
-unsigned int CharToInt(char &C){
+Uint CharToInt(char &C){
     stringstream ss;
     ss << C;
 
-    unsigned int I;
+    Uint I;
     ss >> I;
     return I;
 }
@@ -184,30 +184,38 @@ void WritePath(string baseName){
 //  Returns the map to translate TDC channels into RPC strips.
 // ****************************************************************************************************
 
-map<int,int> TDCMapping(string baseName){
+Mapping TDCMapping(string baseName){
     //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
-    int RPCCh;
+    Uint RPCCh = 9999;
 
     //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
-    int TDCCh;
+    Uint TDCCh = 9999;
 
-    //2D Map of the TDC Channels and their corresponding RPC strips
-    map<int,int> Map;
+    //Mask (1 is strip is active and 0 if strip is masked)
+    Uint Mask = 1;
+
+    //Maps of:
+    //TDC Channels and their corresponding RPC strips
+    //RPC Channels and their corresponding mask value
+    Mapping Map;
 
     //File that contains the path to the mapping file located
     //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
+    string mappingpath = baseName.substr(0,baseName.find_last_of("/"))+"/ChannelsMapping.csv";
 
     //Open mapping file
-    ifstream mappingfile(mapping.c_str(), ios::in);
+    ifstream mappingfile(mappingpath.c_str(), ios::in);
     if(mappingfile){
         while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-            mappingfile >> RPCCh >> TDCCh;
-            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+            mappingfile >> RPCCh >> TDCCh >> Mask;
+            if ( TDCCh != 9999 ){
+                Map.link[TDCCh] = RPCCh;
+                Map.mask[RPCCh] = Mask;
+            }
         }
         mappingfile.close();
     } else {
-        MSG_ERROR("[Offline] Couldn't open file " + mapping);
+        MSG_ERROR("[Offline] Couldn't open file " + mappingpath);
         exit(EXIT_FAILURE);
     }
 
@@ -227,7 +235,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
     rpc.nGaps       = geofile->intType(ID,"Gaps",0);
 
-    for(unsigned int g = 0 ; g < rpc.nGaps; g++){
+    for(Uint g = 0 ; g < rpc.nGaps; g++){
         string gapID = "Gap" + intToString(g+1);
         rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
 
@@ -238,7 +246,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
     string partID = "ABCD";
 
-    for(unsigned int p = 0; p < rpc.nPartitions; p++){
+    for(Uint p = 0; p < rpc.nPartitions; p++){
         string areaID  = "ActiveArea-"  + CharToString(partID[p]);
         float area = geofile->floatType(ID,areaID,1.);
         rpc.stripGeo.push_back(area);
@@ -257,7 +265,7 @@ void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
     trolley.nSlots = geofile->intType(ID,"nSlots",NSLOTS);
     trolley.SlotsID = geofile->stringType(ID,"SlotsID","");
 
-    for(unsigned int s = 0; s < trolley.nSlots; s++){
+    for(Uint s = 0; s < trolley.nSlots; s++){
         string rpcID = ID + "S" + CharToString(trolley.SlotsID[s]);
 
         RPC temprpc;
@@ -279,7 +287,7 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
     infra.TrolleysID = geofile->stringType("General","TrolleysID","");
     infra.Trolleys.clear();
 
-    for(unsigned int t = 0; t < infra.nTrolleys; t++){
+    for(Uint t = 0; t < infra.nTrolleys; t++){
         string trolleyID = "T" + CharToString(infra.TrolleysID[t]);
 
         GIFTrolley tempTrolley;
@@ -301,9 +309,9 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Strip       = Channel%1000;         //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-    for(unsigned int i = 0; i < Infra.nTrolleys; i++){
+    for(Uint i = 0; i < Infra.nTrolleys; i++){
         if(CharToInt(Infra.TrolleysID[i]) == Hit.Trolley){
-            for(unsigned int j = 0; j < Infra.Trolleys[i].nSlots; j++){
+            for(Uint j = 0; j < Infra.Trolleys[i].nSlots; j++){
                 if(CharToInt(Infra.Trolleys[i].SlotsID[j]) == Hit.Station)
                     nStripsPart = Infra.Trolleys[i].RPCs[j].strips;
             }
@@ -325,12 +333,11 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 // ****************************************************************************************************
 
 //Set the beam time window
-void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
-                    float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS],
-                    TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
+void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+                    TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra){
     RAWData mydata;
 
-    mydata.TDCCh = new vector<unsigned int>;
+    mydata.TDCCh = new vector<Uint>;
     mydata.TDCTS = new vector<float>;
     mydata.TDCCh->clear();
     mydata.TDCTS->clear();
@@ -344,9 +351,9 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     float noiseHits[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
     int binWidth = TIMEBIN;
 
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++)
-        for(unsigned int sl = 0; sl < NSLOTS; sl++)
-            for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint tr = 0; tr < NTROLLEYS; tr++)
+        for(Uint sl = 0; sl < NSLOTS; sl++)
+            for(Uint p = 0; p < NPARTITIONS; p++){
                 string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
                 tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/TIMEBIN,0.,BMTDCWINDOW);
     }
@@ -354,44 +361,50 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     //Loop over the entries to get the hits and fill the time distribution + count the
     //noise hits in the window around the peak
 
-    for(unsigned int i = 0; i < mytree->GetEntries(); i++){
+    for(Uint i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
         for(int h = 0; h < mydata.TDCNHits; h++){
             RPCHit tmpHit;
+            Uint channel = mydata.TDCCh->at(h);
+            Uint timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
-            if(mydata.TDCCh->at(h) > 5127) continue;
-            if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
+            if(channel > 5127) continue;
+            if(RPCChMap.link[channel] == 0) continue;
 
-            SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
-            tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
+            SetRPCHit(tmpHit, RPCChMap.link[channel], timing, GIFInfra);
+            Uint T = tmpHit.Trolley;
+            Uint S = tmpHit.Station-1;
+            Uint P = tmpHit.Partition-1;
+
+            tmpTimeProfile[T][S][P]->Fill(tmpHit.TimeStamp);
         }
     }
 
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
     //distribution
 
-    float center[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
-    float lowlimit[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
-    float highlimit[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+    muonPeak center;
+    muonPeak lowlimit;
+    muonPeak highlimit;
 
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
-        for(unsigned int sl = 0; sl < NSLOTS; sl++){
-            for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint tr = 0; tr < NTROLLEYS; tr++){
+        for(Uint sl = 0; sl < NSLOTS; sl++){
+            for(Uint p = 0; p < NPARTITIONS; p++){
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.){
-                    center[tr][sl][p] = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
-                    lowlimit[tr][sl][p] = center[tr][sl][p] - 40.;
-                    highlimit[tr][sl][p] = center[tr][sl][p] + 40.;
+                    center.rpc[tr][sl][p] = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
+                    lowlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] - 40.;
+                    highlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] + 40.;
 
-                    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit[tr][sl][p]-lowlimit[tr][sl][p]);
+                    float timeWdw = BMTDCWINDOW-TIMEREJECT-(highlimit.rpc[tr][sl][p]-lowlimit.rpc[tr][sl][p]);
 
-                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit[tr][sl][p]/TIMEBIN);
-                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit[tr][sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
+                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit.rpc[tr][sl][p]/TIMEBIN);
+                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit.rpc[tr][sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
 
                     noiseHits[tr][sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
 
-                    for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                    for(Uint b = 1; b <= BMTDCWINDOW/binWidth; b++){
                         float binContent = (float)tmpTimeProfile[tr][sl][p]->GetBinContent(b);
                         float correctedContent = (binContent < noiseHits[tr][sl][p]) ? 0. : binContent-noiseHits[tr][sl][p];
                         tmpTimeProfile[tr][sl][p]->SetBinContent(b,correctedContent);
@@ -402,18 +415,18 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     }
 
     //Loop over RPCs
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
-        for(unsigned int sl = 0; sl < NSLOTS; sl++ ){
-            for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint tr = 0; tr < NTROLLEYS; tr++){
+        for(Uint sl = 0; sl < NSLOTS; sl++ ){
+            for(Uint p = 0; p < NPARTITIONS; p++){
                 //Fit with a gaussian the "Good TDC Time"
-                TF1 *slicefit = new TF1("slicefit","gaus(0)",lowlimit[tr][sl][p],highlimit[tr][sl][p]);
+                TF1 *slicefit = new TF1("slicefit","gaus(0)",lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
 
                 //Amplitude
                 slicefit->SetParameter(0,50);
                 slicefit->SetParLimits(0,1,100000);
                 //Mean value
-                slicefit->SetParameter(1,center[tr][sl][p]);
-                slicefit->SetParLimits(1,lowlimit[tr][sl][p],highlimit[tr][sl][p]);
+                slicefit->SetParameter(1,center.rpc[tr][sl][p]);
+                slicefit->SetParLimits(1,lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
                 //RMS
                 slicefit->SetParameter(2,20);
                 slicefit->SetParLimits(2,1,40);
@@ -421,8 +434,8 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.)
                     tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
 
-                PeakTime[tr][sl][p] = slicefit->GetParameter(1);
-                PeakWidth[tr][sl][p] = 3.*slicefit->GetParameter(2);
+                PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
+                PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
 
                 delete tmpTimeProfile[tr][sl][p];
             }
@@ -431,14 +444,14 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
 }
 
 // ****************************************************************************************************
-// *    void SetTitleName(string rpcID, unsigned int partition,
+// *    void SetTitleName(string rpcID, Uint partition,
 // *                      char* Name, char* Title, string Namebase, string Titlebase)
 //
 //  Builds the name and title of ROOT objects.
 // ****************************************************************************************************
 
 //Name of histograms
-void SetTitleName(string rpcID, unsigned int partition,
+void SetTitleName(string rpcID, Uint partition,
                   char* Name, char* Title, string Namebase, string Titlebase){
 
     string P[4] = {"A","B","C","D"};
@@ -455,11 +468,16 @@ void SetTitleName(string rpcID, unsigned int partition,
 //Get mean of 1D histograms
 float GetTH1Mean(TH1* H){
     int nBins = H->GetNbinsX();
+    int nActive = nBins;
     float mean = 0.;
 
-    for(int b = 1; b <= nBins; b++) mean += H->GetBinContent(b);
+    for(int b = 1; b <= nBins; b++){
+        float value = H->GetBinContent(b);
+        mean += value;
+        if(value == 0.) nActive--;
+    }
 
-    mean /= (float)nBins;
+    mean /= (float)nActive;
 
     return mean;
 }
