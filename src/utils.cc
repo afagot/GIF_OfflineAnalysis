@@ -487,7 +487,8 @@ float GetTH1Mean(TH1* H){
         if(value == 0.) nActive--;
     }
 
-    mean /= (float)nActive;
+    if(nActive != 0) mean /= (float)nActive;
+    else mean = 0.;
 
     return mean;
 }
