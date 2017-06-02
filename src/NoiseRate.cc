@@ -186,12 +186,12 @@ void GetNoiseRate(string baseName){
                     SetTH1(StripActivity_H[trolley][slot][p],"Strip","Activity (normalized strip profil)");
 
                     //Masked strip mean noise rate profile
-                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise_mask","Masked strip mean noise rate");
+                    SetTitleName(rpcID,p,hisname,histitle,"mask_Strip_Mean_Noise","Masked strip mean noise rate");
                     MaskMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
                     SetTH1(MaskMeanNoiseProf_H[trolley][slot][p],"Strip","Rate (Hz/cm^{2})");
 
                     //Masked strip activity
-                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity_mask","Masked strip activity");
+                    SetTitleName(rpcID,p,hisname,histitle,"mask_Strip_Activity","Masked strip activity");
                     MaskActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
                     SetTH1(MaskActivity_H[trolley][slot][p],"Strip","Activity (normalized strip profil)");
 
