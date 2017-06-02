@@ -207,7 +207,17 @@ Mapping TDCMapping(string baseName){
     ifstream mappingfile(mappingpath.c_str(), ios::in);
     if(mappingfile){
         while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-            mappingfile >> RPCCh >> TDCCh >> Mask;
+            mappingfile >> RPCCh >> TDCCh;
+
+            //Check the TDC mapping file format (2 columns - old format -
+            //or 3 columns - new format including mask - )
+            char next;
+            mappingfile.get(next);
+            if(next == '\n')
+                Mask = 1;
+            else
+                mappingfile >> Mask;
+
             if ( TDCCh != 9999 ){
                 Map.link[TDCCh] = RPCCh;
                 Map.mask[RPCCh] = Mask;
