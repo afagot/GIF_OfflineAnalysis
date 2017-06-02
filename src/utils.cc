@@ -179,9 +179,9 @@ void WritePath(string baseName){
 }
 
 // ****************************************************************************************************
-// *    map<int,int> TDCMapping(string baseName)
+// *    Mapping TDCMapping(string baseName)
 //
-//  Returns the map to translate TDC channels into RPC strips.
+//  Returns the map to translate TDC channels into RPC strips and get the mask.
 // ****************************************************************************************************
 
 Mapping TDCMapping(string baseName){
@@ -513,6 +513,30 @@ float GetTH1StdDev(TH1* H){
     stddev = sqrt(variance/nBins);
 
     return stddev;
+}
+
+// ****************************************************************************************************
+// *    float GetChipBin(TH1* H)
+//
+//  Returns the chip average value from strip histograms by grouping active strips.
+// ****************************************************************************************************
+
+//Get mean of Chip from 1D histograms
+float GetChipBin(TH1* H, Uint chip){
+    Uint start = 1 + chip*NSTRIPSCHIP;
+    int nActive = NSTRIPSCHIP;
+    float mean = 0.;
+
+    for(Uint b = start; b <= (chip+1)*NSTRIPSCHIP; b++){
+        float value = H->GetBinContent(b);
+        mean += value;
+        if(value == 0.) nActive--;
+    }
+
+    if(nActive != 0) mean /= (float)nActive;
+    else mean = 0.;
+
+    return mean;
 }
 
 // ****************************************************************************************************

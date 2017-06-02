@@ -148,6 +148,7 @@ void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
 float   GetTH1Mean(TH1* H);
 float   GetTH1StdDev(TH1* H);
+float   GetChipBin(TH1* H, Uint chip);
 void    SetTH1(TH1* H, string xtitle, string ytitle);
 void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
 

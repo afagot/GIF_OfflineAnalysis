@@ -368,10 +368,6 @@ void GetNoiseRate(string baseName){
                         else if (RPCChMap.mask[RPCCh] == 0)
                             MaskMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate);
 
-                        //The chip rate only is incremented by a rate that is
-                        //normalised to the number of strip per chip
-                        ChipMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
-
                         //Fill activities
                         float stripAct = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/averageNhit;
 
@@ -379,10 +375,6 @@ void GetNoiseRate(string baseName){
                             StripActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct);
                         else if (RPCChMap.mask[RPCCh] == 0)
                             MaskActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct);
-
-                        //The chip activity only is incremented by an activity
-                        //that is normalised to the number of strip per chip
-                        ChipActivity_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripAct/NSTRIPSCHIP);
 
                         //Get profit of the loop over strips to subtract the
                         //average background from the beam profile. This average
@@ -400,6 +392,13 @@ void GetNoiseRate(string baseName){
                             float correctedContent = (nPeakHits<nNoisePeak) ? 0. : (float)nPeakHits-nNoisePeak;
                             BeamProf_H[trolley][slot][p]->SetBinContent(st,correctedContent);
                         }
+                    }
+
+                    for(Uint ch = 0; ch < (nStripsPart/NSTRIPSCHIP); ch++){
+                        //The chip rate and activity only iare incremented by a rate
+                        //that is normalised to the number of active strip per chip
+                        ChipMeanNoiseProf_H[trolley][slot][p]->SetBinContent(ch+1,GetChipBin(StripMeanNoiseProf_H[trolley][slot][p],ch));
+                        ChipActivity_H[trolley][slot][p]->SetBinContent(ch+1,GetChipBin(StripActivity_H[trolley][slot][p],ch));
                     }
 
                     //Write in the output file the mean noise rate per
