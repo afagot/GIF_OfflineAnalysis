@@ -1,0 +1,613 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v5
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    OfflineAnalysis.cc
+// *
+// *    Extraction of the data from Scan_00XXXX_HVX_DAQ.root
+// *    files :
+// *    + Noise or gamma rate estimation
+// *    + Channel activity monitoring
+// *    + First rude estimation of efficiency (L0)
+// *    + Noise or gamma cluster size estimation
+// *
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
+//***************************************************************
+
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <vector>
+#include <cmath>
+
+#include "TFile.h"
+#include "TTree.h"
+#include "TString.h"
+#include "TH1F.h"
+#include "TH1I.h"
+#include "TH2F.h"
+#include "TProfile.h"
+
+#include "../include/OfflineAnalysis.h"
+#include "../include/IniFile.h"
+#include "../include/MsgSvc.h"
+#include "../include/utils.h"
+
+using namespace std;
+
+//*******************************************************************************
+
+void OfflineAnalysis(string baseName){
+
+    string daqName = baseName + "_DAQ.root";
+
+    //****************** DAQ ROOT FILE *******************************
+
+    //input ROOT data file containing the RAWData TTree that we'll
+    //link to our RAWData structure
+    TFile   dataFile(daqName.c_str());
+
+    int igood = 0;
+
+    if(dataFile.IsOpen()){
+        TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
+
+        //Then get the HVstep number from the ID histogram
+        string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
+
+        //****************** GEOMETRY ************************************
+
+        //Get the chambers geometry and the GIF infrastructure details
+        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
+        IniFile* Dimensions = new IniFile(dimpath.c_str());
+        Dimensions->Read();
+
+        Infrastructure GIFInfra;
+        SetInfrastructure(GIFInfra,Dimensions);
+
+        //****************** MAPPING *************************************
+
+        Mapping RPCChMap = TDCMapping(daqName);
+
+        //****************** PEAK TIME ***********************************
+
+        //First open the RunParameters TTree from the dataFile
+        //Then link a string to the branch corresponding to the beam
+        //status and get the entry
+        //Convention : ON = beam trigger , OFF = Random trigger
+        TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
+        TString* RunType = new TString();
+        RunParameters->SetBranchAddress("RunType",&RunType);
+        RunParameters->GetEntry(0);
+
+        muonPeak PeakMeanTime = {{{0.}}};
+        muonPeak PeakSpread = {{{0.}}};
+
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
+
+        //****************** LINK RAW DATA *******************************
+
+        RAWData data;
+
+        data.TDCCh = new vector<Uint>;
+        data.TDCTS = new vector<float>;
+        data.TDCCh->clear();
+        data.TDCTS->clear();
+
+        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+
+        //****************** HISTOGRAMS & CANVAS *************************
+
+        GIFH1Array BeamProf_H;
+        GIFH1Array NoiseProf_H;
+        GIFH1Array TimeProfile_H;
+        GIFH1Array HitMultiplicity_H;
+        GIFH1Array NoiseCSize_H;
+        GIFH1Array StripHitProf_H;
+        GIFH1Array StripMeanNoiseProf_H;
+        GIFH1Array StripActivity_H;
+        GIFH1Array MaskMeanNoiseProf_H;
+        GIFH1Array MaskActivity_H;
+        GIFH1Array StripHomogeneity_H;
+        GIFH1Array ChipHitProf_H;
+        GIFH1Array ChipMeanNoiseProf_H;
+        GIFH1Array ChipActivity_H;
+        GIFH1Array ChipHomogeneity_H;
+        GIFH1Array Efficiency0_H;
+        GIFH1Array MuonCSize_H;
+
+        char hisname[50];  //ID name of the histogram
+        char histitle[50]; //Title of the histogram
+
+        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
+            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+            Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+
+            for (Uint s = 0; s < nSlotsTrolley; s++){
+                Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
+                Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+
+                //Get the chamber ID name
+                string rpcID = GIFInfra.Trolleys[t].RPCs[s].name;
+
+                for (Uint p = 0; p < nPartRPC; p++){
+                    //Set bining
+                    Uint nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
+                    float low_s = nStrips*p + 0.5;
+                    float high_s = nStrips*(p+1) + 0.5;
+
+                    Uint nBinsMult = 101;
+                    float lowBin = -0.5;
+                    float highBin = (float)nBinsMult + lowBin;
+
+                    //Time profile binning
+                    float timeWidth = 1.;
+
+                    if(RunType->CompareTo("efficiency") == 0)
+                        timeWidth = BMTDCWINDOW;
+                    else if(RunType->CompareTo("efficiency") != 0)
+                        timeWidth = RDMTDCWINDOW;
+
+                    //Initialisation of the histograms
+
+                    //***************************************** General histograms
+
+                    //Beam profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Beam_Profile","Beam profile");
+                    BeamProf_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(BeamProf_H.rpc[T][S][p],"Strip","Number of hits");
+
+                    //Noise profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Noise_Profile","Noise profile");
+                    NoiseProf_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(NoiseProf_H.rpc[T][S][p],"Strip","Number of hits");
+
+                    //Time profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
+                    TimeProfile_H.rpc[T][S][p] = new TH1F( hisname, histitle, (int)timeWidth/TIMEBIN, 0., timeWidth);
+                    SetTH1(TimeProfile_H.rpc[T][S][p],"Time (ns)","Number of hits");
+
+                    //Hit multiplicity
+                    SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
+                    HitMultiplicity_H.rpc[T][S][p] = new TH1I( hisname, histitle, nBinsMult, lowBin, highBin);
+                    SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
+
+                    //Noise/gamma Cluster Size
+                    SetTitleName(rpcID,p,hisname,histitle,"NoiseCSize_H","Noise/gamma cluster size");
+                    NoiseCSize_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips, 0.5, nStrips+0.5);
+
+                    //****************************************** Strip granularuty level histograms
+
+                    //Hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Hit_Profile","Strip hit profile");
+                    StripHitProf_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripHitProf_H.rpc[T][S][p],"Strip","Number of hits");
+
+                    //Mean noise rate profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
+                    StripMeanNoiseProf_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripMeanNoiseProf_H.rpc[T][S][p],"Strip","Rate (Hz/cm^{2})");
+
+                    //Strip activity
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
+                    StripActivity_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(StripActivity_H.rpc[T][S][p],"Strip","Activity (normalized strip profil)");
+
+                    //Masked strip mean noise rate profile
+                    SetTitleName(rpcID,p,hisname,histitle,"mask_Strip_Mean_Noise","Masked strip mean noise rate");
+                    MaskMeanNoiseProf_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(MaskMeanNoiseProf_H.rpc[T][S][p],"Strip","Rate (Hz/cm^{2})");
+
+                    //Masked strip activity
+                    SetTitleName(rpcID,p,hisname,histitle,"mask_Strip_Activity","Masked strip activity");
+                    MaskActivity_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+                    SetTH1(MaskActivity_H.rpc[T][S][p],"Strip","Activity (normalized strip profil)");
+
+                    //Noise homogeneity
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Homogeneity","Strip homogeneity");
+                    StripHomogeneity_H.rpc[T][S][p] = new TH1F( hisname, histitle, 1, 0, 1);
+                    SetTH1(StripHomogeneity_H.rpc[T][S][p],"","Homogeneity");
+
+                    //****************************************** Chip granularuty level histograms
+
+                    //Hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Hit_Profile","Chip hit profile");
+                    ChipHitProf_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipHitProf_H.rpc[T][S][p],"Chip","Number of hits");
+
+                    //Mean noise rate profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
+                    ChipMeanNoiseProf_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipMeanNoiseProf_H.rpc[T][S][p],"Chip","Rate (Hz/cm^{2})");
+
+                    //Strip activity
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
+                    ChipActivity_H.rpc[T][S][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+                    SetTH1(ChipActivity_H.rpc[T][S][p],"Chip","Activity (normalized chip profil)");
+
+                    //Noise homogeneity
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
+                    ChipHomogeneity_H.rpc[T][S][p] = new TH1F( hisname, histitle, 1, 0, 1);
+                    SetTH1(ChipHomogeneity_H.rpc[T][S][p],"","Homogeneity");
+
+                    //****************************************** Muon histogram
+
+                    //Efficiency
+                    SetTitleName(rpcID,p,hisname,histitle,"L0_Efficiency","L0 efficiency");
+                    Efficiency0_H.rpc[T][S][p] = new TH1I( hisname, histitle, 2, -0.5, 1.5);
+                    SetTH1(Efficiency0_H.rpc[T][S][p],"Is efficient?","Number of events");
+
+                    //Muon cluster Size
+                    SetTitleName(rpcID,p,hisname,histitle,"MuonCSize_H","Muon cluster size");
+                    MuonCSize_H.rpc[T][S][p] = new TH1I( hisname, histitle, nStrips, 0.5, nStrips+0.5);
+                }
+            }
+        }
+
+        //****************** MACRO ***************************************
+
+        //Tabel to count the hits in every chamber partitions - used to
+        //compute the noise rate
+        GIFintArray Multiplicity = {{{0}}};
+
+        //Table to keep track of the number of in time hits.
+        //Will be used later to estimated the proportion of
+        //noise hits within the peak time range and correct
+        //the efficiency accordingly.
+        GIFintArray inTimeHits = {{{0}}};
+        GIFintArray noiseHits = {{{0}}};
+
+        Uint nEntries = dataTree->GetEntries();
+
+        for(Uint i = 0; i < nEntries; i++){
+            dataTree->GetEntry(i);
+
+            igood++;
+            if (igood>10000) continue;
+
+            //Vectors to store the hits and reconstruct clusters:
+            //for muons
+            GIFHitList MuonHitList;
+            //and for noise/gammas
+            GIFHitList NoiseHitList;
+
+            //Loop over the TDC hits
+            for(int h = 0; h < data.TDCNHits; h++){
+                RPCHit hit;
+
+                //Get rid of the noise hits outside of the connected channels
+                if(data.TDCCh->at(h) > 5127) continue;
+                if(RPCChMap.link[data.TDCCh->at(h)] == 0) continue;
+
+                SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                Uint T = hit.Trolley;
+                Uint S = hit.Station-1;
+                Uint P = hit.Partition-1;
+
+                if(RunType->CompareTo("efficiency") == 0){
+                    //First define the accepted peak time range
+                    float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
+                    float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
+
+                    bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
+
+                    //Fill the hits inside of the defined noise range
+                    if(peakrange){
+                        BeamProf_H.rpc[T][S][P]->Fill(hit.Strip);
+                        MuonHitList.rpc[T][S][P].push_back(hit);
+                        inTimeHits.rpc[T][S][P]++;
+                    }
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    else if(hit.TimeStamp >= TIMEREJECT){
+                        NoiseProf_H.rpc[T][S][P]->Fill(hit.Strip);
+                        NoiseHitList.rpc[T][S][P].push_back(hit);
+                        noiseHits.rpc[T][S][P]++;
+                    }
+                } else if(RunType->CompareTo("efficiency") != 0){
+                    //Reject the 100 first ns due to inhomogeneity of data
+                    if(hit.TimeStamp >= TIMEREJECT){
+                        NoiseProf_H.rpc[T][S][P]->Fill(hit.Strip);
+                        NoiseHitList.rpc[T][S][P].push_back(hit);
+                    }
+                }
+
+                //Fill the profiles
+                StripHitProf_H.rpc[T][S][P]->Fill(hit.Strip);
+                ChipHitProf_H.rpc[T][S][P]->Fill(hit.Strip);
+                TimeProfile_H.rpc[T][S][P]->Fill(hit.TimeStamp);
+                Multiplicity.rpc[T][S][P]++;
+
+                //Get effiency and cluster size
+                for(Uint tr = 0; tr < GIFInfra.nTrolleys; tr++){
+                    Uint nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
+                    Uint T = CharToInt(GIFInfra.TrolleysID[tr]);
+
+                    for(Uint sl=0; sl<nSlotsTrolley; sl++){
+                        Uint nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
+                        Uint S = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
+
+                        for (Uint p = 0; p < nPartRPC; p++){
+                            if(MuonHitList.rpc[T][S][p].size() > 0)
+                                Efficiency0_H.rpc[T][S][p]->Fill(1);
+                            else
+                                Efficiency0_H.rpc[T][S][p]->Fill(0);
+                        }
+                    }
+                }
+            }
+
+            //********** MULTIPLICITY ************************************
+
+            for(Uint t=0; t<GIFInfra.nTrolleys; t++){
+                Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+                Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+
+                for(Uint sl=0; sl<nSlotsTrolley; sl++){
+                    Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+                    Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
+
+                    for (Uint p = 0; p < nPartRPC; p++){
+                        HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
+                        Multiplicity.rpc[T][S][p] = 0;
+
+                        //Clusterize noise/gamma data
+                        sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
+                        Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p]);
+
+                        //Clusterize muon data
+                        sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
+                        Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p]);
+                    }
+                }
+            }
+        }
+
+        //************** OUTPUT FILES ***********************************
+
+        //create a ROOT output file to save the histograms
+        string fNameROOT = baseName + "_Offline.root";
+        TFile outputfile(fNameROOT.c_str(), "recreate");
+
+        //*********************************************** Rate
+        //output csv file to save the list of parameters saved into the
+        //Offline-Rate.csv file - it represents the header of that file
+        string headNameRate = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate-Header.csv";
+        ofstream headRateCSV(headNameRate.c_str(),ios::out);
+        headRateCSV << "HVstep\t";
+
+        //output Rate csv file
+        string csvNameRate = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate.csv";
+        ofstream outputRateCSV(csvNameRate.c_str(),ios::app);
+        //Print the HV step as first column
+        outputRateCSV << HVstep << '\t';
+
+        //********************************* Efficiency, cluster
+        //output csv file to save the list of parameters saved into the
+        //Offline-L0-EffCl.csv file - it represents the header of that file
+        string headNameEff = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl-Header.csv";
+        ofstream headEffCSV(headNameEff.c_str(),ios::out);
+        headEffCSV << "HVstep\t";
+
+        //output csv file
+        string csvNameEff = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-L0-EffCl.csv";
+        ofstream outputEffCSV(csvNameEff.c_str(),ios::app);
+        //Print the HV step as first column
+        outputEffCSV << HVstep << '\t';
+
+        //Loop over trolleys
+        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
+            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+            Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+
+            for (Uint sl = 0; sl < nSlotsTrolley; sl++){
+                Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+                Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
+
+                //Get the total chamber rate
+                //we need to now the total chamber surface (sum active areas)
+                Uint  nStripsRPC  = 0;
+                float RPCarea     = 0.;
+                float MeanRPCRate = 0.;
+                float MeanRPCSDev = 0.;
+
+                for (Uint p = 0; p < nPartRPC; p++){
+                    string partID = "ABCD";
+                    string partName = GIFInfra.Trolleys[t].RPCs[sl].name + "-" + partID[p];
+
+                    //***************************************************************************
+                    //Write the rate header file
+                    headRateCSV << "Rate-" << partName << "\t";
+
+                    //Get the mean noise on the strips and chips using the noise hit
+                    //profile. Normalise the number of hits in each bin by the integrated
+                    //time and the strip sruface (counts/s/cm2)
+                    float normalisation = 0.;
+
+                    //Get the number of noise hits
+                    int nNoise = NoiseProf_H.rpc[T][S][p]->GetEntries();
+
+                    //Get the strip geometry
+                    float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
+
+                    if(RunType->CompareTo("efficiency") == 0){
+                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
+                        normalisation = nEntries*noiseWindow*1e-9*stripArea;
+                    } else if(RunType->CompareTo("efficiency") != 0)
+                        normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
+
+                    //Get the average number of hits per strip to normalise the activity
+                    //histogram (this number is the same for both Strip and Chip histos).
+                    Uint nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+                    float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
+
+                    for(Uint st = 1; st <= nStripsPart; st++){
+                        //Get full RPCCh info usinf format TSCCC
+                        Uint RPCCh = T*1e4 + (S+1)*1e3 + st + p*nStripsPart;
+
+                        //Fill noise rates
+                        float stripRate = NoiseProf_H.rpc[T][S][p]->GetBinContent(st)/normalisation;
+
+                        if(RPCChMap.mask[RPCCh] == 1)
+                            StripMeanNoiseProf_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripRate);
+                        else if (RPCChMap.mask[RPCCh] == 0)
+                            MaskMeanNoiseProf_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripRate);
+
+                        //Fill activities
+                        float stripAct = NoiseProf_H.rpc[T][S][p]->GetBinContent(st)/averageNhit;
+
+                        if(RPCChMap.mask[RPCCh] == 1)
+                            StripActivity_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripAct);
+                        else if (RPCChMap.mask[RPCCh] == 0)
+                            MaskActivity_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripAct);
+
+                        //Get profit of the loop over strips to subtract the
+                        //average background from the beam profile. This average
+                        //calculated strip by strip is obtained using a proportionnality
+                        //rule on the number of hits measured during the noise
+                        //window and the time width of the peak
+                        if(RunType->CompareTo("efficiency") == 0){
+                            int nNoiseHits = NoiseProf_H.rpc[T][S][p]->GetBinContent(st);
+                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
+                            float peakWindow = 2*PeakSpread.rpc[T][S][p];
+                            float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
+
+                            int nPeakHits = BeamProf_H.rpc[T][S][p]->GetBinContent(st);
+
+                            float correctedContent = (nPeakHits<nNoisePeak) ? 0. : (float)nPeakHits-nNoisePeak;
+                            BeamProf_H.rpc[T][S][p]->SetBinContent(st,correctedContent);
+                        }
+                    }
+
+                    for(Uint ch = 0; ch < (nStripsPart/NSTRIPSCHIP); ch++){
+                        //The chip rate and activity only iare incremented by a rate
+                        //that is normalised to the number of active strip per chip
+                        ChipMeanNoiseProf_H.rpc[T][S][p]->SetBinContent(ch+1,GetChipBin(StripMeanNoiseProf_H.rpc[T][S][p],ch));
+                        ChipActivity_H.rpc[T][S][p]->SetBinContent(ch+1,GetChipBin(StripActivity_H.rpc[T][S][p],ch));
+                    }
+
+                    //Write in the output file the mean noise rate per
+                    //partition
+                    float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H.rpc[T][S][p]);
+                    outputRateCSV << MeanPartRate << '\t';
+
+                    //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
+                    //The closer the homogeneity is to 1 the more homogeneus, the closer
+                    //the homogeneity is to 0 the less homogeneous.
+                    //This gives idea about noisy strips and dead strips.
+                    float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H.rpc[T][S][p]);
+                    float strip_homog = exp(-MeanPartSDev/MeanPartRate);
+                    StripHomogeneity_H.rpc[T][S][p]->Fill(0.,strip_homog);
+
+                    //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
+                    float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H.rpc[T][S][p]);
+
+                    float chip_homog = exp(-ChipStDevMean/MeanPartRate);
+                    ChipHomogeneity_H.rpc[T][S][p]->Fill(0.,chip_homog);
+
+                    //Push the partition results into the chamber level
+                    nStripsRPC  += nStripsPart;
+                    RPCarea     += stripArea * nStripsPart;
+                    MeanRPCRate += MeanPartRate * stripArea * nStripsPart;
+                    MeanRPCSDev += MeanPartSDev * stripArea * nStripsPart;
+
+                    //Draw and write the histograms into the output ROOT file
+                    //********************************* General histograms
+
+                    BeamProf_H.rpc[T][S][p]->Write();
+                    NoiseProf_H.rpc[T][S][p]->Write();
+                    TimeProfile_H.rpc[T][S][p]->Write();
+                    HitMultiplicity_H.rpc[T][S][p]->Write();
+                    NoiseCSize_H.rpc[T][S][p]->Write();
+
+                    //******************************* Strip granularity histograms
+
+                    StripHitProf_H.rpc[T][S][p]->Write();
+                    StripMeanNoiseProf_H.rpc[T][S][p]->Write();
+                    StripActivity_H.rpc[T][S][p]->Write();
+                    MaskMeanNoiseProf_H.rpc[T][S][p]->Write();
+                    MaskActivity_H.rpc[T][S][p]->Write();
+
+                    StripHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
+                    StripHomogeneity_H.rpc[T][S][p]->Write();
+
+                    //******************************* Chip granularity histograms
+
+                    ChipHitProf_H.rpc[T][S][p]->Write();
+                    ChipMeanNoiseProf_H.rpc[T][S][p]->Write();
+                    ChipActivity_H.rpc[T][S][p]->Write();
+
+                    ChipHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
+                    ChipHomogeneity_H.rpc[T][S][p]->Write();
+
+                    //***************************************************************************
+
+                    //Write the efficiency/cluster header file
+                    headEffCSV << "Noise-" << partName << "\t"
+                               << "DataRatio-" << partName << "\t"
+                               << "Eff-" << partName << '\t'
+                               << "Eff-" << partName << "_Err\t";
+
+                    //For each cases, evaluate the proportion of noise
+                    //with respect to the actual muon data. The efficiency
+                    //will then be corrected using this factor to "substract"
+                    //the fake efficiency caused by the noise
+                    float meanNoiseHitPerns = (float)noiseHits.rpc[T][S][p]/
+                            (BMTDCWINDOW-TIMEREJECT-2*PeakSpread.rpc[T][S][p]);
+                    float integralNoise = 2*PeakSpread.rpc[T][S][p]*meanNoiseHitPerns;
+                    float integralPeak = (float)inTimeHits.rpc[T][S][p];
+
+                    float DataNoiseRatio = 1.;
+                    if(integralNoise != 0.) DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
+                    if(DataNoiseRatio < 0.) DataNoiseRatio = 0.;
+
+                    //Get efficiency, cluster size and multiplicity
+                    //and evaluate the streamer probability (cls > 5)
+                    float noise = meanNoiseHitPerns*TIMEBIN;
+                    float eff = Efficiency0_H.rpc[T][S][p]->GetMean()*DataNoiseRatio;
+                    float effErr = sqrt(eff*(1.-eff)/nEntries);
+
+                    //Write in the output CSV file
+                    outputEffCSV << noise << '\t' << DataNoiseRatio << '\t'
+                                 << eff << '\t' << effErr << '\t';
+
+                    Efficiency0_H.rpc[T][S][p]->Write();
+                }
+
+                //Finalise the calculation of the chamber rate
+                MeanRPCRate /= RPCarea;
+                MeanRPCSDev /= RPCarea;
+
+                //Write the header file
+                headRateCSV << "Rate-"
+                        << GIFInfra.Trolleys[t].RPCs[sl].name
+                        << "-TOT\t";
+
+                //Write the output file
+                outputRateCSV << MeanRPCRate << '\t';
+            }
+        }
+        headRateCSV << '\n';
+        headRateCSV.close();
+
+        outputRateCSV << '\n';
+        outputRateCSV.close();
+
+        headEffCSV << '\n';
+        headEffCSV.close();
+
+        outputEffCSV << '\n';
+        outputEffCSV.close();
+
+        outputfile.Close();
+        dataFile.Close();
+    } else {
+        MSG_INFO("[Offline] File " + daqName + " could not be opened");
+        MSG_INFO("[Offline] Skipping offline analysis");
+    }
+}

@@ -30,11 +30,6 @@ using namespace std;
 
 //****************************************************************************
 
-typedef unsigned int Uint;
-typedef map<Uint,Uint> mapping;
-
-//****************************************************************************
-
 //List of global variables used as default values
 //in case of problems to read Dimensions.ini
 const float TIMEREJECT   = 100.;
@@ -43,6 +38,7 @@ const float BMTDCWINDOW  = 24.*25.;
 const float RDMTDCWINDOW = 400.*25.;
 const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
 
+typedef unsigned int Uint;
 const Uint NTROLLEYS   = 5;
 const Uint NSLOTS      = 9;
 const Uint NPARTITIONS = 4;
@@ -54,7 +50,10 @@ const Uint NSTRIPSCHIP = 8;
 
 //****************************************************************************
 
-typedef struct muonPeak { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } muonPeak;
+typedef struct GIFH1Array { TH1* rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFH1Array;
+typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintArray;
+typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;
+typedef GIFfloatArray muonPeak;
 
 //****************************************************************************
 
@@ -119,7 +118,26 @@ struct RPCHit {
     Uint  Partition; //Partition (1 to 4)
     float TimeStamp; //TDC time stamp
 };
+typedef vector<RPCHit> HitList;
+typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHitList;
 
+//Cluster reconstructed in the RPC
+struct Cluster {
+   int   ClusterID;
+   float HitCenter;
+   float HitTime;
+   float HitDeltaTime;
+   int   clustersize;
+   int   FullDeltaTime;
+   int   DeltaTime;
+   int   FirstHit;
+   int   LastHit;
+   int   hitID;
+   int   Isolation;
+};
+typedef vector<Cluster> ClusterList;
+
+typedef map<Uint,Uint> mapping;
 struct Mapping {
     mapping link;
     mapping mask;
@@ -129,14 +147,17 @@ struct Mapping {
 
 //Functions (more details in utils.cc)
 
-Uint CharToInt(char& C);
+Uint    CharToInt(char& C);
 string  CharToString(char& C);
 string  intToString(int value);
 string  longTostring(long value);
 string  floatTostring(float value);
+
 bool    existFile(string ROOTName);
+
 string  GetLogTimeStamp();
 void    WritePath(string basename);
+
 Mapping TDCMapping(string baseName);
 void    SetRPC(RPC& rpc, string ID, IniFile* geofile);
 void    SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
@@ -146,10 +167,19 @@ void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
+
 float   GetTH1Mean(TH1* H);
 float   GetTH1StdDev(TH1* H);
 float   GetChipBin(TH1* H, Uint chip);
 void    SetTH1(TH1* H, string xtitle, string ytitle);
 void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
+
+bool    SortHitbyStrip(RPCHit h1, RPCHit h2);
+bool    SortHitbyTime(RPCHit h1, RPCHit h2);
+void    BuildClusters(HitList &cluster, ClusterList &clusterList);
+float   GetTDCHitTime(HitList &cluster, int cSize, int hitID);
+float   GetTDCHitDeltaTime(HitList &cluster, int cSize, int hitID);
+void    Clusterization(HitList &hits,  TH1 *h);
+void    print_vector( HitList &v);
 
 #endif // UTILS_H

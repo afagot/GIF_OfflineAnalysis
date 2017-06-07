@@ -19,6 +19,7 @@
 #include <fstream>
 #include <cstdio>
 #include <map>
+#include <algorithm>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -333,8 +334,7 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 }
 
 // ****************************************************************************************************
-// *    void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
-// *                        float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS],
+// *    void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 // *                        TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra)
 //
 //  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
@@ -454,15 +454,15 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 }
 
 // ****************************************************************************************************
-// *    void SetTitleName(string rpcID, Uint partition,
-// *                      char* Name, char* Title, string Namebase, string Titlebase)
+// *    void SetTitleName(string rpcID, Uint partition, char* Name, char* Title,
+// *                      string Namebase, string Titlebase)
 //
 //  Builds the name and title of ROOT objects.
 // ****************************************************************************************************
 
 //Name of histograms
-void SetTitleName(string rpcID, Uint partition,
-                  char* Name, char* Title, string Namebase, string Titlebase){
+void SetTitleName(string rpcID, Uint partition, char* Name, char* Title,
+                  string Namebase, string Titlebase){
 
     string P[4] = {"A","B","C","D"};
     sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
@@ -562,4 +562,194 @@ void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
     H->SetXTitle(ztitle.c_str());
+}
+
+
+
+
+float oldtime;
+float acumtime=0.0;
+int FlipRPCNumSub;
+
+// ****************************************************************************************************
+// *    bool sortbyhit(pair<int, float> p1, pair<int, float> p2)
+//
+//  Sort RPC hits using strip position information
+// ****************************************************************************************************
+
+//Sort hits by strip position
+bool SortHitbyStrip(RPCHit h1, RPCHit h2){
+        return (h1.Strip < h2.Strip);
+}
+
+// ****************************************************************************************************
+// *    bool sortbytime(pair<int, float> p1, pair<int, float> p2)
+//
+//  Sort RPC hits using time stamp information
+// ****************************************************************************************************
+
+//Sort hits by time
+bool SortHitbyTime(RPCHit h1, RPCHit h2){
+        return (h1.TimeStamp < h2.TimeStamp);
+}
+
+// ****************************************************************************************************
+// *    void do_cluster(vector < pair<int, float> > &v,
+// *                    vector < Cluster > &cluster, bool noflip,int thePartition)
+//
+//  Build cluster using the sorted RPC hit arrays
+//  Wee need the following variables:
+//  - cluster size
+//  - isolation (nominal, "other side")
+//  - cluster:
+//      * center,  (left, right sides)
+//      * delta time
+// ****************************************************************************************************
+
+//Build clusters
+void BuildClusters(HitList &cluster, ClusterList &clusterList){
+    int cMult = 0;
+    int cSize = 0;
+    int IsolationTemp = 0;
+    int firsthit = 0;
+    int hitID = 0;
+    float DeltaTimeHit = 0.;
+
+    if(cluster.size() > 0){
+        // Check Time window of input hits
+        sort(cluster.begin(), cluster.end(), SortHitbyTime);
+        DeltaTimeHit = cluster.back().TimeStamp - cluster.front().TimeStamp;
+
+        // Sort back again by wire order to make cluster size
+        sort(cluster.begin(), cluster.end(), SortHitbyStrip);
+
+        // Start Clusters
+        IsolationTemp = cluster.front().Strip;
+
+        for(Uint i = 0; i < cluster.size(); i ++){
+            cSize++;  // This is cluster size
+
+            if (cluster[i].Strip-IsolationTemp > 1){
+                cMult++;   // This is the number of clusters
+
+                clusterList.push_back(Cluster());
+
+                clusterList.back().ClusterID     = cMult;
+                clusterList.back().clustersize   = cSize-1;
+                clusterList.back().FullDeltaTime = DeltaTimeHit;
+                clusterList.back().FirstHit      = firsthit;
+                clusterList.back().LastHit       = firsthit+(cSize-1)-1;
+                clusterList.back().HitCenter     = (firsthit + firsthit+(cSize-1)-1)/2.;
+                clusterList.back().hitID         = hitID;
+                clusterList.back().Isolation     = cluster[i].Strip-IsolationTemp;
+                clusterList.back().HitTime       = GetTDCHitTime(cluster,cSize-1,hitID);
+                clusterList.back().HitDeltaTime  = GetTDCHitDeltaTime(cluster,cSize-1,hitID);
+
+                cSize=1;
+            }
+
+            if (cluster[i].Strip-IsolationTemp != 1){
+                hitID = i;
+                firsthit = cluster[i].Strip;
+            }
+
+            IsolationTemp = cluster[i].Strip; // Isolation is number of wires separation
+        }
+        cMult++;
+
+        if (cMult>0){
+            clusterList.push_back(Cluster());
+
+            clusterList.back().ClusterID     = cMult;
+            clusterList.back().clustersize   = cSize;
+            clusterList.back().FullDeltaTime = DeltaTimeHit;
+            clusterList.back().FirstHit      = firsthit;
+            clusterList.back().LastHit       = firsthit+(cSize-1);
+            clusterList.back().HitCenter     = (firsthit + firsthit+(cSize-1))/2.;
+            clusterList.back().hitID         = hitID;
+            clusterList.back().Isolation     = 32-IsolationTemp-1;
+            clusterList.back().HitTime       = GetTDCHitTime(cluster,cSize,hitID);
+            clusterList.back().HitDeltaTime  = GetTDCHitDeltaTime(cluster,cSize,hitID);
+        }
+    }
+}
+
+// ****************************************************************************************************
+// *   float GetTDCHitDeltaTime(HitList &hits, int cSize, int hitID)
+//
+//  Return the time difference in between the first and the last hit of the cluster
+// ****************************************************************************************************
+
+//Get the time spread of the cluster
+float GetTDCHitDeltaTime(HitList &cluster, int cSize, int hitID){
+    //Cluster are reconstructed in the non rejected time window
+    float max = 0.;
+    float min = 0.;
+
+    for(int i = hitID; i <= (hitID + cSize-1); i++){
+        if(i == hitID && min == 0. && max == 0.){
+            min = cluster[i].TimeStamp;
+            max = cluster[i].TimeStamp;
+        } else {
+            if(cluster[i].TimeStamp < min ) min = cluster[i].TimeStamp;
+            if(cluster[i].TimeStamp > max ) max = cluster[i].TimeStamp;
+        }
+    }
+
+    return (max-min);
+}
+
+// ****************************************************************************************************
+// *   float GetTDCHitTime(HitList &cluster,int cSize, int hitID)
+//
+//  Return the starting time stamp of the cluster
+// ****************************************************************************************************
+
+//Get the start time of the cluster
+float GetTDCHitTime(HitList &cluster,int cSize, int hitID){
+    //Cluster are reconstructed in the non rejected time window
+    float min = 0.;
+
+    for(int i = hitID; i <= (hitID + cSize-1); i++){
+        if(i == hitID && min == 0.) min = cluster[i].TimeStamp;
+        else if(cluster[i].TimeStamp < min ) min = cluster[i].TimeStamp;
+    }
+
+    return min;
+}
+
+// ****************************************************************************************************
+// *   float GetTDCHitTime(HitList &cluster,int cSize, int hitID)
+//
+//  Return the starting time stamp of the cluster
+// ****************************************************************************************************
+
+//Get the start time of the cluster
+void Clusterization(HitList &hits, TH1 *h){
+    HitList cluster;
+    cluster.clear();
+
+    ClusterList clusterList;
+    clusterList.clear();
+
+    float timediff = 0.;
+    float lastime = 0.;
+
+    for(Uint i = 0; i < hits.size(); i ++){
+        timediff = hits[i].TimeStamp-lastime;
+
+        if(abs(timediff) > 25. && lastime > 0.){
+            clusterList.clear();
+            BuildClusters(cluster,clusterList);
+
+            for(Uint i = 0; i < clusterList.size(); i++)
+                if ((clusterList[i].LastHit-clusterList[i].FirstHit+1)>0)
+                    h->Fill(clusterList[i].LastHit-clusterList[i].FirstHit+1);
+
+            cluster.clear();
+        }
+
+        lastime = hits[i].TimeStamp;
+        cluster.push_back(hits[i]);
+    }
 }
