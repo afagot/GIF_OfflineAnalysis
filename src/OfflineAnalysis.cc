@@ -483,11 +483,11 @@ void OfflineAnalysis(string baseName){
                         float stripAct = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/averageNhit;
 
                         if(RPCChMap.mask[RPCCh] == 1){
-                            StripNoiseProfile_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripRate);
-                            StripActivity_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripAct);
+                            StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
+                            StripActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         } else if (RPCChMap.mask[RPCCh] == 0){
-                            MaskNoiseProfile_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripRate);
-                            MaskActivity_H.rpc[T][S][p]->Fill(p*nStripsPart+st,stripAct);
+                            MaskNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
+                            MaskActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         }
                     }
 
@@ -540,8 +540,8 @@ void OfflineAnalysis(string baseName){
                     //******************************* General histograms
 
                     TimeProfile_H.rpc[T][S][p]->Write();
+                    HitProfile_H.rpc[T][S][p]->Write();
                     HitMultiplicity_H.rpc[T][S][p]->Write();
-                    NoiseCSize_H.rpc[T][S][p]->Write();
 
                     //******************************* Strip granularity histograms
 

@@ -42,7 +42,7 @@ int main(int argc ,char *argv[]){
 
         //Start the needed analysis tools - check if the ROOT files exist
         string daqName = baseName + "_DAQ.root";
-        if(existFile(daqName)) OfflineAnalysis(daqName);
+        if(existFile(daqName)) OfflineAnalysis(baseName);
         else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
 
         string caenName = baseName + "_CAEN.root";
