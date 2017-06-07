@@ -470,6 +470,17 @@ void SetTitleName(string rpcID, Uint partition, char* Name, char* Title,
 }
 
 // ****************************************************************************************************
+// *    bool IsEfficiencyRun(TString* runtype)
+//
+//  Returns true if the comparison of the runtype to the word "efficiency" gives 0 (no difference).
+// ****************************************************************************************************
+
+//Is the run an efficiency run?
+bool IsEfficiencyRun(TString* runtype){
+    return (runtype->CompareTo("efficiency") == 0);
+}
+
+// ****************************************************************************************************
 // *    float GetTH1Mean(TH1* H)
 //
 //  Returns the mean along the Y axis of a TH1 (value not given by the ROOT statbox).
@@ -719,13 +730,13 @@ float GetTDCHitTime(HitList &cluster,int cSize, int hitID){
 }
 
 // ****************************************************************************************************
-// *   float GetTDCHitTime(HitList &cluster,int cSize, int hitID)
+// *   void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
 //
-//  Return the starting time stamp of the cluster
+//  Used to loop over the hit list, create clusters and fill histograms
 // ****************************************************************************************************
 
-//Get the start time of the cluster
-void Clusterization(HitList &hits, TH1 *h){
+//Clusterization of a list of hits
+void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
     HitList cluster;
     cluster.clear();
 
@@ -734,6 +745,7 @@ void Clusterization(HitList &hits, TH1 *h){
 
     float timediff = 0.;
     float lastime = 0.;
+    Uint multiplicity = 0;
 
     for(Uint i = 0; i < hits.size(); i ++){
         timediff = hits[i].TimeStamp-lastime;
@@ -744,12 +756,14 @@ void Clusterization(HitList &hits, TH1 *h){
 
             for(Uint i = 0; i < clusterList.size(); i++)
                 if ((clusterList[i].LastHit-clusterList[i].FirstHit+1)>0)
-                    h->Fill(clusterList[i].LastHit-clusterList[i].FirstHit+1);
+                    hcSize->Fill(clusterList[i].LastHit-clusterList[i].FirstHit+1);
 
+            multiplicity += clusterList.size();
             cluster.clear();
         }
 
         lastime = hits[i].TimeStamp;
         cluster.push_back(hits[i]);
     }
+    hcMult->Fill(multiplicity);
 }

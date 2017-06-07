@@ -167,7 +167,7 @@ void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
-
+bool    IsEfficiencyRun(TString* runtype);
 float   GetTH1Mean(TH1* H);
 float   GetTH1StdDev(TH1* H);
 float   GetChipBin(TH1* H, Uint chip);
@@ -179,7 +179,7 @@ bool    SortHitbyTime(RPCHit h1, RPCHit h2);
 void    BuildClusters(HitList &cluster, ClusterList &clusterList);
 float   GetTDCHitTime(HitList &cluster, int cSize, int hitID);
 float   GetTDCHitDeltaTime(HitList &cluster, int cSize, int hitID);
-void    Clusterization(HitList &hits,  TH1 *h);
+void    Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult);
 void    print_vector( HitList &v);
 
 #endif // UTILS_H
