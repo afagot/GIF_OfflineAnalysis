@@ -209,7 +209,7 @@ void OfflineAnalysis(string baseName){
 
                     //Noise/gamma cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips+1, -0.5, nStrips+0.5);
+                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
                     SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
                     //****************************************** Chip granularuty level histograms

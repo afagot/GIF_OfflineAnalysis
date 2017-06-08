@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -11,8 +11,8 @@
 // *    gaps, strips, and all ID names.
 // *    This file was originally developped for the GIF_DAQ.
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <sstream>

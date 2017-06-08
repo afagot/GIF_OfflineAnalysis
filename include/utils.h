@@ -2,7 +2,7 @@
 #define UTILS_H
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -12,8 +12,8 @@
 // *    All usefull functions (type cast, time stamps,...)
 // *    and structures (used for the GIF layout definition).
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <string>
@@ -122,20 +122,17 @@ typedef vector<RPCHit> HitList;
 typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHitList;
 
 //Cluster reconstructed in the RPC
-struct Cluster {
-   int   ClusterID;
-   float HitCenter;
-   float HitTime;
-   float HitDeltaTime;
-   int   clustersize;
-   int   FullDeltaTime;
-   int   DeltaTime;
-   int   FirstHit;
-   int   LastHit;
-   int   hitID;
-   int   Isolation;
+struct RPCCluster {
+   Uint  ClusterID;
+   Uint  ClusterSize;
+   Uint  FirstStrip;
+   Uint  LastStrip;
+   float Center;
+   float StartStamp;
+   float StopStamp;
+   float TimeSpread;
 };
-typedef vector<Cluster> ClusterList;
+typedef vector<RPCCluster> ClusterList;
 
 typedef map<Uint,Uint> mapping;
 struct Mapping {
@@ -163,6 +160,7 @@ void    SetRPC(RPC& rpc, string ID, IniFile* geofile);
 void    SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
 void    SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void    SetCluster(RPCCluster& Cluster, HitList List, Uint cID, Uint cSize, Uint first, Uint firstID);
 void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
@@ -177,9 +175,9 @@ void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
 bool    SortHitbyStrip(RPCHit h1, RPCHit h2);
 bool    SortHitbyTime(RPCHit h1, RPCHit h2);
 void    BuildClusters(HitList &cluster, ClusterList &clusterList);
-float   GetTDCHitTime(HitList &cluster, int cSize, int hitID);
-float   GetTDCHitDeltaTime(HitList &cluster, int cSize, int hitID);
+float   GetClusterStartStamp(HitList &cluster, int cSize, int hitID);
+float   GetClusterStopStamp(HitList &cluster,int cSize, int hitID);
+float   GetClusterSpreadTime(HitList &cluster, int cSize, int hitID);
 void    Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult);
-void    print_vector( HitList &v);
 
 #endif // UTILS_H

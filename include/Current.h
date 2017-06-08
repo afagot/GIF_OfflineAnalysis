@@ -2,7 +2,7 @@
 #define CURRENT_H
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -11,8 +11,8 @@
 // *
 // *    Current extraction from Scan_00XXXX_HVX_CAEN.root files
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <string>

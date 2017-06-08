@@ -1,13 +1,13 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates and currents.
 // *
 // *    main.cc
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <sstream>
