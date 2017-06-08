@@ -1,503 +1,515 @@
-#include "../include/NoiseRate.h"
-#include "../include/MsgSvc.h"
+//***************************************************************
+// *    GIF OFFLINE TOOL v4
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    NoiseRate.cc
+// *
+// *    Extraction of the rates from Scan_00XXXX_HVX_DAQ.root
+// *    files + monitoring of strip activities and noise
+// *    homogeneity.
+// *
+// *    Developped by : Alexis Fagot
+// *    07/03/2017
+//***************************************************************
 
-#include "TFile.h"
-#include "TBranch.h"
-#include "TH1.h"
-#include "TH2.h"
-#include "TProfile.h"
-#include "TCanvas.h"
-#include "THistPainter.h"
-#include "TColor.h"
-#include "TStyle.h"
-
+#include <iostream>
+#include <cstdlib>
+#include <fstream>
+#include <vector>
 #include <cmath>
 
-string GetPath(string fileName){
+#include "TFile.h"
+#include "TTree.h"
+#include "TString.h"
+#include "TH1F.h"
+#include "TH1I.h"
+#include "TH2F.h"
+#include "TProfile.h"
+
+#include "../include/NoiseRate.h"
+#include "../include/IniFile.h"
+#include "../include/MsgSvc.h"
+#include "../include/utils.h"
+
+//*******************************************************************************
+
+string GetSavePath(string baseName, string stepID){
     string path;
-    path = fileName.substr(0,fileName.find_last_of("/")+1);
+    path = baseName.substr(0,baseName.find_last_of("/")) + "/HV" + stepID + "/DAQ/";
+    MSG_INFO("[Offline] DQM files in " + path);
     return path;
 }
 
 //*******************************************************************************
 
-string GetBaseName(string fileName){
-    if(fileName.substr(fileName.find_last_of(".")) == ".root"){
-        MSG_INFO("[NoiseRate]: Using data file %s\n",fileName.c_str());
-        string base;
-        base = fileName.erase(fileName.find_last_of("."));
-        return base;
+map<int,int> TDCMapping(string baseName){
+    //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
+    int RPCCh;
+
+    //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
+    int TDCCh;
+
+    //2D Map of the TDC Channels and their corresponding RPC strips
+    map<int,int> Map;
+
+    //File that contains the path to the mapping file located
+    //in the scan directory
+    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/ChannelsMapping.csv";
+
+    //Open mapping file
+    ifstream mappingfile(mapping.c_str(), ios::in);
+    if(mappingfile){
+        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
+            mappingfile >> RPCCh >> TDCCh;
+            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+        }
+        mappingfile.close();
     } else {
-        string extension = fileName.substr(fileName.find_last_of("."));
-        MSG_ERROR("[NoiseRate]: Wrong file format %s used\n",extension.c_str());
-        return "";
+        MSG_ERROR("[Offline] Couldn't open file " + mapping);
+        exit(EXIT_FAILURE);
     }
-}
-
-//*******************************************************************************
-
-float GetStripSurface(int GeoID, IniFile* GeoFile){
-    float stripMinor = 1.;
-    float stripMajor = 1.;
-    float stripHeight = 1.;
-
-    //The 3 digit number "chamber" will then be used in a "switch" to select the
-    //dimensions of the corresponding chamber type
-    switch(GeoID){
-        case 111: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 112: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 113: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 121: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 122: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 123: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 131: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 132: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 133: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 141: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 142: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 143: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-
-        case 311: {
-            stripMinor = GeoFile->GetValue("Type1-1-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-A","Height",1.);
-            break;
-        }
-
-        case 312: {
-            stripMinor = GeoFile->GetValue("Type1-1-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-B","Height",1.);
-            break;
-        }
-
-        case 313: {
-            stripMinor = GeoFile->GetValue("Type1-1-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-C","Height",1.);
-            break;
-        }
-
-        case 314: {
-            stripMinor = GeoFile->GetValue("Type1-1-D","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-D","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-D","Height",1.);
-            break;
-        }
-
-        case 321: {
-            stripMinor = GeoFile->GetValue("Type1-1-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-A","Height",1.);
-            break;
-        }
-
-        case 322: {
-            stripMinor = GeoFile->GetValue("Type1-1-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-B","Height",1.);
-            break;
-        }
-
-        case 323: {
-            stripMinor = GeoFile->GetValue("Type1-1-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-C","Height",1.);
-            break;
-        }
-
-        case 324: {
-            stripMinor = GeoFile->GetValue("Type1-1-D","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type1-1-D","Major",1.);
-            stripHeight = GeoFile->GetValue("Type1-1-D","Height",1.);
-            break;
-        }
-
-        case 331: {
-            stripMinor = GeoFile->GetValue("China","Minor",1.);
-            stripMajor = GeoFile->GetValue("China","Major",1.);
-            stripHeight = GeoFile->GetValue("China","Height",1.);
-            break;
-        }
-
-        case 341: {
-            stripMinor = GeoFile->GetValue("Type2-A","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-A","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-A","Height",1.);
-            break;
-        }
-
-        case 342: {
-            stripMinor = GeoFile->GetValue("Type2-B","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-B","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-B","Height",1.);
-            break;
-        }
-
-        case 343: {
-            stripMinor = GeoFile->GetValue("Type2-C","Minor",1.);
-            stripMajor = GeoFile->GetValue("Type2-C","Major",1.);
-            stripHeight = GeoFile->GetValue("Type2-C","Height",1.);
-            break;
-        }
-        default:
-            break;
-    }
-
-    float stripSurface = (stripMinor+stripMajor)*stripHeight/2.;
-    return stripSurface;
-}
-
-//*******************************************************************************
-
-map<int,int> TDCMapping(string mappingfName){
-    int RPCCh;              //# RPC Channel (X00 to X95 : X stations [X = 0,1,...], 96 strips)
-    int TDCCh;              //# TDC Channel (X000 to X127 : X modules [X = 0,1,...], 128 channels)
-    map<int,int> Map;       //2D Map of the TDC Channels and their corresponding RPC strips
-
-    ifstream mappingfile(mappingfName.c_str(), ios::in);	//Mapping file
-
-    while (mappingfile.good()) { //Fill the map with RPC and TDC channels
-        mappingfile >> RPCCh >> TDCCh;
-        if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
-    }
-    mappingfile.close();
 
     return Map;
 }
 
 //*******************************************************************************
 
-void GetNoiseRate(string fName, string trigger){ //raw root file name
-    // strip off .root from filename - usefull to contruct the
-    //output file name
-    string baseName = GetBaseName(fName);
+void GetNoiseRate(string baseName){
 
-    //****************** GEOMETRY ************************************
+    string daqName = baseName + "_DAQ.root";
+    string caenName = baseName + "_CAEN.root";
 
-    //Get the chamber geometry
-    IniFile* DimensionsRE = new IniFile("DimensionsRE.ini");
-    DimensionsRE->Read();
-    map<int,float> StripSurface;
+    //****************** CAEN ROOT FILE ******************************
 
-    //****************** MAPPING *************************************
+    //input CAEN ROOT data file containing the values of the HV eff for
+    //every HV step
+    TFile caenFile(caenName.c_str());
+    TH1F *HVeff[NTROLLEYS][NSLOTS];
 
-    //First test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150718-20150719.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150719-20150729.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_20150729-20150817.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_EveningShift20150721-NightShift20150722.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_Morning-NightShift20150719.csv");
-
-    //Second test beam
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150817-20150826.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150826-20150828.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828-20150928.csv");
-//    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150828_ATLAS.csv");
-    map<int,int> RPCChMap = TDCMapping("Mappings/ChannelsMapping_T1_T3_20150928-2015XXXX.csv");
-
-    //****************** HISTOGRAMS & CANVAS *************************
-
-    TH2F *RPCInstantNoiseRate[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TProfile *RPCMeanNoiseProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1I *RPCHitProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1F *RPCTimeProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TH1I *RPCHitMultiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-
-    TCanvas *InstantNoise[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *MeanNoise[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *HitProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *TimeProfile[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-    TCanvas *HitMultiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS];
-
-    char hisid[50];                     //ID of the histogram
-    char hisname[50];                   //Name of the histogram
-
-    for (unsigned int t = 0; t < NTROLLEYS; t++){
-        for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
-            for (unsigned int p = 0; p < NPARTITIONS; p++){
-                //Get profit of these loops to fill the strip surface map
-                int GeoID = t*100 + (rpc+1)*10 + p+1;
-                StripSurface[GeoID] = GetStripSurface(GeoID,DimensionsRE);
-
-	        //Noise rate bin size depending on the strip surface
-	        float binWidth = 1.;
-
-	        if(trigger == "random")
-                    binWidth = 1./(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-	        else if(trigger == "beam")
-                    binWidth = 1./((600.-400.)*1e-9*StripSurface[GeoID]);
-
-                //Instantaneous noise rate 2D map
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Instant_Noise","RPC instantaneous noise rate map");
-                RPCInstantNoiseRate[t][rpc][p] = new TH2F( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5, 21, -0.5*binWidth, 20.5*binWidth);
-                InstantNoise[t][rpc][p] = new TCanvas(hisid,hisname);
-
-                //Mean noise rate profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Mean_Noise","RPC mean noise rate");
-                RPCMeanNoiseProfile[t][rpc][p] = new TProfile( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
-                MeanNoise[t][rpc][p] = new TCanvas(hisid,hisname);
-
-                //Hit profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Profile","RPC hit profile");
-                RPCHitProfile[t][rpc][p] = new TH1I( hisid, hisname, 32, 32*p+0.5, 32*(p+1)+0.5);
-                HitProfile[t][rpc][p] = new TCanvas(hisid,hisname);
-
-                //Time profile
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Time_Profile","RPC time profile");
-                RPCTimeProfile[t][rpc][p] = new TH1F( hisid, hisname, (int)RDMTDCWINDOW+1, 0., RDMTDCWINDOW);
-                TimeProfile[t][rpc][p] = new TCanvas(hisid,hisname);
-
-                //Hit multiplicity
-                SetIDName(t,rpc,p,hisid,hisname,"RPC_Hit_Multiplicity","RPC hit multiplicity");
-                RPCHitMultiplicity[t][rpc][p] = new TH1I( hisid, hisname, 33, -0.5, 32.5);
-                HitMultiplicity[t][rpc][p] = new TCanvas(hisid,hisname);
-            }
-        }
-    }
-
-    //****************** ROOT FILE ***********************************
+    //****************** DAQ ROOT FILE *******************************
 
     //input ROOT data file containing the RAWData TTree that we'll
     //link to our RAWData structure
-    TFile   dataFile(fName.c_str());
-    TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
-    RAWData data;
+    TFile   dataFile(daqName.c_str());
 
-    data.TDCCh = new vector<int>;
-    data.TDCTS = new vector<float>;
-    data.TDCCh->clear();
-    data.TDCTS->clear();
+    if(dataFile.IsOpen()){
+        TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
 
-    dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
-    dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-    dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-    dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+        //Then get the HVstep number from the ID histogram
+        string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
 
-    //****************** MACRO ***************************************
+        //****************** GEOMETRY ************************************
 
-    //Tabel to count the hits in every chamber partitions - used to
-    //compute the noise rate
-    int NHitsPerStrip[NTROLLEYS][NRPCTROLLEY][NSTRIPSRPC] = { {0} };
-    int Multiplicity[NTROLLEYS][NRPCTROLLEY][NPARTITIONS] = { {0} };
+        //Get the chambers geometry and the GIF infrastructure details
+        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
+        IniFile* Dimensions = new IniFile(dimpath.c_str());
+        Dimensions->Read();
 
-    unsigned int nEntries = dataTree->GetEntries();
+        Infrastructure GIFInfra;
+        SetInfrastructure(GIFInfra,Dimensions);
 
-    for(unsigned int i = 0; i < nEntries; i++){
-        dataTree->GetEntry(i);
+        //****************** MAPPING *************************************
 
-        //Loop over the TDC hits
-        for ( int h = 0; h < data.TDCNHits; h++ ) {
-            RPCHit hit;
+        map<int,int> RPCChMap = TDCMapping(daqName);
 
-            //Get rid of the noise hits outside of the connected channels
-            if(data.TDCCh->at(h) > 5095) continue;
+        //****************** PEAK TIME ***********************************
 
-            SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h));
+        //First open the RunParameters TTree from the dataFile
+        //Then link a string to the branch corresponding to the beam
+        //status and get the entry
+        //Convention : ON = beam trigger , OFF = Random trigger
+        TTree* RunParameters = (TTree*)dataFile.Get("RunParameters");
+        TString* RunType = new TString();
+        RunParameters->SetBranchAddress("RunType",&RunType);
+        RunParameters->GetEntry(0);
 
-            //Count the number of hits outside the peak but only
-            //consider the ones before the peak since the muons can
-            //generate after pulses
-            if(trigger == "beam" && hit.TimeStamp >= 400. && hit.TimeStamp < 600.)
-                NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
-            else if(trigger == "random")
-                NHitsPerStrip[hit.Trolley][hit.Station-1][hit.Strip-1]++;
+        float PeakMeanTime[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+        float PeakSpread[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
 
-            //Fill the RPC profiles
-            RPCHitProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
-            RPCTimeProfile[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.TimeStamp);
-            Multiplicity[hit.Trolley][hit.Station-1][hit.Partition-1]++;
+        if(RunType->CompareTo("efficiency") == 0) SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
+
+        //****************** LINK RAW DATA *******************************
+
+        RAWData data;
+
+        data.TDCCh = new vector<unsigned int>;
+        data.TDCTS = new vector<float>;
+        data.TDCCh->clear();
+        data.TDCTS->clear();
+
+        dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
+        dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
+        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+
+        //****************** HISTOGRAMS & CANVAS *************************
+
+        TH1I *BeamProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1I *NoiseProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *TimeProfile_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1I *HitMultiplicity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1I *StripHitProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *StripMeanNoiseProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *StripActivity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *StripHomogeneity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1I *ChipHitProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *ChipMeanNoiseProf_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *ChipActivity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+        TH1F *ChipHomogeneity_H[NTROLLEYS][NSLOTS][NPARTITIONS];
+
+        char hisname[50];                    //ID name of the histogram
+        char histitle[50];                   //Title of the histogram
+
+        for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
+            unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+            unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
+
+            for (unsigned int s = 0; s < nSlotsTrolley; s++){
+                unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
+                unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+                unsigned int nGaps = GIFInfra.Trolleys[t].RPCs[s].nGaps;
+
+                //Get the HVeff histogram by having the highest gap HVeff
+                string HVeffHisto = "";
+                float HVmax = 0.;
+
+                for(unsigned int g=0; g<nGaps; g++){
+                    string rpc = GIFInfra.Trolleys[t].RPCs[s].name;
+                    string tmpHisto;
+
+                    if(GIFInfra.Trolleys[t].RPCs[s].gaps[g] == "empty")
+                        tmpHisto = "HVeff_" + rpc;
+                    else
+                        tmpHisto = "HVeff_" + rpc + "-" + GIFInfra.Trolleys[t].RPCs[s].gaps[g];
+
+                    if(caenFile.GetListOfKeys()->Contains(tmpHisto.c_str())){
+                        float tmpHVeff = ((TH1F*)caenFile.Get(tmpHisto.c_str()))->GetMean();
+                        if(tmpHVeff > HVmax){
+                            HVmax = tmpHVeff;
+                            HVeffHisto = tmpHisto;
+                        }
+                    }
+                }
+
+                if(HVeffHisto != "")
+                    HVeff[trolley][slot] = (TH1F*)caenFile.Get(HVeffHisto.c_str());
+
+                //Get the chamber ID in terms of trolley + slot position TXSX
+                string rpcID = "T"+ CharToString(GIFInfra.TrolleysID[t]) +
+                        "S" + CharToString(GIFInfra.Trolleys[t].SlotsID[s]);
+
+                for (unsigned int p = 0; p < nPartRPC; p++){
+                    //Set bining
+                    unsigned int nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
+                    float low_s = nStrips*p + 0.5;
+                    float high_s = nStrips*(p+1) + 0.5;
+
+                    unsigned int nBinsMult = 101;
+                    float lowBin = -0.5;
+                    float highBin = (float)nBinsMult + lowBin;
+
+                    //Time profile binning
+                    float timeWidth = 1.;
+
+                    if(RunType->CompareTo("efficiency") == 0)
+                        timeWidth = BMTDCWINDOW;
+                    else if(RunType->CompareTo("efficiency") != 0)
+                        timeWidth = RDMTDCWINDOW;
+
+                    //Initialisation of the histograms
+
+                    //***************************************** General histograms
+
+                    //Beam profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Beam_Profile","Beam profile");
+                    BeamProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+
+                    //Noise profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Noise_Profile","Noise profile");
+                    NoiseProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+
+                    //Time profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
+                    TimeProfile_H[trolley][slot][p] = new TH1F( hisname, histitle, (int)timeWidth/20, 0., timeWidth);
+
+                    //Hit multiplicity
+                    SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
+                    HitMultiplicity_H[trolley][slot][p] = new TH1I( hisname, histitle, nBinsMult, lowBin, highBin);
+
+                    //****************************************** Strip granularuty level histograms
+
+                    //Hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Hit_Profile","Strip hit profile");
+                    StripHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips, low_s, high_s);
+
+                    //Mean noise rate profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Mean_Noise","Strip mean noise rate");
+                    StripMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+
+                    //Strip activity
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Activity","Strip activity");
+                    StripActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips, low_s, high_s);
+
+                    //Noise homogeneity
+                    SetTitleName(rpcID,p,hisname,histitle,"Strip_Homogeneity","Strip homogeneity");
+                    StripHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
+
+                    //****************************************** Chip granularuty level histograms
+
+                    //Hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Hit_Profile","Chip hit profile");
+                    ChipHitProf_H[trolley][slot][p] = new TH1I( hisname, histitle, nStrips/8, low_s, high_s);
+
+                    //Mean noise rate profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Mean_Noise","Chip mean noise rate");
+                    ChipMeanNoiseProf_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+
+                    //Strip activity
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Activity","Chip activity");
+                    ChipActivity_H[trolley][slot][p] = new TH1F( hisname, histitle, nStrips/8, low_s, high_s);
+
+                    //Noise homogeneity
+                    SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
+                    ChipHomogeneity_H[trolley][slot][p] = new TH1F( hisname, histitle, 1, 0, 1);
+                }
+            }
         }
 
-        //** INSTANTANEOUS NOISE RATE ********************************
+        //****************** MACRO ***************************************
 
-        for(unsigned int t=0; t<NTROLLEYS; t++){
-            for(unsigned int rpc=0; rpc<NRPCTROLLEY; rpc++){
-                for(unsigned int s=0; s<NSTRIPSRPC; s++){
-                    //Partition from 0 to 2
-                    int p = s/NSTRIPSPART;
+        //Tabel to count the hits in every chamber partitions - used to
+        //compute the noise rate
+        int Multiplicity[NTROLLEYS][NSLOTS][NPARTITIONS] = { {0} };
 
-                    //Get the geometry ID
-                    int GeoID = t*100 + (rpc+1)*10 + p+1;
+        unsigned int nEntries = dataTree->GetEntries();
 
-                    //Get the instaneous noise by normalise the hit count to the
-                    //time window length in seconds and to the strip surface
-                    float InstantNoise = 0.;
+        for(unsigned int i = 0; i < nEntries; i++){
+            dataTree->GetEntry(i);
 
-                    if(trigger == "random")
-                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/(RDMTDCWINDOW*1e-9*StripSurface[GeoID]);
-                    else if (trigger == "beam")
-                        InstantNoise = (float)NHitsPerStrip[t][rpc][s]/((600.-400.)*1e-9*StripSurface[GeoID]);
+            //Loop over the TDC hits
+            for(int h = 0; h < data.TDCNHits; h++){
+                RPCHit hit;
 
-                    RPCInstantNoiseRate[t][rpc][p]->Fill(s+1,InstantNoise);
+                //Get rid of the noise hits outside of the connected channels
+                if(data.TDCCh->at(h) > 5127) continue;
+                if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
 
-                    //Reinitialise the hit count for strip s
-                    NHitsPerStrip[t][rpc][s]=0;
+                //Get rid of the noise hits in the ground channels of KODEL chambers
 
-                    //Fill the multiplicity for this event
-                    if(s == 0 || s == 32 || s == 64 || s == 96){
-                        RPCHitMultiplicity[t][rpc][p]->Fill(Multiplicity[t][rpc][p]);
-                        Multiplicity[t][rpc][p] = 0;
+                SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+
+                if(RunType->CompareTo("efficiency") == 0){
+                    //First define the accepted peak time range
+                    float lowlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
+                            - PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
+                    float highlimit = PeakMeanTime[hit.Trolley][hit.Station-1][hit.Partition-1]
+                            + PeakSpread[hit.Trolley][hit.Station-1][hit.Partition-1];
+
+                    bool peakrange          = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
+
+                    //Define also the ranges used for the noise calculation
+                    bool earlynoiserange    = (hit.TimeStamp >= 100. && hit.TimeStamp < 200.);
+                    bool latenoiserange     = (hit.TimeStamp >= 350. && hit.TimeStamp < 550.);
+
+                    //Fill the hits inside of the defined noise range
+                    if(earlynoiserange || latenoiserange){
+                        NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        StripActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                        ChipActivity_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                    } else if(peakrange)
+                        BeamProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                } else if(RunType->CompareTo("efficiency") != 0){
+                    //Reject the 100 first and last ns due to inhomogeneity of data
+                    bool rejected = (hit.TimeStamp < 100. || hit.TimeStamp > RDMTDCWINDOW-100.);
+
+                    if(!rejected)
+                        NoiseProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                }
+
+                //Fill the profiles
+                StripHitProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                ChipHitProf_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.Strip);
+                TimeProfile_H[hit.Trolley][hit.Station-1][hit.Partition-1]->Fill(hit.TimeStamp);
+                Multiplicity[hit.Trolley][hit.Station-1][hit.Partition-1]++;
+            }
+
+            //********** MULTIPLICITY ************************************
+
+            for(unsigned int t=0; t<GIFInfra.nTrolleys; t++){
+                unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+                unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
+
+                for(unsigned int sl=0; sl<nSlotsTrolley; sl++){
+                    unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+                    unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
+
+                    for (unsigned int p = 0; p < nPartRPC; p++){
+                        HitMultiplicity_H[trolley][slot][p]->Fill(Multiplicity[trolley][slot][p]);
+                        Multiplicity[trolley][slot][p] = 0;
                     }
                 }
             }
         }
-    }
-    dataFile.Close();
 
-    //************** MEAN NOISE RATE *********************************
-    //create a ROOT output file to save the histograms
-    string fNameROOT = "AnalysedData/" + baseName.substr(baseName.find_last_of("/")+1) + "-Offline_Noise_Rate.root";
-    TFile outputfile(fNameROOT.c_str(), "recreate");
+        //************** MEAN NOISE RATE *********************************
+        //create a ROOT output file to save the histograms
+        string fNameROOT = baseName + "_DAQ-Rate.root";
+        TFile outputfile(fNameROOT.c_str(), "recreate");
 
-    //Loop over trolleys
-    for (unsigned int t = 0; t < NTROLLEYS; t++){
-        //Loop over stations
-        for (unsigned int rpc = 0; rpc < NRPCTROLLEY; rpc++){
-            //Loop over strips
+        //output csv file
+        string csvName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate.csv";
+        ofstream outputCSV(csvName.c_str(),ios::app);
+        //Print the HV step as first column
+        outputCSV << HVstep << '\t';
 
-            //output csv file
-            char fNameCSV[100];
-            sprintf(fNameCSV,"AnalysedData/Summary_T%u_S%u.csv",t,rpc+1);
-            ofstream outputCSV(fNameCSV,ios::app);
+        //output csv file to save the list of parameters saved into the
+        //Offline-Rate.csv file - it represents the header of that file
+        string listName = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate-Header.csv";
+        ofstream listCSV(listName.c_str(),ios::out);
+        listCSV << "HVstep\t";
 
-            //Print the file name as first column
-            outputCSV << fName.substr(fName.find_last_of("/")+1) << '\t';
+        //Loop over trolleys
+        for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
+            unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+            unsigned int trolley = CharToInt(GIFInfra.TrolleysID[t]);
 
-            for ( unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                //Project the histograms along the X-axis to get the
-                //mean noise profile on the strips
-                RPCMeanNoiseProfile[t][rpc][p] = RPCInstantNoiseRate[t][rpc][p]->ProfileX();
+            for (unsigned int sl = 0; sl < nSlotsTrolley; sl++){
+                unsigned int nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
+                unsigned int slot = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
 
-                //Write in the output file the mean noise rate per
-                //partition and its error defined as twice the RMS
-                //over the sqrt of the number of events
-                float MeanNoiseRate = RPCInstantNoiseRate[t][rpc][p]->ProjectionY()->GetMean();
-                float ErrorMean = 2*RPCInstantNoiseRate[t][rpc][p]->ProjectionY()->GetRMS()/sqrt(nEntries);
-                outputCSV << MeanNoiseRate << '\t' << ErrorMean << '\t';
+                float HighVoltage = HVeff[trolley][slot]->GetMean();
+                outputCSV << HighVoltage << '\t';
 
-                //Draw the histograms and write the canvas
+                //Write the header file
+                listCSV << "HVeff-" << GIFInfra.Trolleys[t].RPCs[sl].name << '\t';
 
-                if(RPCInstantNoiseRate[t][rpc][p]->ProjectionY()->GetMean() > 0){
-                    InstantNoise[t][rpc][p]->cd(0);
-                    RPCInstantNoiseRate[t][rpc][p]->SetXTitle("Strip");
-                    RPCInstantNoiseRate[t][rpc][p]->SetYTitle("Noise rate (Hz/cm^{2})");
-                    RPCInstantNoiseRate[t][rpc][p]->SetZTitle("# events");
-                    gStyle->SetPalette(55);
-                    RPCInstantNoiseRate[t][rpc][p]->Draw("COLZ");
-                    InstantNoise[t][rpc][p]->SetLogz(1);
-                    InstantNoise[t][rpc][p]->Write();
+                //Get the total chamber rate
+                //we need to now the total chamber surface (sum active areas)
+                unsigned int nStripsRPC  = 0;
+                float        RPCarea     = 0.;
+                float        MeanRPCRate = 0.;
+                float        MeanRPCSDev = 0.;
+
+                for (unsigned int p = 0; p < nPartRPC; p++){
+                    string partID = "ABCD";
+                    //Write the header file
+                    listCSV << "Rate-"
+                            << GIFInfra.Trolleys[t].RPCs[sl].name
+                            << "-" << partID[p]
+                            << "\t";
+
+                    //Get the mean noise on the strips and chips using the noise hit
+                    //profile. Normalise the number of hits in each bin by the integrated
+                    //time and the strip sruface (counts/s/cm2)
+                    float normalisation = 0.;
+
+                    //Get the strip geometry
+                    float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
+
+                    if(RunType->CompareTo("efficiency") == 0)
+                        normalisation = nEntries*BMNOISEWDW*1e-9*stripArea;
+                    else if(RunType->CompareTo("efficiency") != 0)
+                        normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
+
+                    unsigned int nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+
+                    for(unsigned int st = 1; st <= nStripsPart; st++){
+                        float stripRate = NoiseProf_H[trolley][slot][p]->GetBinContent(st)/normalisation;
+
+                        StripMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate);
+
+                        //The chip rate only is incremented by a rate that is
+                        //normalised to the number of strip per chip
+                        ChipMeanNoiseProf_H[trolley][slot][p]->Fill(p*nStripsPart+st,stripRate/NSTRIPSCHIP);
+                    }
+
+                    //Write in the output file the mean noise rate per
+                    //partition
+                    float MeanPartRate = GetTH1Mean(StripMeanNoiseProf_H[trolley][slot][p]);
+                    outputCSV << MeanPartRate << '\t';
+
+                    //Get the partition homogeneity defined as exp(RMS(noise)/MEAN(noise))
+                    //The closer the homogeneity is to 1 the more homogeneus, the closer
+                    //the homogeneity is to 0 the less homogeneous.
+                    //This gives idea about noisy strips and dead strips.
+                    float MeanPartSDev = GetTH1StdDev(StripMeanNoiseProf_H[trolley][slot][p]);
+                    float strip_homog = exp(-MeanPartSDev/MeanPartRate);
+                    StripHomogeneity_H[trolley][slot][p]->Fill(0.,strip_homog);
+
+                    //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
+                    float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H[trolley][slot][p]);
+
+                    float chip_homog = exp(-ChipStDevMean/MeanPartRate);
+                    ChipHomogeneity_H[trolley][slot][p]->Fill(0.,chip_homog);
+
+                    //Push the partition results into the chamber level
+                    nStripsRPC  += nStripsPart;
+                    RPCarea     += stripArea * nStripsPart;
+                    MeanRPCRate += MeanPartRate * stripArea * nStripsPart;
+                    MeanRPCSDev += MeanPartSDev * stripArea * nStripsPart;
+
+                    //Draw and write the histograms into the output ROOT file
+                    //********************************* General histograms
+
+                    BeamProf_H[trolley][slot][p]->Write();
+
+                    NoiseProf_H[trolley][slot][p]->Write();
+
+                    TimeProfile_H[trolley][slot][p]->Write();
+
+                    HitMultiplicity_H[trolley][slot][p]->Write();
+
+                    //******************************* Strip granularity histograms
+
+                    StripHitProf_H[trolley][slot][p]->Write();
+
+                    StripMeanNoiseProf_H[trolley][slot][p]->Write();
+
+                    StripActivity_H[trolley][slot][p]->Write();
+
+                    StripHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
+                    StripHomogeneity_H[trolley][slot][p]->Write();
+
+                    //******************************* Chip granularity histograms
+
+                    ChipHitProf_H[trolley][slot][p]->Write();
+
+                    ChipMeanNoiseProf_H[trolley][slot][p]->Write();
+
+                    ChipActivity_H[trolley][slot][p]->Write();
+
+                    ChipHomogeneity_H[trolley][slot][p]->GetYaxis()->SetRangeUser(0.,1.);
+                    ChipHomogeneity_H[trolley][slot][p]->Write();
                 }
 
-                if(RPCMeanNoiseProfile[t][rpc][p]->GetMean(2) > 0){
-                    MeanNoise[t][rpc][p]->cd(0);
-                    RPCMeanNoiseProfile[t][rpc][p]->SetXTitle("Strip");
-                    RPCMeanNoiseProfile[t][rpc][p]->SetYTitle("Mean Noise rate (Hz/cm^{2})");
-                    RPCMeanNoiseProfile[t][rpc][p]->Draw();
-                    MeanNoise[t][rpc][p]->Write();
-                }
+                //Finalise the calculation of the chamber rate
+                MeanRPCRate /= RPCarea;
+                MeanRPCSDev /= RPCarea;
 
-                if(RPCHitProfile[t][rpc][p]->GetEntries() > 0){
-                    HitProfile[t][rpc][p]->cd(0);
-                    RPCHitProfile[t][rpc][p]->SetXTitle("Strip");
-                    RPCHitProfile[t][rpc][p]->SetYTitle("# events");
-                    RPCHitProfile[t][rpc][p]->Draw();
-                    HitProfile[t][rpc][p]->Write();
-                }
+                //Write the header file
+                listCSV << "Rate-"
+                        << GIFInfra.Trolleys[t].RPCs[sl].name
+                        << "-TOT\tRate-"
+                        << GIFInfra.Trolleys[t].RPCs[sl].name
+                        << "-TOT_err\t";
 
-                if(RPCTimeProfile[t][rpc][p]->GetEntries() > 0){
-                    TimeProfile[t][rpc][p]->cd(0);
-                    RPCTimeProfile[t][rpc][p]->SetXTitle("Time stamp (ns)");
-                    RPCTimeProfile[t][rpc][p]->SetYTitle("# events");
-                    RPCTimeProfile[t][rpc][p]->Draw();
-                    TimeProfile[t][rpc][p]->Write();
-                }
-
-                if(RPCHitMultiplicity[t][rpc][p]->GetMean() > 0){
-                    HitMultiplicity[t][rpc][p]->cd(0);
-                    RPCHitMultiplicity[t][rpc][p]->SetXTitle("Multiplicity");
-                    RPCHitMultiplicity[t][rpc][p]->SetYTitle("# events");
-                    RPCHitMultiplicity[t][rpc][p]->Draw();
-                    HitMultiplicity[t][rpc][p]->Write();
-                }
-           }
-
-            outputCSV << '\n';
-
+                //Write the output file
+                outputCSV << MeanRPCRate << '\t' << MeanRPCSDev << '\t';
+            }
         }
+        listCSV << '\n';
+        listCSV.close();
+
+        outputCSV << '\n';
+        outputCSV.close();
+
+        outputfile.Close();
+        caenFile.Close();
+        dataFile.Close();
+    } else {
+        MSG_INFO("[Offline-Rate] File " + daqName + " could not be opened");
+        MSG_INFO("[Offline-Rate] Skipping rate analysis");
     }
-
-    outputfile.Close();
 }
-

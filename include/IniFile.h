@@ -1,14 +1,25 @@
-// *************************************************************************************************************
-// *   IniFile
-// *   Alexis Fagot
-// *   29/01/2015
-// *************************************************************************************************************
+#ifndef __INIFILE_H_
+#define __INIFILE_H_
+
+//***************************************************************
+// *    GIF OFFLINE TOOL v4
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    Inifile.cc
+// *
+// *    Macro to read Dimensions.ini files and extract
+// *    information from each RPC as number of partitions,
+// *    gaps, strips, and all ID names.
+// *    This file was originally developped for the GIF_DAQ.
+// *
+// *    Developped by : Alexis Fagot
+// *    07/03/2017
+//***************************************************************
 
 #include <string>
 #include <map>
-
-#ifndef __INIFILE_H_
-#define __INIFILE_H_
 
 using namespace std;
 
@@ -51,7 +62,9 @@ class IniFile{
         int             Read();
 
         // Data readout methods
-        float           GetValue( string groupname, const string keyname, const float defaultvalue );
+        long            intType     (string groupname, string keyname, long defaultvalue);
+        string          stringType  (string groupname, string keyname, string defaultvalue );
+        float           floatType   (string groupname, string keyname, float defaultvalue );
 };
 
 #endif
