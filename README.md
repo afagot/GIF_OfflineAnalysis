@@ -1,6 +1,7 @@
 # GIF++ Offline Analysis
 
-#### Authors: [Alexis Fagot](Alexis.Fagot@cern.ch), [Salvador Carillo](Salvador.Carrillo@cern.ch)
+#### Authors: Alexis Fagot < Alexis.Fagot@cern.ch >, Salvador Carillo < Salvador.Carrillo@cern.ch >
+
 
 ## Compilation
 
