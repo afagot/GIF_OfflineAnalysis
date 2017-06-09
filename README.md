@@ -1,8 +1,7 @@
 #GIF++ Offline Analysis
 
-####Author: Alexis Fagot
-####email : alexis.fagot@ugent.be
-####Tel.: +32 9 264 65 69
+####Authors: Alexis Fagot, Salvador Carillo
+####email : Alexis.Fagot@cern.ch, Salvador.Carrillo@cern.ch 
 
 ##Compilation
 
@@ -12,38 +11,47 @@ To compile the project, simply use
 
 ###Usage
 
-In order to use the Offline Analysis tool, it is mandatory to know the data files name that you want to analyse.
-There can be up to 3 data file per run taken with the GIF++ WebDCS :
+In order to use the Offline Analysis tool, it is mandatory to know the Scan number and the HV Step of the run you want to analyse:
 
-* `Scan00XXXX_HVY_DAQ.root` : contains the TDC data from the RPCs
-* `Scan00XXXX_HVY_CAEN.root` : contains the HV and LV data from the RPCs (voltages and currents)
-* `Scan00XXXX_HVY_DIP.root` : contains the environmental parameters + source and beam information
+* `Scan00XXXX_HVY`
 
-In all these 3 files, *XXXX* is the scan ID and *Y* is the high voltage step (in case of a high voltage scan, data will be taken for several HV steps).
-To start the analysis, simply type :
+where *XXXX* is the scan ID and *Y* is the high voltage step (in case of a high voltage scan, data will be taken for several HV steps).
+Usually, the offline analysis tool is automatically called by the WebDCS of GIF++ but, nontheless, to locally start the analysis for tests, simply type :
 
     bin/offlineanalysis /path/to/Scan00XXXX_HVY
 
-and it will take care by itself of finding the existing files among the 3 previously cited.
-Note that this tool is normally meant to be called by the GIF++ WebDCS but it also works by hand.
+and it will take care by itself of finding the data ROOT files:
 
-The analysed output ROOT datafiles for the rate calculation are saved into the data file folder and called `Scan00XXXX_HVY_DAQ-Rate.root` in case
-`Scan00XXXX_HVY_DAQ.root` was provided.
+* `Scan00XXXX_HVY_DAQ.root` containing the TDC data (events, hit and time lists)
+* `Scan00XXXX_HVY_CAEN.root` containing the CAEN mainframe data (HVs and currents basically)
 
-Inside those, you will find a more or less long, depending on the number of chambers that were used inside the setup during the data taking, list of *TCanvas*
-showing histograms.
+The analysed output ROOT datafiles are saved into the data file folder and called `Scan00XXXX_HVY_Offline.root`.
+
+Inside those, you will find a more or less long, depending on the number of chambers that were used inside the setup during the data taking, list of *TH1*.
 For each partition of each chamber, you will find :
 
-* `RPC_Instant_Noise_Tt_Scp` that gives a 2D map of the instantaneous noise per event. It mean that for each event, counting the number of hits and knowing the time window of the TDC, a noise rate is calculated and then filled in the map,
-* `RPC_Mean_Noise_Tt_Scp` that gives the projection along the x-axis of the previous 2D map. This way, the result obtained is the mean noise rate during the entire data taking for each strip,
-* `RPC_Hit_Profile_Tt_Scp` that gives the hit profile of the partition,
-* `RPC_Time_Profile_Tt_Scp` that gives the time profile of the partition, and
-* `RPC_Hit_Multiplicity_Tt_Scp` that gives the hit multiplicity of the partition during the last run.
+* `Time_Profile_Tt_Sc_p` shows the time profile of all recorded events,
+* `Hit_Profile_Tt_Sc_p` shows the hit profile of all recorded events,
+* `Hit_Multiplicity_Tt_Sc_p` shows the hit multiplicity of all recorded events (number of hits per event),
+* `Strip_Mean_Noise_Tt_Sc_p` shows noise/gamma rate for each strip in a selected time range,
+* `Strip_Activity_Tt_Sc_p` shows noise/gamma activity for each strip (normalised version of previous histogram - strip activity = strip rate / average partition rate),
+* `Strip_Homogeneity_Tt_Sc_p` shows the homogeneity of a given partition (homogeneity = exp(-StdDev(strip rates in partition)/(average partition rate))
+* `mask_Strip_Mean_Noise_Tt_Sc_p` shows noise/gamma rate for each masked strip in a selected time range,
+* `mask_Strip_Activity_Tt_Sc_p` shows noise/gamma activity for each masked strip with repect to the average rate of active strips,
+* `NoiseCSize_H_Tt_Sc_p` shows noise/gamma cluster size,
+* `NoiseCMult_H_Tt_Sc_p` shows noise/gamma cluster multiplicity (number of reconstructed clusters per event),
+* `Chip_Mean_Noise_Tt_Sc_p` shows the same information than Strip_Mean_Noise_Tt_Scp using a different binning (1 chip = 8 strips),
+* `Chip_Activity_Tt_Sc_p` shows the same information than Strip_Activity_Tt_Scp using a different binning,
+* `Chip_Homogeneity_Tt_Sc_p` shows the homogeneity of a given partition using chip binning,
+* `Beam_Profile_Tt_Sc_p` shows the estimated beam profile when taking efficiency scan (constructed with the hits contained in the muon peak where the noise/gamma background has been subtracted),
+* `L0_Efficiency_Tt_Sc_p` shows the level 0 efficiency that was estimated WITHOUT muon tracking,
+* `MuonCSize_H_Tt_Sc_p` shows the level 0 muon cluster size that was estimated WITHOUT muon tracking, and
+* `MuonCMult_H_Tt_Sc_p`shows the level 0 muon cluster multiplicity that was estimated WITHOUT muon tracking.
 
-**Note :** in the histogram labels, **t** is for the trolley number (1 or 3), **c** is for chamber label (from 1 to 4 for each trolley) and **p** is for the partition label (A, B, C or D depending on the chamber layout).
+**Note :** in the histogram labels, **t** stands for the trolley number (1 or 3), **c** for the chamber slot label in trolley **t** and **p** for the partition label (A, B, C or D depending on the chamber layout).
 
 Moreover, up to 3 CSV files can created depending on which ones of the 3 input files were in the data folder :
 
-* `Offline-Rate.csv` : contains the summary of the rate calculation for the entire scan, HV step per HV step
+* `Offline-Rate.csv` : contains the summary of the noise/gamma rates and clusters
 * `Offline-Current.csv` : contains the summary of the currents and voltages applied on the RPCs
-* `Offline-DIP` : contains the summary of the environmental, beam and source parameters
+* `Offline-L0-EffCl.csv` : contains the summary of the level 0 efficiency and muon cluster information without tracking
