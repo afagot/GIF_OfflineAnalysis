@@ -502,9 +502,9 @@ void OfflineAnalysis(string baseName){
                     //partition
                     float MeanPartRate = GetTH1Mean(StripNoiseProfile_H.rpc[T][S][p]);
                     float cSizePart = NoiseCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizePartErr = NoiseCSize_H.rpc[T][S][p]->GetStdDev();
+                    float cSizePartErr = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
                     float cMultPart = NoiseCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultPartErr = NoiseCMult_H.rpc[T][S][p]->GetStdDev();
+                    float cMultPartErr = 2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
                     float ClustPartRate = MeanPartRate/cSizePart;
                     float ClustPartRateErr = ClustPartRate * cSizePartErr/cSizePart;
 
@@ -587,9 +587,9 @@ void OfflineAnalysis(string baseName){
                     float eff = Efficiency0_H.rpc[T][S][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
                     float cSize = MuonCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizeErr = MuonCSize_H.rpc[T][S][p]->GetStdDev();
+                    float cSizeErr = 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
                     float cMult = MuonCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultErr = MuonCMult_H.rpc[T][S][p]->GetStdDev();
+                    float cMultErr = 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
 
                     //Write in the output CSV file
                     outputEffCSV << eff << '\t' << effErr << '\t'
