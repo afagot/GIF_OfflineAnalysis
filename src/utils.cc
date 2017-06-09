@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -9,8 +9,8 @@
 // *    All usefull functions (type cast, time stamps,...)
 // *    and structures (used for the GIF layout definition).
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <cstdlib>
@@ -19,6 +19,7 @@
 #include <fstream>
 #include <cstdio>
 #include <map>
+#include <algorithm>
 
 #include "TFile.h"
 #include "TTree.h"
@@ -28,22 +29,9 @@
 #include "THistPainter.h"
 
 #include "../include/utils.h"
+#include "../include/MsgSvc.h"
 
 using namespace std;
-
-
-// ****************************************************************************************************
-// *    bool existFiles(string baseName)
-//
-//  Function that test if the 3 root files created during the data taking exist in the scan directory
-//  or not. This is the needed condition for the offline tool to start.
-// ****************************************************************************************************
-
-bool existFile(string ROOTName){
-    TFile ROOTFile(ROOTName.c_str());
-
-    return (ROOTFile.IsOpen());
-}
 
 // ****************************************************************************************************
 // *    int CharToInt(char &C)
@@ -51,11 +39,11 @@ bool existFile(string ROOTName){
 //  Function that casts a char into an int
 // ****************************************************************************************************
 
-unsigned int CharToInt(char &C){
+Uint CharToInt(char &C){
     stringstream ss;
     ss << C;
 
-    unsigned int I;
+    Uint I;
     ss >> I;
     return I;
 }
@@ -121,6 +109,19 @@ string floatTostring(float value){
 }
 
 // ****************************************************************************************************
+// *    bool existFiles(string baseName)
+//
+//  Function that test if the root files created during the data taking exist in the scan directory
+//  or not. This is the needed condition for the offline tool to start.
+// ****************************************************************************************************
+
+bool existFile(string ROOTName){
+    TFile ROOTFile(ROOTName.c_str());
+
+    return (ROOTFile.IsOpen());
+}
+
+// ****************************************************************************************************
 // *    string GetLogTimeStamp()
 //
 //  Function that gets the system time. The output format of this function has been optimised to be
@@ -141,6 +142,7 @@ string GetLogTimeStamp(){
     int s = Time->tm_sec;
 
     //Set the Date
+    //Format is YYYY-MM-DD.hh:mm:ss.
     string Date;
 
     stream << setfill('0') << setw(4) << Y << "-"
@@ -178,10 +180,65 @@ void WritePath(string baseName){
 }
 
 // ****************************************************************************************************
+// *    Mapping TDCMapping(string baseName)
+//
+//  Returns the map to translate TDC channels into RPC strips and get the mask.
+// ****************************************************************************************************
+
+Mapping TDCMapping(string baseName){
+    //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
+    Uint RPCCh = 9999;
+
+    //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
+    Uint TDCCh = 9999;
+
+    //Mask (1 is strip is active and 0 if strip is masked)
+    Uint Mask = 1;
+
+    //Maps of:
+    //TDC Channels and their corresponding RPC strips
+    //RPC Channels and their corresponding mask value
+    Mapping Map;
+
+    //File that contains the path to the mapping file located
+    //in the scan directory
+    string mappingpath = baseName.substr(0,baseName.find_last_of("/"))+"/ChannelsMapping.csv";
+
+    //Open mapping file
+    ifstream mappingfile(mappingpath.c_str(), ios::in);
+    if(mappingfile){
+        while (mappingfile.good()) { //Fill the map with RPC and TDC channels
+            mappingfile >> RPCCh >> TDCCh;
+
+            //Check the TDC mapping file format (2 columns - old format -
+            //or 3 columns - new format including mask - )
+            char next;
+            mappingfile.get(next);
+            if(next == '\n')
+                Mask = 1;
+            else
+                mappingfile >> Mask;
+
+            if ( TDCCh != 9999 ){
+                Map.link[TDCCh] = RPCCh;
+                Map.mask[RPCCh] = Mask;
+            }
+        }
+        mappingfile.close();
+    } else {
+        MSG_ERROR("[Offline] Couldn't open file " + mappingpath);
+        exit(EXIT_FAILURE);
+    }
+
+    return Map;
+}
+
+// ****************************************************************************************************
 // *    void SetRPC(RPC &rpc, string ID, IniFile *geofile)
 //
 //  Set up the RPC structure needed which is the innermost part of the GIF++ infrasctructure. The RPCs
-//  Are contained inside the Trolleys. For details about RPC members, see file utils.h.
+//  are contained inside the Trolleys. Informations are readout from Dimensions.ini . For details about
+//  RPC members, see file utils.h.
 // ****************************************************************************************************
 
 void SetRPC(RPC &rpc, string ID, IniFile *geofile){
@@ -189,7 +246,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
     rpc.nGaps       = geofile->intType(ID,"Gaps",0);
 
-    for(unsigned int g = 0 ; g < rpc.nGaps; g++){
+    for(Uint g = 0 ; g < rpc.nGaps; g++){
         string gapID = "Gap" + intToString(g+1);
         rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
 
@@ -200,7 +257,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
     string partID = "ABCD";
 
-    for(unsigned int p = 0; p < rpc.nPartitions; p++){
+    for(Uint p = 0; p < rpc.nPartitions; p++){
         string areaID  = "ActiveArea-"  + CharToString(partID[p]);
         float area = geofile->floatType(ID,areaID,1.);
         rpc.stripGeo.push_back(area);
@@ -208,9 +265,10 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile)
 //
-//
+//  Set up the Trolley structure needed that contains RPCs. Informations are readout from
+//  Dimensions.ini . For details about Trolley members, see file utils.h.
 // ****************************************************************************************************
 
 
@@ -218,7 +276,7 @@ void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
     trolley.nSlots = geofile->intType(ID,"nSlots",NSLOTS);
     trolley.SlotsID = geofile->stringType(ID,"SlotsID","");
 
-    for(unsigned int s = 0; s < trolley.nSlots; s++){
+    for(Uint s = 0; s < trolley.nSlots; s++){
         string rpcID = ID + "S" + CharToString(trolley.SlotsID[s]);
 
         RPC temprpc;
@@ -228,9 +286,11 @@ void SetTrolley(GIFTrolley &trolley, string ID, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetInfrastructure(Infrastructure &infra, IniFile *geofile)
 //
-//
+//  Set up the Infrastructure structure needed that represents the GIF++ setup at the moment of data
+//  taking, i.e. the active trolleys and the RPC chambers they contain in their slots. Informations
+//  are readout from Dimensions.ini . For details about Trolley members, see file utils.h.
 // ****************************************************************************************************
 
 void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
@@ -238,7 +298,7 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
     infra.TrolleysID = geofile->stringType("General","TrolleysID","");
     infra.Trolleys.clear();
 
-    for(unsigned int t = 0; t < infra.nTrolleys; t++){
+    for(Uint t = 0; t < infra.nTrolleys; t++){
         string trolleyID = "T" + CharToString(infra.TrolleysID[t]);
 
         GIFTrolley tempTrolley;
@@ -248,59 +308,63 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra)
 //
-//
+//  Uses the mapping to set up every hit and assign it to the right strip in each active RPC.
 // ****************************************************************************************************
 
-//Name of histograms
-void SetTitleName(string rpcID, unsigned int partition, char* Name, char* Title, string Namebase, string Titlebase){
-    string P[4] = {"A","B","C","D"};
-    sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
-    sprintf(Title,"%s %s_%s",Titlebase.c_str(),rpcID.c_str(),P[partition].c_str());
-}
-
-// ****************************************************************************************************
-// *    int CharToInt(char &C)
-//
-//
-// ****************************************************************************************************
-
-//Set the RPCHit variables
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
-    Hit.Channel     = Channel;                      //RPC channel according to mapping (5 digits)
-    Hit.Trolley     = Channel/10000;                //0, 1 or 3 (1st digit of the RPC channel)
-    Hit.Station     = (Channel%10000)/1000;         //From 1 to 4 (2nd digit)
-    Hit.Strip       = Channel%1000;                 //From 1 to 128 (3 last digits)
+    Hit.Channel     = Channel;              //RPC channel according to mapping (5 digits)
+    Hit.Trolley     = Channel/10000;        //0, 1 or 3 (1st digit of the RPC channel)
+    Hit.Station     = (Channel%10000)/1000; //From 1 to 4 (2nd digit)
+    Hit.Strip       = Channel%1000;         //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-    for(unsigned int i = 0; i < Infra.nTrolleys; i++){
+    for(Uint i = 0; i < Infra.nTrolleys; i++){
         if(CharToInt(Infra.TrolleysID[i]) == Hit.Trolley){
-            for(unsigned int j = 0; j < Infra.Trolleys[i].nSlots; j++){
+            for(Uint j = 0; j < Infra.Trolleys[i].nSlots; j++){
                 if(CharToInt(Infra.Trolleys[i].SlotsID[j]) == Hit.Station)
                     nStripsPart = Infra.Trolleys[i].RPCs[j].strips;
             }
         }
     }
 
-    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1;  //From 1 to 4
-    Hit.Connector   = (Hit.Strip-1)/NSTRIPSCONN+1;  //From 1 to 8
+    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1; //From 1 to 4
     Hit.TimeStamp   = TimeStamp;
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetCluster(RPCCluster& Cluster, HitList List, Uint cID,
+// *                    Uint cSize, Uint first, Uint firstID)
 //
-//
+//  Set up clusters.
 // ****************************************************************************************************
 
-//Set the beam time window
-void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
-                    float (&PeakWidth)[NTROLLEYS][NSLOTS][NPARTITIONS],
-                    TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
+void SetCluster(RPCCluster& Cluster, HitList List, Uint cID, Uint cSize, Uint first, Uint firstID){
+    Cluster.ClusterID   = cID;
+    Cluster.ClusterSize = cSize;
+    Cluster.FirstStrip  = first;
+    Cluster.LastStrip   = first+cSize-1;
+    Cluster.Center      = (Cluster.FirstStrip+Cluster.LastStrip)/2.;
+    Cluster.StartStamp  = GetClusterStartStamp(List,cSize,firstID);
+    Cluster.StopStamp   = GetClusterStopStamp(List,cSize,firstID);
+    Cluster.TimeSpread  = GetClusterSpreadTime(List,cSize,firstID);
+}
+
+// ****************************************************************************************************
+// *    void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+// *                        TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra)
+//
+//  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
+//  of the muon peak and its spread. Then saves the result in 2 3D tables (#D bescause it follows the
+//  dimensions of the GIF++ infrastructure : Trolley, RPC slots and Partitions).
+// ****************************************************************************************************
+
+void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+                    TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra){
     RAWData mydata;
 
-    mydata.TDCCh = new vector<unsigned int>;
+    mydata.TDCCh = new vector<Uint>;
     mydata.TDCTS = new vector<float>;
     mydata.TDCCh->clear();
     mydata.TDCTS->clear();
@@ -311,53 +375,94 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
     mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
 
     TH1F *tmpTimeProfile[NTROLLEYS][NSLOTS][NPARTITIONS];
+    float noiseHits[NTROLLEYS][NSLOTS][NPARTITIONS] = {{{0.}}};
+    int binWidth = TIMEBIN;
 
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++)
-        for(unsigned int sl = 0; sl < NSLOTS; sl++)
-            for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint tr = 0; tr < NTROLLEYS; tr++)
+        for(Uint sl = 0; sl < NSLOTS; sl++)
+            for(Uint p = 0; p < NPARTITIONS; p++){
                 string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
-                tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/20.,0.,BMTDCWINDOW);
+                tmpTimeProfile[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/TIMEBIN,0.,BMTDCWINDOW);
     }
 
-    for(unsigned int i = 0; i < mytree->GetEntries(); i++){
+    //Loop over the entries to get the hits and fill the time distribution + count the
+    //noise hits in the window around the peak
+
+    for(Uint i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
         for(int h = 0; h < mydata.TDCNHits; h++){
             RPCHit tmpHit;
+            Uint channel = mydata.TDCCh->at(h);
+            Uint timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
-            if(mydata.TDCCh->at(h) > 5127) continue;
-            if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
+            if(channel > 5127) continue;
+            if(RPCChMap.link[channel] == 0) continue;
 
-            SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
-            tmpTimeProfile[tmpHit.Trolley][tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
+            SetRPCHit(tmpHit, RPCChMap.link[channel], timing, GIFInfra);
+            Uint T = tmpHit.Trolley;
+            Uint S = tmpHit.Station-1;
+            Uint P = tmpHit.Partition-1;
+
+            tmpTimeProfile[T][S][P]->Fill(tmpHit.TimeStamp);
         }
     }
 
-    //Fit with a gaussian the "Good TDC Time"
-    TF1 *slicefit = new TF1("slicefit","gaus(0)+[3]",250.,350.);//Fit function (gaussian)
+    //Compute the average number of noise hits per 10ns bin and subtract it to the time
+    //distribution
+
+    muonPeak center;
+    muonPeak lowlimit;
+    muonPeak highlimit;
+
+    for(Uint tr = 0; tr < NTROLLEYS; tr++){
+        for(Uint sl = 0; sl < NSLOTS; sl++){
+            for(Uint p = 0; p < NPARTITIONS; p++){
+                if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.){
+                    center.rpc[tr][sl][p] = (float)tmpTimeProfile[tr][sl][p]->GetMaximumBin()*TIMEBIN;
+                    lowlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] - 40.;
+                    highlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] + 40.;
+
+                    float timeWdw = BMTDCWINDOW-TIMEREJECT-(highlimit.rpc[tr][sl][p]-lowlimit.rpc[tr][sl][p]);
+
+                    int nNoiseHitsLow = tmpTimeProfile[tr][sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit.rpc[tr][sl][p]/TIMEBIN);
+                    int nNoiseHitsHigh = tmpTimeProfile[tr][sl][p]->Integral(highlimit.rpc[tr][sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
+
+                    noiseHits[tr][sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
+
+                    for(Uint b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                        float binContent = (float)tmpTimeProfile[tr][sl][p]->GetBinContent(b);
+                        float correctedContent = (binContent < noiseHits[tr][sl][p]) ? 0. : binContent-noiseHits[tr][sl][p];
+                        tmpTimeProfile[tr][sl][p]->SetBinContent(b,correctedContent);
+                    }
+                }
+            }
+        }
+    }
 
     //Loop over RPCs
-    for(unsigned int tr = 0; tr < NTROLLEYS; tr++){
-        for(unsigned int sl = 0; sl < NSLOTS; sl++ ) {
-            for(unsigned int p = 0; p < NPARTITIONS; p++ ) {
-                slicefit->SetParameter(0,50);      //Amplitude
+    for(Uint tr = 0; tr < NTROLLEYS; tr++){
+        for(Uint sl = 0; sl < NSLOTS; sl++ ){
+            for(Uint p = 0; p < NPARTITIONS; p++){
+                //Fit with a gaussian the "Good TDC Time"
+                TF1 *slicefit = new TF1("slicefit","gaus(0)",lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+
+                //Amplitude
+                slicefit->SetParameter(0,50);
                 slicefit->SetParLimits(0,1,100000);
-
-                slicefit->SetParameter(1,300);     //Mean value
-                slicefit->SetParLimits(1,260,340);
-
-                slicefit->SetParameter(2,20);      //RMS
+                //Mean value
+                slicefit->SetParameter(1,center.rpc[tr][sl][p]);
+                slicefit->SetParLimits(1,lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+                //RMS
+                slicefit->SetParameter(2,20);
                 slicefit->SetParLimits(2,1,40);
-
-                slicefit->SetParameter(3,10);      //Background offset
-                slicefit->SetParLimits(3,0,100000);
 
                 if(tmpTimeProfile[tr][sl][p]->GetEntries() > 0.)
                     tmpTimeProfile[tr][sl][p]->Fit(slicefit,"QR");
 
-                PeakTime[tr][sl][p] = slicefit->GetParameter(1);
-                PeakWidth[tr][sl][p] = 2.*slicefit->GetParameter(2);
+                PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
+                PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
 
                 delete tmpTimeProfile[tr][sl][p];
             }
@@ -366,52 +471,60 @@ void SetBeamWindow (float (&PeakTime)[NTROLLEYS][NSLOTS][NPARTITIONS],
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTitleName(string rpcID, Uint partition, char* Name, char* Title,
+// *                      string Namebase, string Titlebase)
 //
-//
+//  Builds the name and title of ROOT objects.
 // ****************************************************************************************************
 
-//Function use to sort hits by increasing strip number
-bool SortStrips ( RPCHit A, RPCHit B ) {
-    return ( A.Strip < B.Strip );
+void SetTitleName(string rpcID, Uint partition, char* Name, char* Title,
+                  string Namebase, string Titlebase){
+
+    string P[4] = {"A","B","C","D"};
+    sprintf(Name,"%s_%s_%s",Namebase.c_str(),rpcID.c_str(),P[partition].c_str());
+    sprintf(Title,"%s %s_%s",Titlebase.c_str(),rpcID.c_str(),P[partition].c_str());
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    bool IsEfficiencyRun(TString* runtype)
 //
-//
+//  Returns true if the comparison of the runtype to the word "efficiency" gives 0 (no difference).
 // ****************************************************************************************************
 
-//Return the partition corresponding to the strip
-int GetPartition( int strip ) {
-    return strip/NSTRIPSPART;
+bool IsEfficiencyRun(TString* runtype){
+    return (runtype->CompareTo("efficiency") == 0);
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    float GetTH1Mean(TH1* H)
 //
-//
+//  Returns the mean along the Y axis of a TH1 (value not given by the ROOT statbox).
 // ****************************************************************************************************
 
-//Get mean of 1D histograms
 float GetTH1Mean(TH1* H){
     int nBins = H->GetNbinsX();
+    int nActive = nBins;
     float mean = 0.;
 
-    for(int b = 1; b <= nBins; b++) mean += H->GetBinContent(b);
+    for(int b = 1; b <= nBins; b++){
+        float value = H->GetBinContent(b);
+        mean += value;
+        if(value == 0.) nActive--;
+    }
 
-    mean /= (float)nBins;
+    if(nActive != 0) mean /= (float)nActive;
+    else mean = 0.;
 
     return mean;
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    float GetTH1StdDev(TH1* H)
 //
-//
+//  Returns the spread of the distribution of values along the Y axis of a TH1 (value not given by
+//  the ROOT statbox).
 // ****************************************************************************************************
 
-//Get standard deviation of 1D histograms
 float GetTH1StdDev(TH1* H){
     int nBins = H->GetNbinsX();
     float mean = GetTH1Mean(H);
@@ -426,37 +539,215 @@ float GetTH1StdDev(TH1* H){
     return stddev;
 }
 
-
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    float GetChipBin(TH1* H)
 //
-//
+//  Returns the chip average value from strip histograms by grouping active strips.
 // ****************************************************************************************************
 
-//Draw 1D histograms
-void DrawTH1(TCanvas* C, TH1* H, string xtitle, string ytitle, string option){
-    C->cd(0);
-    H->SetXTitle(xtitle.c_str());
-    H->SetYTitle(ytitle.c_str());
-    H->SetFillColor(kBlue);
-    H->Draw(option.c_str());
-    C->Update();
+float GetChipBin(TH1* H, Uint chip){
+    Uint start = 1 + chip*NSTRIPSCHIP;
+    int nActive = NSTRIPSCHIP;
+    float mean = 0.;
+
+    for(Uint b = start; b <= (chip+1)*NSTRIPSCHIP; b++){
+        float value = H->GetBinContent(b);
+        mean += value;
+        if(value == 0.) nActive--;
+    }
+
+    if(nActive != 0) mean /= (float)nActive;
+    else mean = 0.;
+
+    return mean;
 }
 
 // ****************************************************************************************************
-// *    int CharToInt(char &C)
+// *    void SetTH1(TH1* H, string xtitle, string ytitle)
 //
+//  Sets the title of X and Y axis of a TH1.
+// ****************************************************************************************************
+
+void SetTH1(TH1* H, string xtitle, string ytitle){
+    H->SetXTitle(xtitle.c_str());
+    H->SetYTitle(ytitle.c_str());
+}
+
+// ****************************************************************************************************
+// *    void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle)
 //
+//  Sets the title of X, Y and Z axis of a TH1.
 // ****************************************************************************************************
 
 //Draw 2D histograms
-void DrawTH2(TCanvas* C, TH2* H, string xtitle, string ytitle, string ztitle, string option){
-    C->cd(0);
+void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
     H->SetXTitle(ztitle.c_str());
-    gStyle->SetPalette(55);
-    H->Draw(option.c_str());
-    C->SetLogz(1);
-    C->Update();
+}
+
+// ****************************************************************************************************
+// *    bool sortbyhit(pair<int, float> p1, pair<int, float> p2)
+//
+//  Sort RPC hits using strip position information
+// ****************************************************************************************************
+
+bool SortHitbyStrip(RPCHit h1, RPCHit h2){
+        return (h1.Strip < h2.Strip);
+}
+
+// ****************************************************************************************************
+// *    bool sortbytime(pair<int, float> p1, pair<int, float> p2)
+//
+//  Sort RPC hits using time stamp information
+// ****************************************************************************************************
+
+//Sort hits by time
+bool SortHitbyTime(RPCHit h1, RPCHit h2){
+        return (h1.TimeStamp < h2.TimeStamp);
+}
+
+// ****************************************************************************************************
+// *   float GetClusterSpreadTime(HitList &hits, int cSize, int hitID)
+//
+//  Return the time difference in between the first and the last hit of the cluster
+// ****************************************************************************************************
+
+float GetClusterSpreadTime(HitList &cluster, int cSize, int hitID){
+    //Cluster are reconstructed in the non rejected time window
+    float max = 0.;
+    float min = 0.;
+
+    for(int i = hitID; i <= (hitID + cSize-1); i++){
+        if(i == hitID && min == 0. && max == 0.){
+            min = cluster[i].TimeStamp;
+            max = cluster[i].TimeStamp;
+        } else {
+            if(cluster[i].TimeStamp < min ) min = cluster[i].TimeStamp;
+            if(cluster[i].TimeStamp > max ) max = cluster[i].TimeStamp;
+        }
+    }
+
+    return (max-min);
+}
+
+// ****************************************************************************************************
+// *   float GetClusterStartStamp(HitList &cluster,int cSize, int hitID)
+//
+//  Return the starting time stamp of the cluster
+// ****************************************************************************************************
+
+float GetClusterStartStamp(HitList &cluster,int cSize, int hitID){
+    //Cluster are reconstructed in the non rejected time window
+    float min = 0.;
+
+    for(int i = hitID; i <= (hitID + cSize-1); i++){
+        if(i == hitID && min == 0.) min = cluster[i].TimeStamp;
+        else if(cluster[i].TimeStamp < min ) min = cluster[i].TimeStamp;
+    }
+
+    return min;
+}
+
+// ****************************************************************************************************
+// *   float GetClusterStopStamp(HitList &cluster,int cSize, int hitID)
+//
+//  Return the stopping time stamp of the cluster
+// ****************************************************************************************************
+
+float GetClusterStopStamp(HitList &cluster,int cSize, int hitID){
+    //Cluster are reconstructed in the non rejected time window
+    float max = 0.;
+
+    for(int i = hitID; i <= (hitID + cSize-1); i++){
+        if(i == hitID && max == 0.) max = cluster[i].TimeStamp;
+        else if(cluster[i].TimeStamp > max ) max = cluster[i].TimeStamp;
+    }
+
+    return max;
+}
+
+// ****************************************************************************************************
+// *    void do_cluster(vector < pair<int, float> > &v,
+// *                    vector < Cluster > &cluster, bool noflip,int thePartition)
+//
+//  Build cluster using the sorted RPC hit arrays
+//  Wee need the following variables:
+//  - cluster size
+//  - isolation (nominal, "other side")
+//  - cluster:
+//      * center,  (left, right sides)
+//      * delta time
+// ****************************************************************************************************
+
+void BuildClusters(HitList &cluster, ClusterList &clusterList){
+    if(cluster.size() > 0){
+        // Sort by strip order to make cluster by using adjacent strips
+        sort(cluster.begin(), cluster.end(), SortHitbyStrip);
+
+        Uint firstHit = cluster.front().Strip; //first cluster hit
+        Uint previous = firstHit;              //previous strip checked
+        Uint hitID = 0;      //ID of the first cluster hit to
+                             //look for start and stop stamps
+        Uint clusterID = 0;  //ID of the cluster starting from 0
+        Uint cSize = 0;      //cluster size counter
+
+        //Loop over the hit list and group adjacent strips
+        for(Uint i = 0; i < cluster.size(); i++){
+            if (cluster[i].Strip-previous > 1){
+                clusterList.push_back(RPCCluster());
+                SetCluster(clusterList.back(),cluster,clusterID,cSize,firstHit,hitID);
+
+                cSize = 1;
+                hitID = i;
+                firstHit = cluster[i].Strip;
+                clusterID++;
+            }
+            previous = cluster[i].Strip;
+            cSize++;
+        }
+        clusterID++;
+
+        //Add the last cluster to the list
+        clusterList.push_back(RPCCluster());
+        SetCluster(clusterList.back(),cluster,clusterID,cSize,firstHit,hitID);
+    }
+}
+
+// ****************************************************************************************************
+// *   void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
+//
+//  Used to loop over the hit list, create clusters and fill histograms
+// ****************************************************************************************************
+
+void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
+    HitList cluster;
+    cluster.clear();
+
+    ClusterList clusterList;
+    clusterList.clear();
+
+    float timediff = 0.;
+    float lastime = 0.;
+    Uint multiplicity = 0;
+
+    for(Uint i = 0; i < hits.size(); i ++){
+        timediff = hits[i].TimeStamp-lastime;
+
+        if(abs(timediff) > 25. && lastime > 0.){
+            clusterList.clear();
+            BuildClusters(cluster,clusterList);
+
+            for(Uint i = 0; i < clusterList.size(); i++)
+                if(clusterList[i].ClusterSize > 0)
+                    hcSize->Fill(clusterList[i].ClusterSize);
+
+            multiplicity += clusterList.size();
+            cluster.clear();
+        }
+
+        lastime = hits[i].TimeStamp;
+        cluster.push_back(hits[i]);
+    }
+    hcMult->Fill(multiplicity);
 }

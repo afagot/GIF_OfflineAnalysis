@@ -1,19 +1,19 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates and currents.
 // *
 // *    main.cc
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <sstream>
 #include <string>
 
-#include "../include/NoiseRate.h"
+#include "../include/OfflineAnalysis.h"
 #include "../include/Current.h"
 #include "../include/MsgSvc.h"
 
@@ -40,13 +40,12 @@ int main(int argc ,char *argv[]){
         //in the HVSCAN directory to know where to write the logs
         WritePath(baseName);
 
-        string daqName = baseName + "_DAQ.root";
-        string caenName = baseName + "_CAEN.root";
-
         //Start the needed analysis tools - check if the ROOT files exist
-        if(existFile(daqName)) GetNoiseRate(baseName);
+        string daqName = baseName + "_DAQ.root";
+        if(existFile(daqName)) OfflineAnalysis(baseName);
         else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
 
+        string caenName = baseName + "_CAEN.root";
         if(existFile(caenName)) GetCurrent(baseName);
         else  MSG_ERROR("[Offline] No CAEN file for run " + baseName);
 

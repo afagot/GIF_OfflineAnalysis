@@ -1,5 +1,5 @@
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
@@ -8,8 +8,8 @@
 // *
 // *    Current extraction from Scan_00XXXX_HVX_CAEN.root files
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <fstream>
@@ -31,7 +31,7 @@ void GetCurrent(string baseName){
     //****************** HVSTEP **************************************
 
     //Get the HVstep number from the file name
-    unsigned int length = caenName.rfind("_") - caenName.rfind("HV") - 2;
+    Uint length = caenName.rfind("_") - caenName.rfind("HV") - 2;
     string HVstep = caenName.substr(caenName.find_last_of("_")-length,length);
 
     //****************** CAEN ROOT FILE ******************************
@@ -68,30 +68,36 @@ void GetCurrent(string baseName){
         ofstream listCSV(listName.c_str(),ios::out);
         listCSV << "HVstep\t";
 
-        for (unsigned int t = 0; t < GIFInfra.nTrolleys; t++){
-            unsigned int nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
+            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
 
-            for (unsigned int s = 0; s < nSlotsTrolley; s++){
-                unsigned int nGapsRPC = GIFInfra.Trolleys[t].RPCs[s].nGaps;
+            for (Uint s = 0; s < nSlotsTrolley; s++){
+                Uint nGapsRPC = GIFInfra.Trolleys[t].RPCs[s].nGaps;
 
-                for(unsigned int g = 0; g < nGapsRPC; g++){
+                for(Uint g = 0; g < nGapsRPC; g++){
                     string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
                     float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
-                    string ImonHisto, HVeffHisto, ADCHisto;
+                    string ImonHisto, JmonTitle, HVeffHisto, HVappHisto, ADCHisto;
 
                     //Histogram names
                     if(gapID == "empty"){
                         HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                        HVappHisto = "HVapp_" + GIFInfra.Trolleys[t].RPCs[s].name;
                         ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name;
                         ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name;
                     } else {
                         HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                        HVappHisto = "HVapp_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                         ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                         ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
                     }
 
                     listCSV << HVeffHisto << '\t'
+                            << HVappHisto << '\t' << HVappHisto << "_err\t"
                             << ImonHisto << '\t' << ImonHisto << "_err\t"
+                            << JmonTitle << '\t' << JmonTitle << "_err\t"
                             << ADCHisto << '\t' << ADCHisto << "_err\t";
 
                     //Save the effective voltages
@@ -104,16 +110,34 @@ void GetCurrent(string baseName){
                         outputCSV << voltage << '\t';
                     }
 
+                    //Save the applied voltages
+                    if(caenFile.GetListOfKeys()->Contains(HVappHisto.c_str())){
+                        TH1F* HVapp = (TH1F*)caenFile.Get(HVappHisto.c_str());
+                        float voltage = HVapp->GetMean();
+                        float voltageErr = HVapp->GetRMS()/sqrt(HVapp->GetEntries());
+                        outputCSV << voltage << '\t' << voltageErr << '\t';
+                    } else {
+                        float voltage = 0.;
+                        float voltageErr = 0.;
+                        outputCSV << voltage << '\t' << voltageErr << '\t';
+                    }
+
                     //Save the corresponding gap imons
                     if(caenFile.GetListOfKeys()->Contains(ImonHisto.c_str())){
                         TH1F* Imon = (TH1F*)caenFile.Get(ImonHisto.c_str());
-                        float current = Imon->GetMean()/areagap;
-                        float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries())/areagap;
+                        float current = Imon->GetMean();
+                        float currentErr = Imon->GetRMS()/sqrt(Imon->GetEntries());
+                        float density = current/areagap;
+                        float densityErr = currentErr/areagap;
                         outputCSV << current << '\t' << currentErr << '\t';
+                        outputCSV << density << '\t' << densityErr << '\t';
                     } else {
                         float current = 0.;
                         float currentErr = 0.;
+                        float density = 0.;
+                        float densityErr = 0.;
                         outputCSV << current << '\t' << currentErr << '\t';
+                        outputCSV << density << '\t' << densityErr << '\t';
                     }
 
                     //Save the corresponding gap ADC currents

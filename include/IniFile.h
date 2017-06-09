@@ -2,20 +2,20 @@
 #define __INIFILE_H_
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v4
+// *    GIF OFFLINE TOOL v5
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
 // *
 // *    Inifile.cc
 // *
-// *    Macro to read Dimensions.ini files and extract
+// *    INI Parser to read Dimensions.ini files and extract
 // *    information from each RPC as number of partitions,
 // *    gaps, strips, and all ID names.
 // *    This file was originally developped for the GIF_DAQ.
 // *
-// *    Developped by : Alexis Fagot
-// *    07/03/2017
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
 //***************************************************************
 
 #include <string>
@@ -42,29 +42,28 @@ typedef  IniFileData::iterator IniFileDataIter;
 
 // *************************************************************************************************************
 
-
 class IniFile{
     private:
-        bool            CheckIfComment(string line);
-        bool            CheckIfGroup(string line,string& group);
-        bool            CheckIfToken(string line,string& key,string& value);
-        string          FileName;
-        IniFileData 	FileData;
-        int             Error;
+        bool        CheckIfComment(string line);
+        bool        CheckIfGroup(string line,string& group);
+        bool        CheckIfToken(string line,string& key,string& value);
+        string      FileName;
+        IniFileData FileData;
+        int         Error;
 
     public:
         IniFile();
         IniFile(string filename);
-        virtual         ~IniFile();
+        virtual     ~IniFile();
 
         // Basic file operations
-        void            SetFileName(const string filename);
-        int             Read();
+        void        SetFileName(const string filename);
+        int         Read();
 
         // Data readout methods
-        long            intType     (string groupname, string keyname, long defaultvalue);
-        string          stringType  (string groupname, string keyname, string defaultvalue );
-        float           floatType   (string groupname, string keyname, float defaultvalue );
+        long        intType    (string groupname, string keyname, long defaultvalue);
+        string      stringType (string groupname, string keyname, string defaultvalue);
+        float       floatType  (string groupname, string keyname, float defaultvalue);
 };
 
 #endif
