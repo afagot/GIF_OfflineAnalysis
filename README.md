@@ -1,15 +1,14 @@
-#GIF++ Offline Analysis
+# GIF++ Offline Analysis
 
-####Authors: Alexis Fagot, Salvador Carillo
-####email : Alexis.Fagot@cern.ch, Salvador.Carrillo@cern.ch 
+#### Authors: [Alexis Fagot](Alexis.Fagot@cern.ch), [Salvador Carillo](Salvador.Carrillo@cern.ch)
 
-##Compilation
+## Compilation
 
 To compile the project, simply use
 
-   make
+    make
 
-###Usage
+### Usage
 
 In order to use the Offline Analysis tool, it is mandatory to know the Scan number and the HV Step of the run you want to analyse:
 
