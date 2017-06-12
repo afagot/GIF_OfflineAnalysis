@@ -731,9 +731,13 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
     float lastime = 0.;
     Uint multiplicity = 0;
 
-    for(Uint i = 0; i < hits.size(); i ++){
-        timediff = hits[i].TimeStamp-lastime;
+    for(Uint h = 0; h < hits.size(); h ++){
+        timediff = hits[h].TimeStamp-lastime;
 
+        //If there is 25 time difference with the previous hit
+        //consider that the hit is too far in time and make
+        //cluster with what has been saved into the cluster
+        //vector
         if(abs(timediff) > 25. && lastime > 0.){
             clusterList.clear();
             BuildClusters(cluster,clusterList);
@@ -746,8 +750,21 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
             cluster.clear();
         }
 
-        lastime = hits[i].TimeStamp;
-        cluster.push_back(hits[i]);
+        lastime = hits[h].TimeStamp;
+        cluster.push_back(hits[h]);
     }
+
+    //Make cluster with the very last part of data saved in the list
+    if(cluster.size() > 0){
+        BuildClusters(cluster,clusterList);
+
+        for(Uint i = 0; i < clusterList.size(); i++)
+            if(clusterList[i].ClusterSize > 0)
+                hcSize->Fill(clusterList[i].ClusterSize);
+
+        multiplicity += clusterList.size();
+        cluster.clear();
+    }
+
     hcMult->Fill(multiplicity);
 }

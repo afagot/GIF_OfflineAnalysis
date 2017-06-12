@@ -533,7 +533,7 @@ void OfflineAnalysis(string baseName){
                     nStripsRPC    += nStripsPart;
                     RPCarea       += stripArea * nStripsPart;
                     MeanNoiseRate += MeanPartRate * stripArea * nStripsPart;
-                    ClusterRate   += MeanNoiseRate/cSizePart;
+                    ClusterRate   += ClustPartRate * stripArea * nStripsPart;
                     ClusterSDev   += ClusterRate*cSizePartErr/cSizePart;
 
                     //Draw and write the histograms into the output ROOT file
