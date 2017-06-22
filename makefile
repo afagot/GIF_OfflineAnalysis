@@ -19,12 +19,17 @@ CFLAGS = -ggdb -fPIC -DLINUX -Wall -funsigned-char \
 
 all: $(DAQ_BIN_DIR) $(DAQ_OBJ_DIR) offlineanalysis
 
-offlineanalysis: main.o OfflineAnalysis.o Current.o IniFile.o MsgSvc.o utils.o
+offlineanalysis: main.o OfflineAnalysis.o Current.o IniFile.o MsgSvc.o Infrastructure.o GIFTrolley.o RPCDetector.o Cluster.o Mapping.o utils.o
 		g++ $(CFLAGS) $(DAQ_OBJ_DIR)/main.o \
 		$(DAQ_OBJ_DIR)/OfflineAnalysis.o \
 		$(DAQ_OBJ_DIR)/Current.o \
 		$(DAQ_OBJ_DIR)/IniFile.o \
 		$(DAQ_OBJ_DIR)/MsgSvc.o \
+		$(DAQ_OBJ_DIR)/Infrastructure.o \
+		$(DAQ_OBJ_DIR)/GIFTrolley.o \
+		$(DAQ_OBJ_DIR)/RPCDetector.o \
+		$(DAQ_OBJ_DIR)/Cluster.o \
+		$(DAQ_OBJ_DIR)/Mapping.o \
 		$(DAQ_OBJ_DIR)/utils.o \
 		-o $(DAQ_BIN_DIR)/offlineanalysis \
 		$(LFLAGS) \
@@ -40,6 +45,16 @@ IniFile.o:
 	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/IniFile.cc -o $(DAQ_OBJ_DIR)/IniFile.o
 MsgSvc.o:
 	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/MsgSvc.cc -o $(DAQ_OBJ_DIR)/MsgSvc.o
+Infrastructure.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/Infrastructure.cc -o $(DAQ_OBJ_DIR)/Infrastructure.o
+GIFTrolley.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/GIFTrolley.cc -o $(DAQ_OBJ_DIR)/GIFTrolley.o
+RPCDetector.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/RPCDetector.cc -o $(DAQ_OBJ_DIR)/RPCDetector.o
+Cluster.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/Cluster.cc -o $(DAQ_OBJ_DIR)/Cluster.o
+Mapping.o:
+	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/Mapping.cc -o $(DAQ_OBJ_DIR)/Mapping.o
 utils.o:
 	$(CC) $(CFLAGS) -c $(DAQ_SRC_DIR)/utils.cc -o $(DAQ_OBJ_DIR)/utils.o
 
