@@ -2,7 +2,7 @@
 #define CURRENT_H
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v5
+// *    GIF OFFLINE TOOL v6
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
