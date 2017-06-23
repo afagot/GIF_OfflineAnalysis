@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../include/RPCDetector.h"
+#include "../include/IniFile.h"
 
 using namespace std;
 
@@ -26,8 +27,14 @@ RPC::RPC(){
 }
 
 // *************************************************************************************************************
+// *    RPC(string ID, IniFile *geofile)
+//
+//  Constructor of the RPC class which is the innermost part of the GIF++ infrasctructure. The RPCs
+//  are contained inside the Trolleys. Informations are readout from Dimensions.ini . For details about
+//  RPC members, see file RPCDetector.h.
+// *************************************************************************************************************
 
-RPC::RPC(string ID, Inifile* geofile){
+RPC::RPC(string ID, IniFile* geofile){
     SetName(ID,geofile);
     SetNStrips(ID,geofile);
     SetNGaps(ID,geofile);
@@ -69,6 +76,24 @@ Uint RPC::GetNStrips(){
 
 // *************************************************************************************************************
 
+string RPC::gapsElem(Uint i){
+    return gaps[i];
+}
+
+// *************************************************************************************************************
+
+float RPC::gGeoElem(Uint i){
+    return gapGeo[i];
+}
+
+// *************************************************************************************************************
+
+float RPC::sGeoElem(Uint i){
+    return stripGeo[i];
+}
+
+// *************************************************************************************************************
+
 void RPC::SetName(string ID, IniFile* geofile){
     name = geofile->stringType(ID,"Name","");
 }
@@ -94,6 +119,8 @@ void RPC::SetNStrips(string ID, IniFile* geofile){
 // *************************************************************************************************************
 
 void RPC::SetGapNameList(string ID, IniFile* geofile){
+    gaps.clear();
+
     for(Uint g = 0 ; g < GetNGaps(); g++){
         string gapID = "Gap" + intToString(g+1);
         gaps.push_back(geofile->stringType(ID,gapID,""));
@@ -103,6 +130,8 @@ void RPC::SetGapNameList(string ID, IniFile* geofile){
 // *************************************************************************************************************
 
 void RPC::SetGapGeoList(string ID, IniFile* geofile){
+    gapGeo.clear();
+
     for(Uint g = 0 ; g < GetNGaps(); g++){
         string areaID = "AreaGap" + intToString(g+1);
         gapGeo.push_back(geofile->floatType(ID,areaID,1.));
@@ -112,6 +141,7 @@ void RPC::SetGapGeoList(string ID, IniFile* geofile){
 // *************************************************************************************************************
 
 void RPC::SetStripGeoList(string ID, IniFile* geofile){
+    stripGeo.clear();
     string partID = "ABCD";
 
     for(Uint p = 0; p < GetNPartitions(); p++){

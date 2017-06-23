@@ -71,23 +71,6 @@ const string __logpath = __rundir + "log-offline";
 //-> Trolleys contains RPCs
 //-> RPCs contain gaps and have partitions
 
-struct RPC{
-    string          name;        //RPC name as in webDCS database
-    Uint            nGaps;       //Number of gaps in the RPC
-    vector<string>  gaps;        //List of gap labels (BOT, TOP, etc...)
-    vector<float>   gapGeo;      //List of gap active areas
-    Uint            nPartitions; //Number of partitions in the RPC
-    Uint            strips;      //Number of strips per partition
-    vector<Uint>    actStrips;   //Number of active strips
-    vector<float>   stripGeo;    //List of strip active areas
-};
-
-struct GIFTrolley {
-    Uint        nSlots;  //Number of active RPCs in the considered trolley
-    string      SlotsID; //Active RPC IDs written into a string
-    vector<RPC> RPCs;    //List of active RPCs (struct)
-};
-
 struct Infrastructure {
     Uint               nTrolleys;  //Number of active Trolleys in the run
     string             TrolleysID; //Active trolley IDs written into a string
@@ -156,7 +139,6 @@ string  GetLogTimeStamp();
 void    WritePath(string basename);
 
 Mapping TDCMapping(string baseName);
-void    SetRPC(RPC& rpc, string ID, IniFile* geofile);
 void    SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
 void    SetInfrastructure(Infrastructure& infra, IniFile* geofile);
 void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);

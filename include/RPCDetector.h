@@ -31,7 +31,6 @@ class RPC{
         Uint            nStrips;      //Number of strips per partition
         vector<string>  gaps;        //List of gap labels (BOT, TOP, etc...)
         vector<float>   gapGeo;      //List of gap active areas
-        vector<Uint>    actStrips;   //Number of active strips
         vector<float>   stripGeo;    //List of strip active areas
 
     public:
@@ -43,6 +42,9 @@ class RPC{
         Uint GetNGaps();
         Uint GetNPartitions();
         Uint GetNStrips();
+        string gapsElem(Uint i);
+        float gGeoElem(Uint i);
+        float sGeoElem(Uint i);
 
         void SetName(string ID, IniFile* geofile);
         void SetNGaps(string ID, IniFile* geofile);
