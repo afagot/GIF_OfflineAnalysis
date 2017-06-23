@@ -19,18 +19,18 @@ CFLAGS = -ggdb -fPIC -DLINUX -Wall -funsigned-char \
 
 all: $(DAQ_BIN_DIR) $(DAQ_OBJ_DIR) offlineanalysis
 
-offlineanalysis: main.o OfflineAnalysis.o Current.o IniFile.o MsgSvc.o Infrastructure.o GIFTrolley.o RPCDetector.o Cluster.o Mapping.o utils.o
+offlineanalysis: main.o OfflineAnalysis.o Current.o IniFile.o MsgSvc.o utils.o Infrastructure.o GIFTrolley.o RPCDetector.o Cluster.o Mapping.o
 		g++ $(CFLAGS) $(DAQ_OBJ_DIR)/main.o \
 		$(DAQ_OBJ_DIR)/OfflineAnalysis.o \
 		$(DAQ_OBJ_DIR)/Current.o \
 		$(DAQ_OBJ_DIR)/IniFile.o \
 		$(DAQ_OBJ_DIR)/MsgSvc.o \
+		$(DAQ_OBJ_DIR)/utils.o \
 		$(DAQ_OBJ_DIR)/Infrastructure.o \
 		$(DAQ_OBJ_DIR)/GIFTrolley.o \
 		$(DAQ_OBJ_DIR)/RPCDetector.o \
 		$(DAQ_OBJ_DIR)/Cluster.o \
 		$(DAQ_OBJ_DIR)/Mapping.o \
-		$(DAQ_OBJ_DIR)/utils.o \
 		-o $(DAQ_BIN_DIR)/offlineanalysis \
 		$(LFLAGS) \
 		-l curses

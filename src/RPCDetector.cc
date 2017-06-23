@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "../include/types.h"
 #include "../include/RPCDetector.h"
 #include "../include/IniFile.h"
 
@@ -76,20 +77,20 @@ Uint RPC::GetNStrips(){
 
 // *************************************************************************************************************
 
-string RPC::gapsElem(Uint i){
-    return gaps[i];
+string RPC::GetGap(Uint g){
+    return gaps[g];
 }
 
 // *************************************************************************************************************
 
-float RPC::gGeoElem(Uint i){
-    return gapGeo[i];
+float RPC::GetGapGeo(Uint g){
+    return gapGeo[g];
 }
 
 // *************************************************************************************************************
 
-float RPC::sGeoElem(Uint i){
-    return stripGeo[i];
+float RPC::GetStripGeo(Uint p){
+    return stripGeo[p];
 }
 
 // *************************************************************************************************************

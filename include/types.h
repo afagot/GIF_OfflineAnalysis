@@ -1,0 +1,60 @@
+#ifndef TYPES_H
+#define TYPES_H
+
+//***************************************************************
+// *    GIF OFFLINE TOOL v6
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    types.h
+// *
+// *    To updates
+// *
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    07/06/2017
+//***************************************************************
+
+#include "TH1.h"
+
+using namespace std;
+
+//****************************************************************************
+
+//List of global variables used as default values
+//in case of problems to read Dimensions.ini
+const float TIMEREJECT   = 100.;
+const float TIMEBIN      = 10.;
+const float BMTDCWINDOW  = 24.*25.;
+const float RDMTDCWINDOW = 400.*25.;
+const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
+
+typedef unsigned int Uint;
+const Uint NTROLLEYS   = 5;
+const Uint NSLOTS      = 9;
+const Uint NPARTITIONS = 4;
+
+const Uint NSTRIPSRPC  = 128;
+const Uint NSTRIPSPART = 48;
+const Uint NSTRIPSCONN = 16;
+const Uint NSTRIPSCHIP = 8;
+
+//****************************************************************************
+
+typedef struct GIFH1Array { TH1* rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFH1Array;
+typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintArray;
+typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;
+typedef GIFfloatArray muonPeak;
+
+//****************************************************************************
+
+//Path to file where is saved the current data
+//file path. Saving this path into the file allows
+//to write all the logs in the log.txt file that
+//is inside the scan directory.
+const string __rundir = "/var/operation/RUN/";
+const string __logpath = __rundir + "log-offline";
+const string __dimension = "/Dimensions.ini";
+const string __mapping = "/ChannelsMapping.csv";
+
+#endif

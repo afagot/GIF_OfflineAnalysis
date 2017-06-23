@@ -18,27 +18,41 @@
 #include <string>
 #include <vector>
 
+#include "types.h"
 #include "utils.h"
 #include "IniFile.h"
 #include "RPCDetector.h"
 
 using namespace std;
 
-class GIFTrolley{
+class Trolley{
     private:
-        Uint        nSlots;  //Number of active RPCs in the considered trolley
-        string      SlotsID; //Active RPC IDs written into a string
-        vector<RPC> RPCs;    //List of active RPCs (struct)
+        Uint         nSlots;  //Number of active RPCs in the considered trolley
+        string       SlotsID; //Active RPC IDs written into a string
+        vector<RPC*> RPCs;    //List of active RPCs
 
     public:
-        GIFTrolley();
-        GIFTrolley(string ID, IniFile* geofile);
-        virtual ~GIFTrolley();
+        //Constructors & destructor
+        Trolley();
+        Trolley(string ID, IniFile* geofile);
+        ~Trolley();
 
-        Uint GetNSlots();
+        //Get GIFTrolley members
+        Uint   GetNSlots();
         string GetSlotsID();
-        string GetSlotID(Uint i);
+        Uint   GetSlotID(Uint s);
+        RPC*   GetRPC(Uint r);
 
+        //Methods to get members of RPC objects stored in RPCs
+        string GetName(Uint r);
+        Uint   GetNGaps(Uint r);
+        Uint   GetNPartitions(Uint r);
+        Uint   GetNStrips(Uint r);
+        string GetGap(Uint r, Uint g);
+        float  GetGapGeo(Uint r, Uint g);
+        float  GetStripGeo(Uint r, Uint p);
+
+        //Set GIFTrolley members
         void SetNSlots(string ID, IniFile* geofile);
         void SetSlotsID(string ID, IniFile* geofile);
         void SetRPCs(string ID, IniFile* geofile);

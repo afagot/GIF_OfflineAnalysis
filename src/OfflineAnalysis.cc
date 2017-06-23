@@ -34,6 +34,8 @@
 #include "../include/OfflineAnalysis.h"
 #include "../include/IniFile.h"
 #include "../include/MsgSvc.h"
+#include "../include/Mapping.h"
+#include "../include/Infrastructure.h"
 #include "../include/utils.h"
 
 using namespace std;
@@ -59,16 +61,17 @@ void OfflineAnalysis(string baseName){
         //****************** GEOMETRY ************************************
 
         //Get the chambers geometry and the GIF infrastructure details
-        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + "/Dimensions.ini";
-        IniFile* Dimensions = new IniFile(dimpath.c_str());
+        string dimpath = daqName.substr(0,daqName.find_last_of("/")) + __dimension;
+        IniFile* Dimensions = new IniFile(dimpath);
         Dimensions->Read();
 
-        Infrastructure GIFInfra;
-        SetInfrastructure(GIFInfra,Dimensions);
+        Infrastructure* GIFInfra = new Infrastructure(Dimensions);
 
         //****************** MAPPING *************************************
 
-        Mapping RPCChMap = TDCMapping(daqName);
+        string mappath = daqName.substr(0,daqName.find_last_of("/")) + __mapping;
+        Mapping* RPCChMap = new Mapping(mappath);
+        RPCChMap->Read();
 
         //****************** PEAK TIME ***********************************
 
@@ -127,20 +130,18 @@ void OfflineAnalysis(string baseName){
         char hisname[50];  //ID name of the histogram
         char histitle[50]; //Title of the histogram
 
-        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
-            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
-            Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+        for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
+            Uint T = GIFInfra->GetTrolleyID(tr);
 
-            for (Uint s = 0; s < nSlotsTrolley; s++){
-                Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[s].nPartitions;
-                Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[s]) - 1;
+            for (Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
+                Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
 
                 //Get the chamber ID name
-                string rpcID = GIFInfra.Trolleys[t].RPCs[s].name;
+                string rpcID = GIFInfra->GetName(tr,sl);
 
-                for (Uint p = 0; p < nPartRPC; p++){
+                for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
                     //Set bining
-                    Uint nStrips = GIFInfra.Trolleys[t].RPCs[s].strips;
+                    Uint nStrips = GIFInfra->GetNStrips(tr,sl);
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
@@ -280,17 +281,18 @@ void OfflineAnalysis(string baseName){
 
             //Loop over the TDC hits
             for(int h = 0; h < data.TDCNHits; h++){
-                RPCHit hit;
+                Uint tdcchannel = data.TDCCh->at(h);
+                Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
+                float timestamp = data.TDCTS->at(h);
 
                 //Get rid of the noise hits outside of the connected channels
-                if(data.TDCCh->at(h) > 5127)
-                    continue;
+                if(tdcchannel > 5127) continue;
 
                 //Get rid of the hits in channels not considered in the mapping
-                if(RPCChMap.link[data.TDCCh->at(h)] == 0)
-                    continue;
+                if(rpcchannel == 0) continue;
 
-                SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                RPCHit hit;
+                SetRPCHit(hit, rpcchannel, timestamp, GIFInfra);
                 Uint T = hit.Trolley;
                 Uint S = hit.Station-1;
                 Uint P = hit.Partition-1;
@@ -328,15 +330,13 @@ void OfflineAnalysis(string baseName){
                 Multiplicity.rpc[T][S][P]++;
 
                 //Get effiency and cluster size
-                for(Uint tr = 0; tr < GIFInfra.nTrolleys; tr++){
-                    Uint nSlotsTrolley = GIFInfra.Trolleys[tr].nSlots;
-                    Uint T = CharToInt(GIFInfra.TrolleysID[tr]);
+                for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
+                    Uint T = GIFInfra->GetTrolleyID(tr);
 
-                    for(Uint sl=0; sl<nSlotsTrolley; sl++){
-                        Uint nPartRPC = GIFInfra.Trolleys[tr].RPCs[sl].nPartitions;
-                        Uint S = CharToInt(GIFInfra.Trolleys[tr].SlotsID[sl]) - 1;
+                    for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
+                        Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
 
-                        for (Uint p = 0; p < nPartRPC; p++){
+                        for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
                             if(MuonHitList.rpc[T][S][p].size() > 0)
                                 Efficiency0_H.rpc[T][S][p]->Fill(1);
                             else
@@ -348,15 +348,13 @@ void OfflineAnalysis(string baseName){
 
             //********** MULTIPLICITY ************************************
 
-            for(Uint t=0; t<GIFInfra.nTrolleys; t++){
-                Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
-                Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+            for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
+                Uint T = GIFInfra->GetTrolleyID(tr);
 
-                for(Uint sl=0; sl<nSlotsTrolley; sl++){
-                    Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
-                    Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
+                for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
+                    Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
 
-                    for (Uint p = 0; p < nPartRPC; p++){
+                    for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
                         HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
                         Multiplicity.rpc[T][S][p] = 0;
 
@@ -405,13 +403,11 @@ void OfflineAnalysis(string baseName){
         outputEffCSV << HVstep << '\t';
 
         //Loop over trolleys
-        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
-            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
-            Uint T = CharToInt(GIFInfra.TrolleysID[t]);
+        for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
+            Uint T = GIFInfra->GetTrolleyID(tr);
 
-            for (Uint sl = 0; sl < nSlotsTrolley; sl++){
-                Uint nPartRPC = GIFInfra.Trolleys[t].RPCs[sl].nPartitions;
-                Uint S = CharToInt(GIFInfra.Trolleys[t].SlotsID[sl]) - 1;
+            for (Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
+                Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
 
                 //Get the total chamber rate
                 //we need to now the total chamber surface (sum active areas)
@@ -421,9 +417,9 @@ void OfflineAnalysis(string baseName){
                 float ClusterRate   = 0.;
                 float ClusterSDev   = 0.;
 
-                for (Uint p = 0; p < nPartRPC; p++){
+                for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
                     string partID = "ABCD";
-                    string partName = GIFInfra.Trolleys[t].RPCs[sl].name + "-" + partID[p];
+                    string partName = GIFInfra->GetName(tr,sl) + "-" + partID[p];
 
                     //***************************************************************************
                     //Write the rate header file
@@ -444,7 +440,7 @@ void OfflineAnalysis(string baseName){
                     int nNoise = StripNoiseProfile_H.rpc[T][S][p]->GetEntries();
 
                     //Get the strip geometry
-                    float stripArea = GIFInfra.Trolleys[t].RPCs[sl].stripGeo[p];
+                    float stripArea = GIFInfra->GetStripGeo(tr,sl,p);
 
                     if(IsEfficiencyRun(RunType)){
                         float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
@@ -454,7 +450,7 @@ void OfflineAnalysis(string baseName){
 
                     //Get the average number of hits per strip to normalise the activity
                     //histogram (this number is the same for both Strip and Chip histos).
-                    Uint nStripsPart = GIFInfra.Trolleys[t].RPCs[sl].strips;
+                    Uint nStripsPart = GIFInfra->GetNStrips(tr,sl);
                     float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
 
                     for(Uint st = 1; st <= nStripsPart; st++){
@@ -482,10 +478,10 @@ void OfflineAnalysis(string baseName){
                         float stripRate = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/normalisation;
                         float stripAct = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/averageNhit;
 
-                        if(RPCChMap.mask[RPCCh] == 1){
+                        if(RPCChMap->GetMask(RPCCh) == 1){
                             StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             StripActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
-                        } else if (RPCChMap.mask[RPCCh] == 0){
+                        } else if (RPCChMap->GetMask(RPCCh) == 0){
                             MaskNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             MaskActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         }
@@ -610,9 +606,9 @@ void OfflineAnalysis(string baseName){
                 ClusterSDev   /= RPCarea;
 
                 //Write the header file
-                headRateCSV << "Rate-" << GIFInfra.Trolleys[t].RPCs[sl].name << "-TOT\t"
-                            << "ClRate-" << GIFInfra.Trolleys[t].RPCs[sl].name << "-TOT\t"
-                            << "ClRate-" << GIFInfra.Trolleys[t].RPCs[sl].name << "-TOT_Err\t";
+                headRateCSV << "Rate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
+                            << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
+                            << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT_Err\t";
 
                 //Write the output file
                 outputRateCSV << MeanNoiseRate << '\t'
@@ -633,6 +629,13 @@ void OfflineAnalysis(string baseName){
 
         outputfile.Close();
         dataFile.Close();
+
+        delete GIFInfra;
+        delete Dimensions;
+        delete RPCChMap;
+        delete dataTree;
+        delete RunParameters;
+        delete RunType;
     } else {
         MSG_INFO("[Offline] File " + daqName + " could not be opened");
         MSG_INFO("[Offline] Skipping offline analysis");

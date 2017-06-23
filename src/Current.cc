@@ -20,6 +20,7 @@
 #include "../include/MsgSvc.h"
 #include "../include/IniFile.h"
 #include "../include/Current.h"
+#include "../include/Infrastructure.h"
 #include "../include/utils.h"
 
 using namespace std;
@@ -49,8 +50,7 @@ void GetCurrent(string baseName){
         IniFile* Dimensions = new IniFile(dimpath.c_str());
         Dimensions->Read();
 
-        Infrastructure GIFInfra;
-        SetInfrastructure(GIFInfra,Dimensions);
+        Infrastructure* Infra = new Infrastructure(Dimensions);
 
 
         //****************** OUPUT FILE **********************************
@@ -68,37 +68,35 @@ void GetCurrent(string baseName){
         ofstream listCSV(listName.c_str(),ios::out);
         listCSV << "HVstep\t";
 
-        for (Uint t = 0; t < GIFInfra.nTrolleys; t++){
-            Uint nSlotsTrolley = GIFInfra.Trolleys[t].nSlots;
+        for (Uint tr = 0; tr < Infra->GetNTrolleys(); tr++){
+            for (Uint sl = 0; sl < Infra->GetNSlots(tr); sl++){
+                for(Uint g = 0; g < Infra->GetNGaps(tr,sl); g++){
+                    string RPCname = Infra->GetName(tr,sl);
+                    string gapID   = Infra->GetGap(tr,sl,g);
+                    float areagap  = Infra->GetGapGeo(tr,sl,g);
 
-            for (Uint s = 0; s < nSlotsTrolley; s++){
-                Uint nGapsRPC = GIFInfra.Trolleys[t].RPCs[s].nGaps;
-
-                for(Uint g = 0; g < nGapsRPC; g++){
-                    string gapID = GIFInfra.Trolleys[t].RPCs[s].gaps[g];
-                    float areagap = GIFInfra.Trolleys[t].RPCs[s].gapGeo[g];
                     string ImonHisto, JmonTitle, HVeffHisto, HVappHisto, ADCHisto;
 
                     //Histogram names
                     if(gapID == "empty"){
-                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name;
-                        HVappHisto = "HVapp_" + GIFInfra.Trolleys[t].RPCs[s].name;
-                        ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name;
-                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name;
-                        ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name;
+                        HVeffHisto = "HVeff_" + RPCname;
+                        HVappHisto = "HVapp_" + RPCname;
+                        ImonHisto  = "Imon_"  + RPCname;
+                        JmonTitle  = "Jmon_"  + RPCname;
+                        ADCHisto   = "ADC_"   + RPCname;
                     } else {
-                        HVeffHisto = "HVeff_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                        HVappHisto = "HVapp_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                        ImonHisto = "Imon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                        JmonTitle = "Jmon_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
-                        ADCHisto = "ADC_" + GIFInfra.Trolleys[t].RPCs[s].name + "-" + gapID;
+                        HVeffHisto = "HVeff_" + RPCname + "-" + gapID;
+                        HVappHisto = "HVapp_" + RPCname + "-" + gapID;
+                        ImonHisto  = "Imon_"  + RPCname + "-" + gapID;
+                        JmonTitle  = "Jmon_"  + RPCname + "-" + gapID;
+                        ADCHisto   = "ADC_"   + RPCname + "-" + gapID;
                     }
 
                     listCSV << HVeffHisto << '\t'
                             << HVappHisto << '\t' << HVappHisto << "_err\t"
-                            << ImonHisto << '\t' << ImonHisto << "_err\t"
-                            << JmonTitle << '\t' << JmonTitle << "_err\t"
-                            << ADCHisto << '\t' << ADCHisto << "_err\t";
+                            << ImonHisto  << '\t' << ImonHisto  << "_err\t"
+                            << JmonTitle  << '\t' << JmonTitle  << "_err\t"
+                            << ADCHisto   << '\t' << ADCHisto   << "_err\t";
 
                     //Save the effective voltages
                     if(caenFile.GetListOfKeys()->Contains(HVeffHisto.c_str())){
@@ -166,6 +164,9 @@ void GetCurrent(string baseName){
         outputCSV.close();
 
         caenFile.Close();
+
+        delete Dimensions;
+        delete Infra;
     } else {
         MSG_INFO("[Offline-Current] File " + caenName + " could not be opened");
         MSG_INFO("[Offline-Current] Skipping current analysis");

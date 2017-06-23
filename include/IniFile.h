@@ -54,7 +54,7 @@ class IniFile{
     public:
         IniFile();
         IniFile(string filename);
-        virtual     ~IniFile();
+        ~IniFile();
 
         // Basic file operations
         void        SetFileName(const string filename);

@@ -24,58 +24,11 @@
 #include "TH1.h"
 #include "TH2.h"
 
-#include "IniFile.h"
+#include "types.h"
+#include "Mapping.h"
+#include "Infrastructure.h"
 
 using namespace std;
-
-//****************************************************************************
-
-//List of global variables used as default values
-//in case of problems to read Dimensions.ini
-const float TIMEREJECT   = 100.;
-const float TIMEBIN      = 10.;
-const float BMTDCWINDOW  = 24.*25.;
-const float RDMTDCWINDOW = 400.*25.;
-const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
-
-typedef unsigned int Uint;
-const Uint NTROLLEYS   = 5;
-const Uint NSLOTS      = 9;
-const Uint NPARTITIONS = 4;
-
-const Uint NSTRIPSRPC  = 128;
-const Uint NSTRIPSPART = 48;
-const Uint NSTRIPSCONN = 16;
-const Uint NSTRIPSCHIP = 8;
-
-//****************************************************************************
-
-typedef struct GIFH1Array { TH1* rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFH1Array;
-typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintArray;
-typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;
-typedef GIFfloatArray muonPeak;
-
-//****************************************************************************
-
-//Path to file where is saved the current data
-//file path. Saving this path into the file allows
-//to write all the logs in the log.txt file that
-//is inside the scan directory.
-const string __rundir = "/var/operation/RUN/";
-const string __logpath = __rundir + "log-offline";
-
-//****************************************************************************
-
-//Structures representing the infrastructure inside GIF++
-//-> The infrastructure contains trolleys
-//-> Trolleys contains RPCs
-//-> RPCs contain gaps and have partitions
-
-struct Infrastructure {
-    Uint               nTrolleys;  //Number of active Trolleys in the run
-    string             TrolleysID; //Active trolley IDs written into a string
-    vector<GIFTrolley> Trolleys;   //List of active Trolleys (struct)
-};
 
 //****************************************************************************
 
@@ -117,12 +70,6 @@ struct RPCCluster {
 };
 typedef vector<RPCCluster> ClusterList;
 
-typedef map<Uint,Uint> mapping;
-struct Mapping {
-    mapping link;
-    mapping mask;
-};
-
 //****************************************************************************
 
 //Functions (more details in utils.cc)
@@ -138,13 +85,10 @@ bool    existFile(string ROOTName);
 string  GetLogTimeStamp();
 void    WritePath(string basename);
 
-Mapping TDCMapping(string baseName);
-void    SetTrolley(GIFTrolley& trolley, string ID, IniFile* geofile);
-void    SetInfrastructure(Infrastructure& infra, IniFile* geofile);
-void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure* Infra);
 void    SetCluster(RPCCluster& Cluster, HitList List, Uint cID, Uint cSize, Uint first, Uint firstID);
 void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
-                       TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
+                       TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
 bool    IsEfficiencyRun(TString* runtype);
