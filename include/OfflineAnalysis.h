@@ -1,5 +1,5 @@
-#ifndef OFFLINE_H
-#define OFFLINE_H
+#ifndef __OFFLINE_H_
+#define __OFFLINE_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6
@@ -21,7 +21,6 @@
 //***************************************************************
 
 #include <string>
-#include <map>
 
 using namespace std;
 

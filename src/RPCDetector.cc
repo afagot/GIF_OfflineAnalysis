@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../include/types.h"
+#include "../include/utils.h"
 #include "../include/RPCDetector.h"
 #include "../include/IniFile.h"
 
@@ -36,13 +37,29 @@ RPC::RPC(){
 // *************************************************************************************************************
 
 RPC::RPC(string ID, IniFile* geofile){
-    SetName(ID,geofile);
-    SetNStrips(ID,geofile);
-    SetNGaps(ID,geofile);
-    SetNPartitions(ID,geofile);
-    SetGapNameList(ID,geofile);
-    SetGapGeoList(ID,geofile);
-    SetStripGeoList(ID,geofile);
+    name = geofile->stringType(ID,"Name","");
+    nGaps = geofile->intType(ID,"Gaps",1);
+    nStrips = geofile->intType(ID,"Strips",1);
+    nPartitions = geofile->intType(ID,"Partitions",1);
+
+    gaps.clear();
+    gapGeo.clear();
+
+    for(Uint g = 0 ; g < nGaps; g++){
+        string gapID = "Gap" + intToString(g+1);
+        gaps.push_back(geofile->stringType(ID,gapID,""));
+
+        string areaID = "AreaGap" + intToString(g+1);
+        gapGeo.push_back(geofile->floatType(ID,areaID,1.));
+    }
+
+    stripGeo.clear();
+    string partID = "ABCD";
+
+    for(Uint p = 0; p < GetNPartitions(); p++){
+        string areaID  = "ActiveArea-"  + CharToString(partID[p]);
+        stripGeo.push_back(geofile->floatType(ID,areaID,1.));
+    }
 }
 
 // *************************************************************************************************************
@@ -91,62 +108,4 @@ float RPC::GetGapGeo(Uint g){
 
 float RPC::GetStripGeo(Uint p){
     return stripGeo[p];
-}
-
-// *************************************************************************************************************
-
-void RPC::SetName(string ID, IniFile* geofile){
-    name = geofile->stringType(ID,"Name","");
-}
-
-// *************************************************************************************************************
-
-void RPC::SetNGaps(string ID, IniFile* geofile){
-    nGaps = geofile->intType(ID,"Gaps",0);
-}
-
-// *************************************************************************************************************
-
-void RPC::SetNPartitions(string ID, IniFile* geofile){
-    nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
-}
-
-// *************************************************************************************************************
-
-void RPC::SetNStrips(string ID, IniFile* geofile){
-    nStrips = geofile->intType(ID,"Strips",NSLOTS);
-}
-
-// *************************************************************************************************************
-
-void RPC::SetGapNameList(string ID, IniFile* geofile){
-    gaps.clear();
-
-    for(Uint g = 0 ; g < GetNGaps(); g++){
-        string gapID = "Gap" + intToString(g+1);
-        gaps.push_back(geofile->stringType(ID,gapID,""));
-    }
-}
-
-// *************************************************************************************************************
-
-void RPC::SetGapGeoList(string ID, IniFile* geofile){
-    gapGeo.clear();
-
-    for(Uint g = 0 ; g < GetNGaps(); g++){
-        string areaID = "AreaGap" + intToString(g+1);
-        gapGeo.push_back(geofile->floatType(ID,areaID,1.));
-    }
-}
-
-// *************************************************************************************************************
-
-void RPC::SetStripGeoList(string ID, IniFile* geofile){
-    stripGeo.clear();
-    string partID = "ABCD";
-
-    for(Uint p = 0; p < GetNPartitions(); p++){
-        string areaID  = "ActiveArea-"  + CharToString(partID[p]);
-        stripGeo.push_back(geofile->floatType(ID,areaID,1.));
-    }
 }

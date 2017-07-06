@@ -1,5 +1,5 @@
-#ifndef _MSGSVC_H_
-#define _MSGSVC_H_
+#ifndef __MSGSVC_H_
+#define __MSGSVC_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6
@@ -19,8 +19,6 @@
 //***************************************************************
 
 #include <string>
-
-#include "utils.h"
 
 using namespace std;
 

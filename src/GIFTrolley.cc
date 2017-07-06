@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../include/types.h"
+#include "../include/utils.h"
 #include "../include/GIFTrolley.h"
 #include "../include/RPCDetector.h"
 
@@ -35,17 +36,27 @@ Trolley::Trolley(){
 // *************************************************************************************************************
 
 Trolley::Trolley(string ID, IniFile *geofile){
-    SetNSlots(ID,geofile);
-    SetSlotsID(ID,geofile);
-    SetRPCs(ID,geofile);
+    nSlots = geofile->intType(ID,"nSlots",NSLOTS);
+    SlotsID = geofile->stringType(ID,"SlotsID","");
+
+    RPCs.clear();
+
+    for(Uint s = 0; s < GetNSlots(); s++){
+        string rpcID = ID + "S" + intToString(GetSlotID(s));
+
+        RPC* temprpc = new RPC(rpcID,geofile);
+        RPCs.push_back(temprpc);
+        delete temprpc;
+    }
 }
 
 // *************************************************************************************************************
 
 Trolley::~Trolley(){
-    for(Uint s = 0; s < GetNSlots(); s++){
-        delete RPCs[r];
-    }
+    vector<RPC*>::iterator it = RPCs.begin();
+
+    while(it != RPCs.end())
+        delete *(it++);
 }
 
 // *************************************************************************************************************
@@ -69,72 +80,59 @@ Uint Trolley::GetSlotID(Uint s){
 // *************************************************************************************************************
 
 RPC* Trolley::GetRPC(Uint r){
-    return RPCs[r];
+    if(r < RPCs.size())
+        return RPCs[r];
+    else
+        return NULL;
+}
+
+void Trolley::DeleteRPC(Uint r){
+    if(r < RPCs.size()){
+        delete RPCs[r];
+        RPCs.erase(RPCs.begin()+r);
+        nSlots--;
+        SlotsID.erase(SlotsID.begin()+r);
+    }
 }
 
 // *************************************************************************************************************
 
 string Trolley::GetName(Uint r){
-    return RPCs[r]->GetName();
+    return GetRPC(r)->GetName();
 }
 
 // *************************************************************************************************************
 
 Uint Trolley::GetNGaps(Uint r){
-    return RPCs[r]->GetNGaps();
+    return GetRPC(r)->GetNGaps();
 }
 
 // *************************************************************************************************************
 
 Uint Trolley::GetNPartitions(Uint r){
-    return RPCs[r]->GetNPartitions();
+    return GetRPC(r)->GetNPartitions();
 }
 
 // *************************************************************************************************************
 
 Uint Trolley::GetNStrips(Uint r){
-    return RPCs[r]->GetNStrips();
+    return GetRPC(r)->GetNStrips();
 }
 
 // *************************************************************************************************************
 
 string Trolley::GetGap(Uint r, Uint g){
-    return RPCs[r]->GetGap(g);
+    return GetRPC(r)->GetGap(g);
 }
 
 // *************************************************************************************************************
 
 float Trolley::GetGapGeo(Uint r, Uint g){
-    return RPCs[r]->GetGapGeo(g);
+    return GetRPC(r)->GetGapGeo(g);
 }
 
 // *************************************************************************************************************
 
 float Trolley::GetStripGeo(Uint r, Uint p){
-    return RPCs[r]->GetStripGeo(p);
-}
-
-// *************************************************************************************************************
-
-void Trolley::SetNSlots(string ID, IniFile *geofile){
-    nSlots = geofile->intType(ID,"nSlots",NSLOTS);
-}
-
-// *************************************************************************************************************
-
-void Trolley::SetSlotsID(string ID, IniFile *geofile){
-    SlotsID = geofile->stringType(ID,"SlotsID","");
-}
-
-// *************************************************************************************************************
-
-void Trolley::SetRPCs(string ID, IniFile *geofile){
-    RPCs.clear();
-
-    for(Uint s = 0; s < GetNSlots(); s++){
-        string rpcID = ID + "S" + GetSlotID(s);
-
-        RPC* temprpc = new RPC(rpcID,geofile);
-        RPCs.push_back(temprpc);
-    }
+    return GetRPC(r)->GetStripGeo(p);
 }

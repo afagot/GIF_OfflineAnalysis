@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "types.h"
-#include "utils.h"
 #include "GIFTrolley.h"
 
 using namespace std;
@@ -40,7 +39,10 @@ class Infrastructure {
         Uint   GetNTrolleys();
         string GetTrolleysID();
         Uint   GetTrolleyID(Uint t);
+
+        //Manage Trolleys
         Trolley* GetTrolley(Uint t);
+        void     DeleteTrolley(Uint t);
 
         //Methods to get members of GIFTrolley objects stored in Trolleys
         Uint   GetNSlots(Uint t);
@@ -56,11 +58,6 @@ class Infrastructure {
         string GetGap(Uint t, Uint r, Uint g);
         float  GetGapGeo(Uint t, Uint r, Uint g);
         float  GetStripGeo(Uint t, Uint r, Uint p);
-
-        //Sets
-        void SetNTrolleys(IniFile* geofile);
-        void SetTrolleysID(IniFile* geofile);
-        void SetTrolleys(IniFile* geofile);
 };
 
 #endif

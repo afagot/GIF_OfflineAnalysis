@@ -16,6 +16,7 @@
 #include "../include/OfflineAnalysis.h"
 #include "../include/Current.h"
 #include "../include/MsgSvc.h"
+#include "../include/utils.h"
 
 using namespace std;
 

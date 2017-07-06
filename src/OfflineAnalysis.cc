@@ -36,6 +36,9 @@
 #include "../include/MsgSvc.h"
 #include "../include/Mapping.h"
 #include "../include/Infrastructure.h"
+#include "../include/Cluster.h"
+#include "../include/RPCHit.h"
+#include "../include/types.h"
 #include "../include/utils.h"
 
 using namespace std;
@@ -69,6 +72,7 @@ void OfflineAnalysis(string baseName){
 
         //****************** MAPPING *************************************
 
+        //Get the channels mapping as well as the mask
         string mappath = daqName.substr(0,daqName.find_last_of("/")) + __mapping;
         Mapping* RPCChMap = new Mapping(mappath);
         RPCChMap->Read();
@@ -291,42 +295,41 @@ void OfflineAnalysis(string baseName){
                 //Get rid of the hits in channels not considered in the mapping
                 if(rpcchannel == 0) continue;
 
-                RPCHit hit;
-                SetRPCHit(hit, rpcchannel, timestamp, GIFInfra);
-                Uint T = hit.Trolley;
-                Uint S = hit.Station-1;
-                Uint P = hit.Partition-1;
+                RPCHit hit(rpcchannel, timestamp, GIFInfra);
+                Uint T = hit.GetTrolley();
+                Uint S = hit.GetStation()-1;
+                Uint P = hit.GetPartition()-1;
 
                 if(IsEfficiencyRun(RunType)){
                     //First define the accepted peak time range
                     float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
                     float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
 
-                    bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
+                    bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
 
                     //Fill the hits inside of the defined noise range
                     if(peakrange){
-                        BeamProfile_H.rpc[T][S][P]->Fill(hit.Strip);
+                        BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         MuonHitList.rpc[T][S][P].push_back(hit);
                         inTimeHits.rpc[T][S][P]++;
                     }
                     //Reject the 100 first ns due to inhomogeneity of data
-                    else if(hit.TimeStamp >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.Strip);
+                    else if(hit.GetTime() >= TIMEREJECT){
+                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         NoiseHitList.rpc[T][S][P].push_back(hit);
                         noiseHits.rpc[T][S][P]++;
                     }
                 } else {
                     //Reject the 100 first ns due to inhomogeneity of data
-                    if(hit.TimeStamp >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.Strip);
+                    if(hit.GetTime() >= TIMEREJECT){
+                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         NoiseHitList.rpc[T][S][P].push_back(hit);
                     }
                 }
 
                 //Fill the profiles
-                TimeProfile_H.rpc[T][S][P]->Fill(hit.TimeStamp);
-                HitProfile_H.rpc[T][S][P]->Fill(hit.Strip);
+                TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
+                HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                 Multiplicity.rpc[T][S][P]++;
 
                 //Get effiency and cluster size

@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef __TYPES_H_
+#define __TYPES_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6

@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "types.h"
-#include "utils.h"
 #include "IniFile.h"
 #include "RPCDetector.h"
 
@@ -41,7 +40,10 @@ class Trolley{
         Uint   GetNSlots();
         string GetSlotsID();
         Uint   GetSlotID(Uint s);
+
+        //Manage RPC list
         RPC*   GetRPC(Uint r);
+        void   DeleteRPC(Uint r);
 
         //Methods to get members of RPC objects stored in RPCs
         string GetName(Uint r);
@@ -51,11 +53,6 @@ class Trolley{
         string GetGap(Uint r, Uint g);
         float  GetGapGeo(Uint r, Uint g);
         float  GetStripGeo(Uint r, Uint p);
-
-        //Set GIFTrolley members
-        void SetNSlots(string ID, IniFile* geofile);
-        void SetSlotsID(string ID, IniFile* geofile);
-        void SetRPCs(string ID, IniFile* geofile);
 };
 
 #endif

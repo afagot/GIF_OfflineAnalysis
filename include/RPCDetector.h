@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "types.h"
-#include "utils.h"
 #include "IniFile.h"
 
 using namespace std;
@@ -46,14 +45,6 @@ class RPC{
         string GetGap(Uint g);
         float  GetGapGeo(Uint g);
         float  GetStripGeo(Uint p);
-
-        void SetName(string ID, IniFile* geofile);
-        void SetNGaps(string ID, IniFile* geofile);
-        void SetNPartitions(string ID, IniFile* geofile);
-        void SetNStrips(string ID, IniFile* geofile);
-        void SetGapNameList(string ID, IniFile* geofile);
-        void SetGapGeoList(string ID, IniFile* geofile);
-        void SetStripGeoList(string ID, IniFile* geofile);
 };
 
 #endif

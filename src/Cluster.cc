@@ -1,0 +1,194 @@
+//***************************************************************
+// *    GIF OFFLINE TOOL v6
+// *
+// *    Program developped to extract from the raw data files
+// *    the rates, currents and DIP parameters.
+// *
+// *    Cluster.cc
+// *
+// *    To be updated
+// *
+// *    Developped by : Alexis Fagot & Salvador Carillo
+// *    22/06/2017
+//***************************************************************
+
+#include <string>
+#include <vector>
+
+#include "../include/types.h"
+#include "../include/Cluster.h"
+#include "../include/RPCHit.h"
+
+using namespace std;
+
+RPCCluster::RPCCluster(){
+
+}
+
+// ****************************************************************************************************
+// *    RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID)
+//
+//  Set up clusters.
+// ****************************************************************************************************
+
+RPCCluster::RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID){
+    ClusterID   = cID;
+    ClusterSize = cSize;
+    FirstStrip  = first;
+    LastStrip   = first+cSize-1;
+    Center      = (FirstStrip+LastStrip)/2.;
+
+    //Cluster are reconstructed in the non rejected time window
+    float max = 0.;
+    float min = 0.;
+
+    for(Uint i = firstID; i <= (firstID + cSize-1); i++){
+        if(i == firstID && min == 0. && max == 0.){
+            min = List[i].GetTime();
+            max = List[i].GetTime();
+        } else {
+            if(List[i].GetTime() < min ) min = List[i].GetTime();
+            if(List[i].GetTime() > max ) max = List[i].GetTime();
+        }
+    }
+
+    StartStamp  = min;
+    StopStamp   = max;
+    TimeSpread  = max-min;
+}
+
+RPCCluster::~RPCCluster(){
+
+}
+
+Uint RPCCluster::GetID(){
+    return ClusterID;
+}
+
+Uint RPCCluster::GetSize(){
+    return ClusterSize;
+}
+
+Uint RPCCluster::GetFirstStrip(){
+    return FirstStrip;
+}
+
+Uint RPCCluster::GetLastStrip(){
+    return LastStrip;
+}
+
+float RPCCluster::GetCenter(){
+    return Center;
+}
+
+float RPCCluster::GetStart(){
+    return StartStamp;
+}
+
+float RPCCluster::GetStop(){
+    return StopStamp;
+}
+
+float RPCCluster::GetSpread(){
+    return TimeSpread;
+}
+
+// ****************************************************************************************************
+// *    void BuildClusters(vector < pair<int, float> > &v,
+// *                    vector < Cluster > &cluster, bool noflip,int thePartition)
+//
+//  Build cluster using the sorted RPC hit arrays
+//  Wee need the following variables:
+//  - cluster size
+//  - isolation (nominal, "other side")
+//  - cluster:
+//      * center,  (left, right sides)
+//      * delta time
+// ****************************************************************************************************
+
+void BuildClusters(HitList &cluster, ClusterList &clusterList){
+    if(cluster.size() > 0){
+        // Sort by strip order to make cluster by using adjacent strips
+        sort(cluster.begin(), cluster.end(), SortHitbyStrip);
+
+        Uint firstHit = cluster.front().GetStrip(); //first cluster hit
+        Uint previous = firstHit;              //previous strip checked
+        Uint hitID = 0;      //ID of the first cluster hit to
+                             //look for start and stop stamps
+        Uint clusterID = 0;  //ID of the cluster starting from 0
+        Uint cSize = 0;      //cluster size counter
+
+        //Loop over the hit list and group adjacent strips
+        for(Uint i = 0; i < cluster.size(); i++){
+            if (cluster[i].GetStrip()-previous > 1){
+                clusterList.push_back(RPCCluster(cluster,clusterID,cSize,firstHit,hitID));
+
+                cSize = 1;
+                hitID = i;
+                firstHit = cluster[i].GetStrip();
+                clusterID++;
+            }
+            previous = cluster[i].GetStrip();
+            cSize++;
+        }
+        clusterID++;
+
+        //Add the last cluster to the list
+        clusterList.push_back(RPCCluster(cluster,clusterID,cSize,firstHit,hitID));
+    }
+}
+
+// ****************************************************************************************************
+// *   void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
+//
+//  Used to loop over the hit list, create clusters and fill histograms
+// ****************************************************************************************************
+
+void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
+    HitList cluster;
+    cluster.clear();
+
+    ClusterList clusterList;
+    clusterList.clear();
+
+    float timediff = 0.;
+    float lastime = 0.;
+    Uint multiplicity = 0;
+
+    for(Uint h = 0; h < hits.size(); h ++){
+        timediff = hits[h].GetTime()-lastime;
+
+        //If there is 25 time difference with the previous hit
+        //consider that the hit is too far in time and make
+        //cluster with what has been saved into the cluster
+        //vector
+        if(abs(timediff) > 25. && lastime > 0.){
+            clusterList.clear();
+            BuildClusters(cluster,clusterList);
+
+            for(Uint i = 0; i < clusterList.size(); i++)
+                if(clusterList[i].GetSize() > 0)
+                    hcSize->Fill(clusterList[i].GetSize());
+
+            multiplicity += clusterList.size();
+            cluster.clear();
+        }
+
+        lastime = hits[h].GetTime();
+        cluster.push_back(hits[h]);
+    }
+
+    //Make cluster with the very last part of data saved in the list
+    if(cluster.size() > 0){
+        BuildClusters(cluster,clusterList);
+
+        for(Uint i = 0; i < clusterList.size(); i++)
+            if(clusterList[i].GetSize() > 0)
+                hcSize->Fill(clusterList[i].GetSize());
+
+        multiplicity += clusterList.size();
+        cluster.clear();
+    }
+
+    hcMult->Fill(multiplicity);
+}

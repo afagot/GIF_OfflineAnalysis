@@ -1,5 +1,5 @@
-#ifndef MAPPING_H
-#define MAPPING_H
+#ifndef __MAPPING_H_
+#define __MAPPING_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6

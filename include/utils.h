@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef __UTILS_H_
+#define __UTILS_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6
@@ -45,31 +45,6 @@ struct RAWData {
     vector<float> *TDCTS;    //List of the corresponding time stamps
 };
 
-//Hit in the RPC
-struct RPCHit {
-    Uint  Channel;   //RPC Channel (5 digit numbers like XX000 - XX128)
-    Uint  Trolley;   //1 or 3 (1st digit of the RPC channel)
-    Uint  Station;   //Place in the trolley (S1 to S4 - 2nd digit)
-    Uint  Strip;     //Strip (1 to 128 depending on the chamber - 3 last digits)
-    Uint  Partition; //Partition (1 to 4)
-    float TimeStamp; //TDC time stamp
-};
-typedef vector<RPCHit> HitList;
-typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHitList;
-
-//Cluster reconstructed in the RPC
-struct RPCCluster {
-   Uint  ClusterID;
-   Uint  ClusterSize;
-   Uint  FirstStrip;
-   Uint  LastStrip;
-   float Center;
-   float StartStamp;
-   float StopStamp;
-   float TimeSpread;
-};
-typedef vector<RPCCluster> ClusterList;
-
 //****************************************************************************
 
 //Functions (more details in utils.cc)
@@ -85,8 +60,6 @@ bool    existFile(string ROOTName);
 string  GetLogTimeStamp();
 void    WritePath(string basename);
 
-void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure* Infra);
-void    SetCluster(RPCCluster& Cluster, HitList List, Uint cID, Uint cSize, Uint first, Uint firstID);
 void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
@@ -97,13 +70,5 @@ float   GetTH1StdDev(TH1* H);
 float   GetChipBin(TH1* H, Uint chip);
 void    SetTH1(TH1* H, string xtitle, string ytitle);
 void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
-
-bool    SortHitbyStrip(RPCHit h1, RPCHit h2);
-bool    SortHitbyTime(RPCHit h1, RPCHit h2);
-void    BuildClusters(HitList &cluster, ClusterList &clusterList);
-float   GetClusterStartStamp(HitList &cluster, int cSize, int hitID);
-float   GetClusterStopStamp(HitList &cluster,int cSize, int hitID);
-float   GetClusterSpreadTime(HitList &cluster, int cSize, int hitID);
-void    Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult);
 
 #endif // UTILS_H

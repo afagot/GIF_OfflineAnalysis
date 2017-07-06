@@ -1,5 +1,5 @@
-#ifndef CURRENT_H
-#define CURRENT_H
+#ifndef __CURRENT_H_
+#define __CURRENT_H_
 
 //***************************************************************
 // *    GIF OFFLINE TOOL v6

@@ -20,6 +20,7 @@
 #include <fstream>
 
 #include "../include/MsgSvc.h"
+#include "../include/utils.h"
 
 using namespace std;
 

@@ -13,15 +13,16 @@
 //***************************************************************
 
 #include <fstream>
+#include <string>
 
 #include "TFile.h"
 #include "TH1F.h"
 
-#include "../include/MsgSvc.h"
-#include "../include/IniFile.h"
 #include "../include/Current.h"
+#include "../include/IniFile.h"
 #include "../include/Infrastructure.h"
-#include "../include/utils.h"
+#include "../include/MsgSvc.h"
+#include "../include/types.h"
 
 using namespace std;
 
@@ -114,6 +115,7 @@ void GetCurrent(string baseName){
                         float voltage = HVapp->GetMean();
                         float voltageErr = HVapp->GetRMS()/sqrt(HVapp->GetEntries());
                         outputCSV << voltage << '\t' << voltageErr << '\t';
+                        delete HVapp;
                     } else {
                         float voltage = 0.;
                         float voltageErr = 0.;
@@ -129,6 +131,7 @@ void GetCurrent(string baseName){
                         float densityErr = currentErr/areagap;
                         outputCSV << current << '\t' << currentErr << '\t';
                         outputCSV << density << '\t' << densityErr << '\t';
+                        delete Imon;
                     } else {
                         float current = 0.;
                         float currentErr = 0.;
@@ -149,6 +152,7 @@ void GetCurrent(string baseName){
                             ADCcurErr = ADC->GetRMS()/sqrt(ADC->GetEntries())/areagap;
                         }
                         outputCSV << ADCcur << '\t' << ADCcurErr << '\t';
+                        delete ADC;
                     } else {
                         float ADCcur = 0.;
                         float ADCcurErr = 0.;

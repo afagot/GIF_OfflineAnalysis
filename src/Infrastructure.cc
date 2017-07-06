@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../include/types.h"
+#include "../include/utils.h"
 #include "../include/Infrastructure.h"
 #include "../include/GIFTrolley.h"
 
@@ -36,17 +37,27 @@ Infrastructure::Infrastructure(){
 // *************************************************************************************************************
 
 Infrastructure::Infrastructure(IniFile *geofile){
-    SetNTrolleys(geofile);
-    SetTrolleysID(geofile);
-    SetTrolleys(geofile);
+    nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
+    TrolleysID = geofile->stringType("General","TrolleysID","");
+
+    Trolleys.clear();
+
+    for(Uint t = 0; t < GetNTrolleys(); t++){
+        string trolleyID = "T" + intToString(GetTrolleyID(t));
+
+        Trolley* tempTrolley = new Trolley(trolleyID, geofile);
+        Trolleys.push_back(tempTrolley);
+        delete tempTrolley;
+    }
 }
 
 // *************************************************************************************************************
 
 Infrastructure::~Infrastructure(){
-    for(Uint t = 0; t < GetNTrolleys(); t++){
-        delete Trolleys[t];
-    }
+    vector<Trolley*>::iterator it = Trolleys.begin();
+
+    while(it != Trolleys.end())
+        delete *(it++);
 }
 
 // *************************************************************************************************************
@@ -70,96 +81,83 @@ Uint Infrastructure::GetTrolleyID(Uint t){
 // *************************************************************************************************************
 
 Trolley* Infrastructure::GetTrolley(Uint t){
-    return Trolleys[t];
+    if(t < Trolleys.size())
+        return Trolleys[t];
+    else
+        return NULL;
+}
+
+void Infrastructure::DeleteTrolley(Uint t){
+    if(t < Trolleys.size()){
+        delete Trolleys[t];
+        Trolleys.erase(Trolleys.begin()+t);
+        nTrolleys--;
+        TrolleysID.erase(TrolleysID.begin()+t);
+    }
 }
 
 // *************************************************************************************************************
 
 Uint Infrastructure::GetNSlots(Uint t){
-    return Trolleys[t]->GetNSlots();
+    return GetTrolley(t)->GetNSlots();
 }
 
 // *************************************************************************************************************
 
 string Infrastructure::GetSlotsID(Uint t){
-    return Trolleys[t]->GetSlotsID();
+    return GetTrolley(t)->GetSlotsID();
 }
 
 // *************************************************************************************************************
 
 Uint Infrastructure::GetSlotID(Uint t, Uint s){
-    return Trolleys[t]->GetSlotID(s);
+    return GetTrolley(t)->GetSlotID(s);
 }
 
 // *************************************************************************************************************
 
 RPC* Infrastructure::GetRPC(Uint t, Uint r){
-    return Trolleys[t]->GetRPC(r);
+    return GetTrolley(t)->GetRPC(r);
 }
 
 // *************************************************************************************************************
 
 string Infrastructure::GetName(Uint t, Uint r){
-    return Trolleys[t]->GetName(r);
+    return GetTrolley(t)->GetName(r);
 }
 
 // *************************************************************************************************************
 
 Uint Infrastructure::GetNGaps(Uint t, Uint r){
-    return Trolleys[t]->GetNGaps(r);
+    return GetTrolley(t)->GetNGaps(r);
 }
 
 // *************************************************************************************************************
 
 Uint Infrastructure::GetNPartitions(Uint t, Uint r){
-    return Trolleys[t]->GetNPartitions(r);
+    return GetTrolley(t)->GetNPartitions(r);
 }
 
 // *************************************************************************************************************
 
 Uint Infrastructure::GetNStrips(Uint t, Uint r){
-    return Trolleys[t]->GetNStrips(r);
+    return GetTrolley(t)->GetNStrips(r);
 }
 
 // *************************************************************************************************************
 
 string Infrastructure::GetGap(Uint t, Uint r, Uint g){
-    return Trolleys[t]->GetGap(r,g);
+    return GetTrolley(t)->GetGap(r,g);
 }
 
 // *************************************************************************************************************
 
 float Infrastructure::GetGapGeo(Uint t, Uint r, Uint g){
-    return Trolleys[t]->GetGapGeo(r,g);
+    return GetTrolley(t)->GetGapGeo(r,g);
 }
 
 // *************************************************************************************************************
 
 float Infrastructure::GetStripGeo(Uint t, Uint r, Uint p){
-    return Trolleys[t]->GetStripGeo(r,p);
-}
-
-// *************************************************************************************************************
-
-void Infrastructure::SetNTrolleys(IniFile *geofile){
-    nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
-}
-
-// *************************************************************************************************************
-
-void Infrastructure::SetTrolleysID(IniFile *geofile){
-    TrolleysID = geofile->stringType("General","TrolleysID","");
-}
-
-// *************************************************************************************************************
-
-void Infrastructure::SetTrolleys(IniFile *geofile){
-    Trolleys.clear();
-
-    for(Uint t = 0; t < GetNTrolleys(); t++){
-        string trolleyID = "T" + intToString(GetTrolleyID(t));
-
-        Trolley* tempTrolley = new Trolley(trolleyID, geofile);
-        Trolleys.push_back(tempTrolley);
-    }
+    return GetTrolley(t)->GetStripGeo(r,p);
 }

@@ -52,7 +52,7 @@ int Mapping::Read(){
 
     // Loading the file into the parser
     if(map){
-        Error = INI_OK;
+        Error = MAP_OK;
 
         while (map.good()) { //Fill the map with RPC and TDC channels
             map >> RPCCh >> TDCCh;
@@ -77,7 +77,7 @@ int Mapping::Read(){
 
         return Error;
     } else {
-        Error = INI_ERROR_CANNOT_OPEN_READ_FILE;
+        Error = MAP_ERROR_CANNOT_OPEN_READ_FILE;
         MSG_ERROR("[Offline-Mapping] Read error " + to_string(Error));
 
         return Error;
