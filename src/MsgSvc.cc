@@ -17,12 +17,54 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <cstdio>
+#include <iomanip>
 #include <fstream>
+#include <sstream>
 
 #include "../include/MsgSvc.h"
-#include "../include/utils.h"
+#include "../include/types.h"
 
 using namespace std;
+
+// ****************************************************************************************************
+// *    string GetLogTimeStamp()
+//
+//  Function that gets the system time. The output format of this function has been optimised to be
+//  used in the log file. For each log message, the line starts with this time stamp.
+// ****************************************************************************************************
+
+string GetLogTimeStamp(){
+    stringstream stream;
+
+    //Get time information
+    time_t t = time(0);
+    struct tm *Time = localtime(&t);
+    int Y = Time->tm_year + 1900;
+    int M = Time->tm_mon + 1;
+    int D = Time->tm_mday;
+    int h = Time->tm_hour;
+    int m = Time->tm_min;
+    int s = Time->tm_sec;
+
+    //Set the Date
+    //Format is YYYY-MM-DD.hh:mm:ss.
+    string Date;
+
+    stream << setfill('0') << setw(4) << Y << "-"
+           << setfill('0') << setw(2) << M << "-"
+           << setfill('0') << setw(2) << D << "."
+           << setfill('0') << setw(2) << h << ":"
+           << setfill('0') << setw(2) << m << ":"
+           << setfill('0') << setw(2) << s << ".";
+
+    stream >> Date;
+    stream.clear();
+
+    return Date;
+}
+
+// ****************************************************************************************************
 
 int MSG(string message, int level){
     //First we need to get the log file path into the log life

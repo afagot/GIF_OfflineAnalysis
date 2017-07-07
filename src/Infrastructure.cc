@@ -17,8 +17,8 @@
 
 #include "../include/types.h"
 #include "../include/utils.h"
-#include "../include/Infrastructure.h"
 #include "../include/GIFTrolley.h"
+#include "../include/Infrastructure.h"
 
 using namespace std;
 

@@ -25,8 +25,6 @@
 #include "TH2.h"
 
 #include "types.h"
-#include "Mapping.h"
-#include "Infrastructure.h"
 
 using namespace std;
 
@@ -56,12 +54,7 @@ string  longTostring(long value);
 string  floatTostring(float value);
 
 bool    existFile(string ROOTName);
-
-string  GetLogTimeStamp();
 void    WritePath(string basename);
-
-void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
-                       TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
 bool    IsEfficiencyRun(TString* runtype);

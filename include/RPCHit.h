@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "types.h"
+#include "Mapping.h"
 #include "Infrastructure.h"
 
 using namespace std;
@@ -50,5 +51,8 @@ typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHi
 
 bool SortHitbyStrip(RPCHit h1, RPCHit h2);
 bool SortHitbyTime(RPCHit h1, RPCHit h2);
+
+void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+                       TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
 
 #endif
