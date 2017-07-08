@@ -22,6 +22,9 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 # Be strict when compiling in debug mode
 SET(CMAKE_CXX_FLAGS_DEBUGS "${CMAKE_CXX_FLAGS} -Wall -Werror")
 
+# We provide a module to find the CAEN VME library
+SET(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 # needed dependencies
 FIND_PACKAGE(ROOT REQUIRED)
 INCLUDE_DIRECTORIES( ${ROOT_INCLUDE_DIRS} )
@@ -40,4 +43,4 @@ SET(SOURCE_FILES ${SOURCE_FILES} ${PROJECT_SOURCE_DIR}/src/main.cc)
 ADD_EXECUTABLE(offlineanalysis ${SOURCE_FILES})
 
 # add the install targets
-INSTALL (TARGETS offlineanalysis DESTINATION bin)
+INSTALL (TARGETS offlineanalysis DESTINATION ${PROJECT_SOURCE_DIR}/bin)
