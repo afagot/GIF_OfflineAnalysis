@@ -17,7 +17,11 @@
 #include "../include/RPCHit.h"
 #include "../include/Mapping.h"
 #include "../include/types.h"
+#include "../include/utils.h"
 #include "../include/Infrastructure.h"
+
+#include "TTree.h"
+#include "TF1.h"
 
 using namespace std;
 
@@ -55,6 +59,30 @@ RPCHit::~RPCHit(){
 
 }
 
+Uint RPCHit::GetChannel(){
+    return Channel;
+}
+
+Uint RPCHit::GetTrolley(){
+    return Trolley;
+}
+
+Uint RPCHit::GetStation(){
+    return Station;
+}
+
+Uint RPCHit::GetStrip(){
+    return Strip;
+}
+
+Uint RPCHit::GetPartition(){
+    return Partition;
+}
+
+float RPCHit::GetTime(){
+    return TimeStamp;
+}
+
 // ****************************************************************************************************
 // *    bool sortbyhit(pair<int, float> p1, pair<int, float> p2)
 //
@@ -62,7 +90,7 @@ RPCHit::~RPCHit(){
 // ****************************************************************************************************
 
 bool SortHitbyStrip(RPCHit h1, RPCHit h2){
-        return (h1.GetStrip() < h2.GetStrip());
+    return (h1.GetStrip() < h2.GetStrip());
 }
 
 // ****************************************************************************************************
@@ -73,7 +101,7 @@ bool SortHitbyStrip(RPCHit h1, RPCHit h2){
 
 //Sort hits by time
 bool SortHitbyTime(RPCHit h1, RPCHit h2){
-        return (h1.GetTime() < h2.GetTime());
+    return (h1.GetTime() < h2.GetTime());
 }
 
 // ****************************************************************************************************

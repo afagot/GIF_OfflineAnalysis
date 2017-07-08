@@ -30,6 +30,7 @@
 #include "TH1I.h"
 #include "TH2F.h"
 #include "TProfile.h"
+#include "TMath.h"
 
 #include "../include/OfflineAnalysis.h"
 #include "../include/IniFile.h"
@@ -134,6 +135,11 @@ void OfflineAnalysis(string baseName){
         char hisname[50];  //ID name of the histogram
         char histitle[50]; //Title of the histogram
 
+        //Get the mean number of hits in the TBranch to define the range of
+        //multiplicity histograms
+        dataTree->Draw("number_of_hits","","goff");
+        float meanNHits = TMath::Mean(dataTree->GetSelectedRows(),dataTree->GetV1());
+
         for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
             Uint T = GIFInfra->GetTrolleyID(tr);
 
@@ -149,7 +155,7 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    Uint nBinsMult = 101;
+                    Uint nBinsMult = meanNHits/GIFInfra->GetNSlots(tr);
                     float lowBin = -0.5;
                     float highBin = (float)nBinsMult + lowBin;
 

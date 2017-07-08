@@ -34,6 +34,10 @@ Mapping::Mapping(string baseName){
     SetFileName(baseName);
 }
 
+Mapping::~Mapping(){
+
+};
+
 bool Mapping::CheckIfNewLine(char next){
     return ( next == '\n' );
 }

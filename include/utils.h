@@ -30,21 +30,6 @@ using namespace std;
 
 //****************************************************************************
 
-//Structures to interpret the data inside of the root file
-//->RAWData represents the data structure inside the root
-//  file itself
-//->RPCHit is used to translate the TDC data into physical
-//  data, assigning each hit to a RPC strip
-
-struct RAWData {
-    int            iEvent;   //Event i
-    int            TDCNHits; //Number of hits in event i
-    vector<Uint>  *TDCCh;    //List of channels giving hits per event
-    vector<float> *TDCTS;    //List of the corresponding time stamps
-};
-
-//****************************************************************************
-
 //Functions (more details in utils.cc)
 
 Uint    CharToInt(char& C);

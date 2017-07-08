@@ -14,7 +14,7 @@ CONFIGURE_FILE(
 
 # add the binary tree to the search path for include files
 # so that we will find header files
-INCLUDE_DIRECTORIES( BEFORE include )
+INCLUDE_DIRECTORIES( BEFORE ${PROJECT_SOURCE_DIR}/include )
 
 # Use C++11
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -32,11 +32,11 @@ LIST( APPEND ${PROJECT_NAME}_DEPENDS_LIBRARY_DIRS ${ROOT_LIBRARY_DIRS} )
 LIST( APPEND ${PROJECT_NAME}_DEPENDS_LIBRARIES ${ROOT_LIBRARIES} )
 
 # add the executable
-SET(SOURCE_FILES src/MsgSvc.cc src/utils.cc src/IniFile.cc src/Mapping.cc)
-SET(SOURCE_FILES ${SOURCE_FILES} src/RPCDetector.cc src/GIFTrolley.cc src/Infrastructure.cc)
-SET(SOURCE_FILES ${SOURCE_FILES} src/RPCHit.cc src/Cluster.cc)
-SET(SOURCE_FILES ${SOURCE_FILES} src/OfflineAnalysis.cc src/Current.cc)
-SET(SOURCE_FILES ${SOURCE_FILES} src/main.cc)
+SET(SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/MsgSvc.cc ${PROJECT_SOURCE_DIR}/src/utils.cc ${PROJECT_SOURCE_DIR}/src/IniFile.cc ${PROJECT_SOURCE_DIR}/src/Mapping.cc)
+SET(SOURCE_FILES ${SOURCE_FILES} ${PROJECT_SOURCE_DIR}/src/RPCDetector.cc ${PROJECT_SOURCE_DIR}/src/GIFTrolley.cc ${PROJECT_SOURCE_DIR}/src/Infrastructure.cc)
+SET(SOURCE_FILES ${SOURCE_FILES} ${PROJECT_SOURCE_DIR}/src/RPCHit.cc ${PROJECT_SOURCE_DIR}/src/Cluster.cc)
+SET(SOURCE_FILES ${SOURCE_FILES} ${PROJECT_SOURCE_DIR}/src/OfflineAnalysis.cc ${PROJECT_SOURCE_DIR}/src/Current.cc)
+SET(SOURCE_FILES ${SOURCE_FILES} ${PROJECT_SOURCE_DIR}/src/main.cc)
 ADD_EXECUTABLE(offlineanalysis ${SOURCE_FILES})
 
 # add the install targets

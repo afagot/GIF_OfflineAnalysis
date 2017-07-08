@@ -21,6 +21,8 @@
 #include "Mapping.h"
 #include "Infrastructure.h"
 
+#include "TTree.h"
+
 using namespace std;
 
 //Hit in the RPC
