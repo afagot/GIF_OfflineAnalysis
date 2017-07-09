@@ -57,8 +57,34 @@ RPCCluster::RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firs
     TimeSpread  = max-min;
 }
 
+RPCCluster::RPCCluster(const RPCCluster &other){
+    ClusterID   = other.ClusterID;
+    ClusterSize = other.ClusterSize;
+    FirstStrip  = other.FirstStrip;
+    LastStrip   = other.LastStrip;
+    Center      = other.Center;
+    StartStamp  = other.StartStamp;
+    StopStamp   = other.StopStamp;
+    TimeSpread  = other.TimeSpread;
+}
+
 RPCCluster::~RPCCluster(){
 
+}
+
+RPCCluster& RPCCluster::operator=(const RPCCluster& other){
+    if(this != &other){
+        ClusterID   = other.ClusterID;
+        ClusterSize = other.ClusterSize;
+        FirstStrip  = other.FirstStrip;
+        LastStrip   = other.LastStrip;
+        Center      = other.Center;
+        StartStamp  = other.StartStamp;
+        StopStamp   = other.StopStamp;
+        TimeSpread  = other.TimeSpread;
+    }
+
+    return *this;
 }
 
 Uint RPCCluster::GetID(){

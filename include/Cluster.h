@@ -38,7 +38,9 @@ class RPCCluster{
         //Constructors & destructor
         RPCCluster();
         RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID);
+        RPCCluster(const RPCCluster& other);
         ~RPCCluster();
+        RPCCluster& operator=(const RPCCluster& other);
 
         //Get GIFTrolley members
         Uint GetID();

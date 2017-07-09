@@ -115,7 +115,6 @@ void GetCurrent(string baseName){
                         float voltage = HVapp->GetMean();
                         float voltageErr = HVapp->GetRMS()/sqrt(HVapp->GetEntries());
                         outputCSV << voltage << '\t' << voltageErr << '\t';
-                        delete HVapp;
                     } else {
                         float voltage = 0.;
                         float voltageErr = 0.;
@@ -131,7 +130,6 @@ void GetCurrent(string baseName){
                         float densityErr = currentErr/areagap;
                         outputCSV << current << '\t' << currentErr << '\t';
                         outputCSV << density << '\t' << densityErr << '\t';
-                        delete Imon;
                     } else {
                         float current = 0.;
                         float currentErr = 0.;
@@ -152,7 +150,6 @@ void GetCurrent(string baseName){
                             ADCcurErr = ADC->GetRMS()/sqrt(ADC->GetEntries())/areagap;
                         }
                         outputCSV << ADCcur << '\t' << ADCcurErr << '\t';
-                        delete ADC;
                     } else {
                         float ADCcur = 0.;
                         float ADCcurErr = 0.;
@@ -168,9 +165,6 @@ void GetCurrent(string baseName){
         outputCSV.close();
 
         caenFile.Close();
-
-        delete Dimensions;
-        delete Infra;
     } else {
         MSG_INFO("[Offline-Current] File " + caenName + " could not be opened");
         MSG_INFO("[Offline-Current] Skipping current analysis");

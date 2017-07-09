@@ -38,7 +38,9 @@ class RPCHit {
     public:
         RPCHit();
         RPCHit(int channel, float time, Infrastructure* Infra);
+        RPCHit(const RPCHit& other);
         ~RPCHit();
+        RPCHit& operator=(const RPCHit& other);
 
         Uint  GetChannel();
         Uint  GetTrolley();

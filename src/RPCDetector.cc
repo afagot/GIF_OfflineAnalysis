@@ -62,11 +62,37 @@ RPC::RPC(string ID, IniFile* geofile){
     }
 }
 
+RPC::RPC(const RPC &other){
+    name = other.name;
+    nGaps = other.nGaps;
+    nPartitions = other.nPartitions;
+    nStrips = other.nStrips;
+    gaps = other.gaps;
+    gapGeo = other.gapGeo;
+    stripGeo = other.stripGeo;
+}
+
+RPC& RPC::operator =(const RPC& other){
+    if(this != &other){
+        name = other.name;
+        nGaps = other.nGaps;
+        nPartitions = other.nPartitions;
+        nStrips = other.nStrips;
+        gaps = other.gaps;
+        gapGeo = other.gapGeo;
+        stripGeo = other.stripGeo;
+    }
+
+    return *this;
+}
+
 // *************************************************************************************************************
 
 RPC::~RPC(){
 
 }
+
+
 
 // *************************************************************************************************************
 

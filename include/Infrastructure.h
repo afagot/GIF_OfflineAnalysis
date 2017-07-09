@@ -33,7 +33,9 @@ class Infrastructure {
         //Constructors and destructor
         Infrastructure();
         Infrastructure(IniFile* geofile);
+        Infrastructure(const Infrastructure& other);
         ~Infrastructure();
+        Infrastructure& operator=(const Infrastructure& other);
 
         //Get Infrastructure members
         Uint   GetNTrolleys();

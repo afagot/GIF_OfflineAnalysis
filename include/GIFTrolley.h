@@ -34,7 +34,9 @@ class Trolley{
         //Constructors & destructor
         Trolley();
         Trolley(string ID, IniFile* geofile);
+        Trolley(const Trolley& other);
         ~Trolley();
+        Trolley& operator=(const Trolley& other);
 
         //Get GIFTrolley members
         Uint   GetNSlots();

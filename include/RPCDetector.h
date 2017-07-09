@@ -36,7 +36,9 @@ class RPC{
     public:
         RPC();
         RPC(string ID, IniFile* geofile);
+        RPC(const RPC& other);
         ~RPC();
+        RPC& operator=(const RPC& other);
 
         string GetName();
         Uint   GetNGaps();

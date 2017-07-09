@@ -46,8 +46,15 @@ Trolley::Trolley(string ID, IniFile *geofile){
 
         RPC* temprpc = new RPC(rpcID,geofile);
         RPCs.push_back(temprpc);
-        delete temprpc;
     }
+}
+
+Trolley::Trolley(const Trolley &other){
+    nSlots = other.nSlots;
+    SlotsID = other.SlotsID;
+
+    RPCs.clear();
+    RPCs = other.RPCs;
 }
 
 // *************************************************************************************************************
@@ -57,6 +64,22 @@ Trolley::~Trolley(){
 
     while(it != RPCs.end())
         delete *(it++);
+}
+
+Trolley& Trolley::operator=(const Trolley& other){
+    if(this != &other){
+        nSlots = other.nSlots;
+        SlotsID = other.SlotsID;
+
+        vector<RPC*>::iterator it = RPCs.begin();
+        while(it != RPCs.end())
+            delete *(it++);
+
+        RPCs.clear();
+        RPCs = other.RPCs;
+    }
+
+    return *this;
 }
 
 // *************************************************************************************************************

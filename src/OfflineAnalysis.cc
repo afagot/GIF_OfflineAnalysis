@@ -638,13 +638,6 @@ void OfflineAnalysis(string baseName){
 
         outputfile.Close();
         dataFile.Close();
-
-        delete GIFInfra;
-        delete Dimensions;
-        delete RPCChMap;
-        delete dataTree;
-        delete RunParameters;
-        delete RunType;
     } else {
         MSG_INFO("[Offline] File " + daqName + " could not be opened");
         MSG_INFO("[Offline] Skipping offline analysis");

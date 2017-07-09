@@ -47,8 +47,15 @@ Infrastructure::Infrastructure(IniFile *geofile){
 
         Trolley* tempTrolley = new Trolley(trolleyID, geofile);
         Trolleys.push_back(tempTrolley);
-        delete tempTrolley;
     }
+}
+
+Infrastructure::Infrastructure(const Infrastructure &other){
+    nTrolleys = other.nTrolleys;
+    TrolleysID = other.TrolleysID;
+
+    Trolleys.clear();
+    Trolleys = other.Trolleys;
 }
 
 // *************************************************************************************************************
@@ -58,6 +65,22 @@ Infrastructure::~Infrastructure(){
 
     while(it != Trolleys.end())
         delete *(it++);
+}
+
+Infrastructure& Infrastructure::operator=(const Infrastructure& other){
+    if(this != &other){
+        nTrolleys = other.nTrolleys;
+        TrolleysID = other.TrolleysID;
+
+        vector<Trolley*>::iterator it = Trolleys.begin();
+        while(it != Trolleys.end())
+            delete *(it++);
+
+        Trolleys.clear();
+        Trolleys = other.Trolleys;
+    }
+
+    return *this;
 }
 
 // *************************************************************************************************************

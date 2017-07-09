@@ -55,8 +55,30 @@ RPCHit::RPCHit(int channel, float time, Infrastructure* Infra){
     TimeStamp   = time;
 }
 
+RPCHit::RPCHit(const RPCHit &other){
+    Channel = other.Channel;
+    Trolley = other.Trolley;
+    Station = other.Station;
+    Strip = other.Strip;
+    Partition = other.Partition;
+    TimeStamp = other.TimeStamp;
+}
+
 RPCHit::~RPCHit(){
 
+}
+
+RPCHit& RPCHit::operator =(const RPCHit& other){
+    if(this != &other){
+        Channel = other.Channel;
+        Trolley = other.Trolley;
+        Station = other.Station;
+        Strip = other.Strip;
+        Partition = other.Partition;
+        TimeStamp = other.TimeStamp;
+    }
+
+    return *this;
 }
 
 Uint RPCHit::GetChannel(){
@@ -210,9 +232,6 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 
                 PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
                 PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
-
-                delete tmpTimeProfile.rpc[tr][sl][p];
-                delete slicefit;
             }
         }
     }
