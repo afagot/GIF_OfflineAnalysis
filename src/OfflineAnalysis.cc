@@ -289,18 +289,21 @@ void OfflineAnalysis(string baseName){
             //and for noise/gammas
             GIFHitList NoiseHitList;
 
+//cout << "Entry " << i << " - nHits " << data.TDCNHits << endl;
+
             //Loop over the TDC hits
             for(int h = 0; h < data.TDCNHits; h++){
                 Uint tdcchannel = data.TDCCh->at(h);
                 Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
                 float timestamp = data.TDCTS->at(h);
-
+//cout << "On est avant les cuts sur les chans\n";
+//cout << tdcchannel << " " << rpcchannel << endl;
                 //Get rid of the noise hits outside of the connected channels
                 if(tdcchannel > 5127) continue;
 
                 //Get rid of the hits in channels not considered in the mapping
                 if(rpcchannel == 0) continue;
-
+//cout << "On a passe les cuts sur les chans\n";
                 RPCHit hit(rpcchannel, timestamp, GIFInfra);
                 Uint T = hit.GetTrolley();
                 Uint S = hit.GetStation()-1;
@@ -330,6 +333,7 @@ void OfflineAnalysis(string baseName){
                     if(hit.GetTime() >= TIMEREJECT){
                         StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         NoiseHitList.rpc[T][S][P].push_back(hit);
+//cout << "On a rempli le bruit\n";
                     }
                 }
 
@@ -337,7 +341,7 @@ void OfflineAnalysis(string baseName){
                 TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
                 HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                 Multiplicity.rpc[T][S][P]++;
-
+//cout << "On a rempli les profils\n";
                 //Get effiency and cluster size
                 for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
                     Uint T = GIFInfra->GetTrolleyID(tr);
