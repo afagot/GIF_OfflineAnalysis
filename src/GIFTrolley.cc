@@ -20,7 +20,7 @@
 #include "../include/types.h"
 #include "../include/utils.h"
 #include "../include/GIFTrolley.h"
-#include "../include/RPC.h"
+#include "../include/RPCDetector.h"
 
 using namespace std;
 
