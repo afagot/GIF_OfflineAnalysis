@@ -6,7 +6,10 @@
 // *
 // *    Mapping.cc
 // *
-// *    To update
+// *    Class that defines Mapping objects. Mapping objects are
+// *    used to contain and easily jump from TDC channels to RPC
+// *    RPC channels (i.e. strips). This is useful to plot the
+// *    results in a human comprehensible way.
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    07/06/2017
@@ -22,33 +25,72 @@
 
 using namespace std;
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Mapping()
+//
+//  Default constructor
+// ****************************************************************************************************
 
 Mapping::Mapping(){
 
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Mapping(string baseName)
+//
+//  Constructor. It needs the information stored in the ChannelsMapping.csv file
+// ****************************************************************************************************
 
 Mapping::Mapping(string baseName){
     SetFileName(baseName);
 }
 
+// ****************************************************************************************************
+// *    ~Mapping()
+//
+//  Destructor
+// ****************************************************************************************************
+
 Mapping::~Mapping(){
 
 };
+
+// ****************************************************************************************************
+// *    bool CheckIfNewLine(char next)
+//
+//  Private method used to parse the mapping file. It looks for '\n' characters.
+// ****************************************************************************************************
 
 bool Mapping::CheckIfNewLine(char next){
     return ( next == '\n' );
 }
 
+// ****************************************************************************************************
+// *    bool CheckIfTDCCh(Uint channel)
+//
+//  Private method used to parse the mapping file. It checks that the channel is in the TDCs.
+// ****************************************************************************************************
+
 bool Mapping::CheckIfTDCCh(Uint channel){
     return ( channel > 0 || channel <= 5127);
 }
 
+// ****************************************************************************************************
+// *    void SetFileName(const string filename)
+//
+//  Set the name of private membre FileName. This is the name of the mapping file.
+// ****************************************************************************************************
+
 void Mapping::SetFileName(const string filename){
     FileName = filename;
 }
+
+// ****************************************************************************************************
+// *    int Read()
+//
+//  Open, read and save into the mapping buffer (private members Link and Mask) the content of the
+//  mapping file.
+// ****************************************************************************************************
 
 int Mapping::Read(){
     ifstream map(FileName.c_str());
@@ -88,9 +130,21 @@ int Mapping::Read(){
     }
 }
 
+// ****************************************************************************************************
+// *    Uint GetLink(Uint tdcchannel)
+//
+//  Get link in betweeen TDC channel tdcchannel and the corresponding RPC channel.
+// ****************************************************************************************************
+
 Uint Mapping::GetLink(Uint tdcchannel){
     return Link[tdcchannel];
 }
+
+// ****************************************************************************************************
+// *    Uint GetMask(Uint rpcchannel)
+//
+//  Get mask of RPC channel rpcchannel to know if it is masked or active.
+// ****************************************************************************************************
 
 Uint Mapping::GetMask(Uint rpcchannel){
     return Mask[rpcchannel];

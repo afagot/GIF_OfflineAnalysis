@@ -9,8 +9,7 @@
 // *
 // *    utils.h
 // *
-// *    All usefull functions (type cast, time stamps,...)
-// *    and structures (used for the GIF layout definition).
+// *    All usefull functions (type cast, time stamps, histos...)
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    07/06/2017

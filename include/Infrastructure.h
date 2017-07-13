@@ -9,7 +9,9 @@
 // *
 // *    Infrastructure.h
 // *
-// *    To be updated
+// *    Class that defines Infrastructure objects. They are
+// *    objects that contain Trolleys, that contains RPCDetectors
+// *    (itreproduces GIF++ infrastructure).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017

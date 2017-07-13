@@ -24,31 +24,53 @@
 
 using namespace std;
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    IniFile()
+//
+//  Default constructor
+// ****************************************************************************************************
 
 IniFile::IniFile(){
 
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    IniFile(string baseName)
+//
+//  Constructor. It needs the information stored in the Dimensions.ini file
+// ****************************************************************************************************
 
 IniFile::IniFile(string filename){
     SetFileName(filename);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    ~IniFile()
+//
+//  Destructor
+// ****************************************************************************************************
 
 IniFile::~IniFile(){
 
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    bool CheckIfComment(string line)
+//
+//  Private method used to parse the ini file. It looks for '#' characters at the beginning of the
+//  line.
+// ****************************************************************************************************
 
 bool IniFile::CheckIfComment(string line){
     return ( line[0] == '#' );
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    bool CheckIfGroup(string line,string& group)
+//
+//  Private method used to parse the mapping file. It looks for '[' and ']' characters at the
+//  beginning and end of group title lines
+// ****************************************************************************************************
 
 bool IniFile::CheckIfGroup(string line,string& group){
     if( line[0] == '[' ){
@@ -63,7 +85,12 @@ bool IniFile::CheckIfGroup(string line,string& group){
     return false;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    bool CheckIfToken(string line,string& key,string& value)
+//
+//  Private method used to parse the mapping file. It looks for '=' characters in the middle of 2
+//  string fields: key = value
+// ****************************************************************************************************
 
 bool IniFile::CheckIfToken(string line,string& key,string& value){
     size_t p0 = 0;
@@ -88,13 +115,22 @@ bool IniFile::CheckIfToken(string line,string& key,string& value){
     }
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    void SetFileName(const string filename)
+//
+//  Set the name of private membre FileName. This is the name of the ini file.
+// ****************************************************************************************************
 
 void IniFile::SetFileName(const string filename){
     FileName = filename;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    int Read()
+//
+//  Open, read and save into the inifile buffer (private members FileData) the content of the ini
+//  file.
+// ****************************************************************************************************
 
 int IniFile::Read(){
     ifstream ini(FileName.c_str());
@@ -137,7 +173,11 @@ int IniFile::Read(){
     return Error;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    long intType(string groupname, string keyname, long defaultvalue )
+//
+//  Cast and return the value of a group.key parameter into a long.
+// ****************************************************************************************************
 
 
 long IniFile::intType(string groupname, string keyname, long defaultvalue ){
@@ -172,7 +212,11 @@ long IniFile::intType(string groupname, string keyname, long defaultvalue ){
     return intValue;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    string stringType(string groupname, string keyname, string defaultvalue )
+//
+//  Cast and return the value of a group.key parameter into a string.
+// ****************************************************************************************************
 
 string IniFile::stringType( string groupname, string keyname, string defaultvalue ){
     string key;
@@ -193,7 +237,11 @@ string IniFile::stringType( string groupname, string keyname, string defaultvalu
     return stringChain;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    float floatType(string groupname, string keyname, float defaultvalue )
+//
+//  Cast and return the value of a group.key parameter into a float.
+// ****************************************************************************************************
 
 float IniFile::floatType( string groupname, string keyname, float defaultvalue ){
     string key;

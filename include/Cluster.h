@@ -9,7 +9,12 @@
 // *
 // *    Cluster.h
 // *
-// *    To be updated
+// *    Class that defines Cluster objects. Clusters are not
+// *    defined as a list of RPCHits but it could one of the
+// *    next updates of the code. For now only saving info
+// *    extracted from the RPCHit list is enough (first and
+// *    lest strips, center, cluster size, time stamps of the
+// *    hits, etc...).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
@@ -25,17 +30,17 @@ using namespace std;
 
 class RPCCluster{
     private:
-        Uint  ClusterID;
-        Uint  ClusterSize;
-        Uint  FirstStrip;
-        Uint  LastStrip;
-        float Center;
-        float StartStamp;
-        float StopStamp;
-        float TimeSpread;
-
+        Uint  ClusterID;    //Cluster ID (not used here)
+        Uint  ClusterSize;  //Size of cluster #ID
+        Uint  FirstStrip;   //First strip of cluster #ID
+        Uint  LastStrip;    //Last strip of cluster #ID
+        float Center;       //Center of cluster #ID ((first+last)/2)
+        float StartStamp;   //Time stamp of the earliest hit of cluster #ID
+        float StopStamp;    //Time stamp of the latest hit of cluster #ID
+        float TimeSpread;   //Time difference between earliest and latest hits
+                            //of cluster #ID
     public:
-        //Constructors & destructor
+        //Constructors, destructor & operator =
         RPCCluster();
         RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID);
         RPCCluster(const RPCCluster& other);

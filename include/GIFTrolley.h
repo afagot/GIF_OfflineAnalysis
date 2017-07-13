@@ -9,7 +9,9 @@
 // *
 // *    GIFTrolley.h
 // *
-// *    To be updated
+// *    Class that defines Trolley objects. Trolleys are objects
+// *    that contain RPCDetectors (it reproduces GIF++ infra
+// *    -structure).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
@@ -31,7 +33,7 @@ class Trolley{
         vector<RPC*> RPCs;    //List of active RPCs
 
     public:
-        //Constructors & destructor
+        //Constructors, destructor and operator =
         Trolley();
         Trolley(string ID, IniFile* geofile);
         Trolley(const Trolley& other);

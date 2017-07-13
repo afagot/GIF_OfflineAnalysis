@@ -65,6 +65,10 @@ string GetLogTimeStamp(){
 }
 
 // ****************************************************************************************************
+// *    int MSG(string message, int level)
+//
+//  Generic messaging function. It prints log messages into the scan log file.
+// ****************************************************************************************************
 
 int MSG(string message, int level){
     //First we need to get the log file path into the log life

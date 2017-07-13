@@ -9,7 +9,7 @@
 // *
 // *    types.h
 // *
-// *    To updates
+// *    Global variables, structs, and typedefs
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    07/06/2017

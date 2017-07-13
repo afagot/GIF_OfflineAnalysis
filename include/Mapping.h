@@ -9,7 +9,10 @@
 // *
 // *    Mapping.h
 // *
-// *    To update
+// *    Class that defines Mapping objects. Mapping objects are
+// *    used to contain and easily jump from TDC channels to RPC
+// *    RPC channels (i.e. strips). This is useful to plot the
+// *    results in a human comprehensible way.
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    07/06/2017

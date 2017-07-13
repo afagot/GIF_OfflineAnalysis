@@ -9,7 +9,16 @@
 // *
 // *    RPCHit.h
 // *
-// *    To be updated
+// *    Class that defines RPCHit objects. RPCHits are simply
+// *    storing the time stamp converting the rpc channel into
+// *    strip, station, trolley information. This inofrmation
+// *    is extracted from the format of the rpc channel :
+// *    it is a 5 digit unsigned int TSCCC
+// *    T : trolley ID
+// *    S : slot ID (or station)
+// *    CCC : rpc strip (depending on the chamber it can go up
+// *    to 128 strips so it was decided to use 3 digit for the
+// *    strip ID).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017

@@ -9,7 +9,7 @@
 // *
 // *    Current.h
 // *
-// *    Current extraction from Scan_00XXXX_HVX_CAEN.root files
+// *    Current extraction from Scan_00XXXX_HVX_CAEN.root files.
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    07/06/2017

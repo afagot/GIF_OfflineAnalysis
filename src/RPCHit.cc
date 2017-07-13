@@ -6,7 +6,16 @@
 // *
 // *    RPCHit.h
 // *
-// *    To be updated
+// *    Class that defines RPCHit objects. RPCHits are simply
+// *    storing the time stamp converting the rpc channel into
+// *    strip, station, trolley information. This inofrmation
+// *    is extracted from the format of the rpc channel :
+// *    it is a 5 digit unsigned int TSCCC
+// *    T : trolley ID
+// *    S : slot ID (or station)
+// *    CCC : rpc strip (depending on the chamber it can go up
+// *    to 128 strips so it was decided to use 3 digit for the
+// *    strip ID).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
@@ -25,6 +34,12 @@
 
 using namespace std;
 
+// ****************************************************************************************************
+// *    RPCHit()
+//
+//  Default constructor
+// ****************************************************************************************************
+
 RPCHit::RPCHit(){
 
 }
@@ -32,7 +47,7 @@ RPCHit::RPCHit(){
 // ****************************************************************************************************
 // *    RPCHit(int channel, float time, Infrastructure* Infra)
 //
-//  Uses the mapping to set up every hit and assign it to the right strip in each active RPC.
+//  Constructor
 // ****************************************************************************************************
 
 RPCHit::RPCHit(int channel, float time, Infrastructure* Infra){
@@ -55,6 +70,12 @@ RPCHit::RPCHit(int channel, float time, Infrastructure* Infra){
     TimeStamp   = time;
 }
 
+// ****************************************************************************************************
+// *    RPCHit(const RPCHit &other)
+//
+//  Copy constructor
+// ****************************************************************************************************
+
 RPCHit::RPCHit(const RPCHit &other){
     Channel = other.Channel;
     Trolley = other.Trolley;
@@ -64,9 +85,21 @@ RPCHit::RPCHit(const RPCHit &other){
     TimeStamp = other.TimeStamp;
 }
 
+// ****************************************************************************************************
+// *    ~RPCHit()
+//
+//  Destructor
+// ****************************************************************************************************
+
 RPCHit::~RPCHit(){
 
 }
+
+// ****************************************************************************************************
+// *    RPCHit& operator =(const RPCHit& other)
+//
+//  Copy operator
+// ****************************************************************************************************
 
 RPCHit& RPCHit::operator =(const RPCHit& other){
     if(this != &other){
@@ -81,32 +114,68 @@ RPCHit& RPCHit::operator =(const RPCHit& other){
     return *this;
 }
 
+// ****************************************************************************************************
+// *    Uint GetChannel()
+//
+//  Get the private member Channel
+// ****************************************************************************************************
+
 Uint RPCHit::GetChannel(){
     return Channel;
 }
+
+// ****************************************************************************************************
+// *    Uint GetTrolley()
+//
+//  Get the private member Trolley
+// ****************************************************************************************************
 
 Uint RPCHit::GetTrolley(){
     return Trolley;
 }
 
+// ****************************************************************************************************
+// *    Uint GetStation()
+//
+//  Get the private member Station
+// ****************************************************************************************************
+
 Uint RPCHit::GetStation(){
     return Station;
 }
+
+// ****************************************************************************************************
+// *    Uint GetStrip()
+//
+//  Get the private member Strip
+// ****************************************************************************************************
 
 Uint RPCHit::GetStrip(){
     return Strip;
 }
 
+// ****************************************************************************************************
+// *    Uint GetPartition()
+//
+//  Get the private member Partition
+// ****************************************************************************************************
+
 Uint RPCHit::GetPartition(){
     return Partition;
 }
+
+// ****************************************************************************************************
+// *    Uint GetTime()
+//
+//  Get the private member TimeStamp
+// ****************************************************************************************************
 
 float RPCHit::GetTime(){
     return TimeStamp;
 }
 
 // ****************************************************************************************************
-// *    bool sortbyhit(pair<int, float> p1, pair<int, float> p2)
+// *    bool SortHitbyStrip(RPCHit h1, RPCHit h2)
 //
 //  Sort RPC hits using strip position information
 // ****************************************************************************************************
@@ -116,7 +185,7 @@ bool SortHitbyStrip(RPCHit h1, RPCHit h2){
 }
 
 // ****************************************************************************************************
-// *    bool sortbytime(pair<int, float> p1, pair<int, float> p2)
+// *    bool SortHitbyTime(RPCHit h1, RPCHit h2)
 //
 //  Sort RPC hits using time stamp information
 // ****************************************************************************************************
@@ -128,7 +197,7 @@ bool SortHitbyTime(RPCHit h1, RPCHit h2){
 
 // ****************************************************************************************************
 // *    void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
-// *                        TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra)
+// *                        TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra)
 //
 //  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
 //  of the muon peak and its spread. Then saves the result in 2 3D tables (#D bescause it follows the

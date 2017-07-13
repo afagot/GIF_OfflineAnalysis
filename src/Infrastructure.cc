@@ -6,7 +6,9 @@
 // *
 // *    Infrastructure.cc
 // *
-// *    To be updated
+// *    Class that defines Infrastructure objects. They are
+// *    objects that contain Trolleys, that contains RPCs
+// *    (itreproduces GIF++ infrastructure).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
@@ -22,19 +24,21 @@
 
 using namespace std;
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Infrastructure()
+//
+//  Default constructor
+// ****************************************************************************************************
 
 Infrastructure::Infrastructure(){
 
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
 // *    Infrastructure(IniFile *geofile)
 //
-//  Set up the Infrastructure structure needed that represents the GIF++ setup at the moment of data
-//  taking, i.e. the active trolleys and the RPC chambers they contain in their slots. Informations
-//  are readout from Dimensions.ini . For details about Trolley members, see file utils.h.
-// *************************************************************************************************************
+//  Constructor. It needs to access the information stored in the Dimensions.ini file.
+// ****************************************************************************************************
 
 Infrastructure::Infrastructure(IniFile *geofile){
     nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
@@ -50,6 +54,12 @@ Infrastructure::Infrastructure(IniFile *geofile){
     }
 }
 
+// ****************************************************************************************************
+// *    Infrastructure(const Infrastructure &other)
+//
+//  Copy constructor
+// ****************************************************************************************************
+
 Infrastructure::Infrastructure(const Infrastructure &other){
     nTrolleys = other.nTrolleys;
     TrolleysID = other.TrolleysID;
@@ -58,7 +68,11 @@ Infrastructure::Infrastructure(const Infrastructure &other){
     Trolleys = other.Trolleys;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    ~Infrastructure()
+//
+//  Destructor
+// ****************************************************************************************************
 
 Infrastructure::~Infrastructure(){
     vector<Trolley*>::iterator it = Trolleys.begin();
@@ -66,6 +80,12 @@ Infrastructure::~Infrastructure(){
     while(it != Trolleys.end())
         delete *(it++);
 }
+
+// ****************************************************************************************************
+// *    Infrastructure& operator=(const Infrastructure& other)
+//
+//  Copy operator
+// ****************************************************************************************************
 
 Infrastructure& Infrastructure::operator=(const Infrastructure& other){
     if(this != &other){
@@ -83,25 +103,41 @@ Infrastructure& Infrastructure::operator=(const Infrastructure& other){
     return *this;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetNTrolleys()
+//
+//  Get the private member nTrolleys
+// ****************************************************************************************************
 
 Uint Infrastructure::GetNTrolleys(){
     return nTrolleys;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    string InfrastructureGetTrolleysID()
+//
+//  Get the private member TrolleysID
+// ****************************************************************************************************
 
 string Infrastructure::GetTrolleysID(){
     return TrolleysID;
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetTrolleyID(Uint t)
+//
+//  Get the private member TrolleysID and extract the ID of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetTrolleyID(Uint t){
     return CharToInt(TrolleysID[t]);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Trolley* GetTrolley(Uint t)
+//
+//  Get the private member Trolleys and get the Trolley t
+// ****************************************************************************************************
 
 Trolley* Infrastructure::GetTrolley(Uint t){
     if(t < Trolleys.size())
@@ -109,6 +145,12 @@ Trolley* Infrastructure::GetTrolley(Uint t){
     else
         return NULL;
 }
+
+// ****************************************************************************************************
+// *    void DeleteTrolley(Uint t)
+//
+//  Get the private member Trolleys and delete Trolley t
+// ****************************************************************************************************
 
 void Infrastructure::DeleteTrolley(Uint t){
     if(t < Trolleys.size()){
@@ -119,67 +161,111 @@ void Infrastructure::DeleteTrolley(Uint t){
     }
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetNSlots(Uint t)
+//
+//  Get the private member Trolleys and get the number of slots of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetNSlots(Uint t){
     return GetTrolley(t)->GetNSlots();
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    string GetSlotsID(Uint t)
+//
+//  Get the private member Trolleys and get the slots IDs of Trolley t
+// ****************************************************************************************************
 
 string Infrastructure::GetSlotsID(Uint t){
     return GetTrolley(t)->GetSlotsID();
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetSlotID(Uint t, Uint s)
+//
+//  Get the private member Trolleys and get the ID of slot s of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetSlotID(Uint t, Uint s){
     return GetTrolley(t)->GetSlotID(s);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    RPC* GetRPC(Uint t, Uint r)
+//
+//  Get the private member Trolleys and get RPC r of Trolley t
+// ****************************************************************************************************
 
 RPC* Infrastructure::GetRPC(Uint t, Uint r){
     return GetTrolley(t)->GetRPC(r);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    string GetName(Uint t, Uint r)
+//
+//  Get the private member Trolleys and get the name of RPC r of Trolley t
+// ****************************************************************************************************
 
 string Infrastructure::GetName(Uint t, Uint r){
     return GetTrolley(t)->GetName(r);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetNGaps(Uint t, Uint r)
+//
+//  Get the private member Trolleys and get the number of gaps of RPC r of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetNGaps(Uint t, Uint r){
     return GetTrolley(t)->GetNGaps(r);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetNPartitions(Uint t, Uint r)
+//
+//  Get the private member Trolleys and get the number of partitions of RPC r of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetNPartitions(Uint t, Uint r){
     return GetTrolley(t)->GetNPartitions(r);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    Uint GetNStrips(Uint t, Uint r)
+//
+//  Get the private member Trolleys and get the number of strips/part. of RPC r of Trolley t
+// ****************************************************************************************************
 
 Uint Infrastructure::GetNStrips(Uint t, Uint r){
     return GetTrolley(t)->GetNStrips(r);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    string GetGap(Uint t, Uint r, Uint g)
+//
+//  Get the private member Trolleys and get the name of gap g of RPC r of Trolley t
+// ****************************************************************************************************
 
 string Infrastructure::GetGap(Uint t, Uint r, Uint g){
     return GetTrolley(t)->GetGap(r,g);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    float GetGapGeo(Uint t, Uint r, Uint g)
+//
+//  Get the private member Trolleys and get the active area of gap g of RPC r of Trolley t
+// ****************************************************************************************************
 
 float Infrastructure::GetGapGeo(Uint t, Uint r, Uint g){
     return GetTrolley(t)->GetGapGeo(r,g);
 }
 
-// *************************************************************************************************************
+// ****************************************************************************************************
+// *    float GetStripGeo(Uint t, Uint r, Uint p)
+//
+//  Get the private member Trolleys and get active area of part p strips of RPC r of Trolley t
+// ****************************************************************************************************
 
 float Infrastructure::GetStripGeo(Uint t, Uint r, Uint p){
     return GetTrolley(t)->GetStripGeo(r,p);

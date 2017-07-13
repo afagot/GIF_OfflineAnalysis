@@ -5,9 +5,17 @@
 
 ## Compilation
 
-To compile the project, simply use
+The project is compiled with cmake. To compile, first create a build/ directory. and compile from there:
 
+    mkdir build
+    cd build
+    cmake ..
     make
+    make install
+
+To clean the directory and create a new build directory, you can use the bash script cleandir.sh:
+
+    ./cleandir.sh
 
 ### Usage
 
@@ -55,3 +63,10 @@ Moreover, up to 3 CSV files can created depending on which ones of the 3 input f
 * `Offline-Rate.csv` : contains the summary of the noise/gamma rates and clusters
 * `Offline-Current.csv` : contains the summary of the currents and voltages applied on the RPCs
 * `Offline-L0-EffCl.csv` : contains the summary of the level 0 efficiency and muon cluster information without tracking
+
+Note that these 3 CSV files are created along there "headers" (file containing the names of the data columns) and are automatically merged together when the offline analysis is used via the *RunDQM* button of the WebDCS.
+Thus, the resulting files are :
+
+* `Rates.csv`
+* `Currents.csv`
+* `L0-EffCl.csv`

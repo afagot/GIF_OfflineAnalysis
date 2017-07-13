@@ -6,7 +6,12 @@
 // *
 // *    Cluster.cc
 // *
-// *    To be updated
+// *    Class that defines Cluster objects. Clusters are not
+// *    defined as a list of RPCHits but it could one of the
+// *    next updates of the code. For now only saving info
+// *    extracted from the RPCHit list is enough (first and
+// *    lest strips, center, cluster size, time stamps of the
+// *    hits, etc...).
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
@@ -21,6 +26,12 @@
 
 using namespace std;
 
+// ****************************************************************************************************
+// *    RPCCluster()
+//
+//  Default constructor
+// ****************************************************************************************************
+
 RPCCluster::RPCCluster(){
 
 }
@@ -28,7 +39,7 @@ RPCCluster::RPCCluster(){
 // ****************************************************************************************************
 // *    RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID)
 //
-//  Set up clusters.
+//  Constructor
 // ****************************************************************************************************
 
 RPCCluster::RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firstID){
@@ -57,6 +68,12 @@ RPCCluster::RPCCluster(HitList List, Uint cID, Uint cSize, Uint first, Uint firs
     TimeSpread  = max-min;
 }
 
+// ****************************************************************************************************
+// *    RPCCluster(const RPCCluster &other)
+//
+//  Copy constructor
+// ****************************************************************************************************
+
 RPCCluster::RPCCluster(const RPCCluster &other){
     ClusterID   = other.ClusterID;
     ClusterSize = other.ClusterSize;
@@ -68,9 +85,21 @@ RPCCluster::RPCCluster(const RPCCluster &other){
     TimeSpread  = other.TimeSpread;
 }
 
+// ****************************************************************************************************
+// *    ~RPCCluster()
+//
+//  Destructor
+// ****************************************************************************************************
+
 RPCCluster::~RPCCluster(){
 
 }
+
+// ****************************************************************************************************
+// *    RPCCluster& operator=(const RPCCluster& other)
+//
+//  Copy operator
+// ****************************************************************************************************
 
 RPCCluster& RPCCluster::operator=(const RPCCluster& other){
     if(this != &other){
@@ -87,44 +116,91 @@ RPCCluster& RPCCluster::operator=(const RPCCluster& other){
     return *this;
 }
 
+// ****************************************************************************************************
+// *    Uint GetID()
+//
+//  Get the private member ClusterID
+// ****************************************************************************************************
+
 Uint RPCCluster::GetID(){
     return ClusterID;
 }
+
+// ****************************************************************************************************
+// *    Uint GetSize()
+//
+//  Get the private member ClusterSize
+// ****************************************************************************************************
 
 Uint RPCCluster::GetSize(){
     return ClusterSize;
 }
 
+// ****************************************************************************************************
+// *    Uint GetFirstStrip()
+//
+//  Get the private member FirstStrip
+// ****************************************************************************************************
+
 Uint RPCCluster::GetFirstStrip(){
     return FirstStrip;
 }
+
+// ****************************************************************************************************
+// *    Uint GetLastStrip()
+//
+//  Get the private member LastStrip
+// ****************************************************************************************************
 
 Uint RPCCluster::GetLastStrip(){
     return LastStrip;
 }
 
+// ****************************************************************************************************
+// *    float GetCenter()
+//
+//  Get the private member Center
+// ****************************************************************************************************
+
 float RPCCluster::GetCenter(){
     return Center;
 }
+
+// ****************************************************************************************************
+// *    float GetStart()
+//
+//  Get the private member StartStamp
+// ****************************************************************************************************
 
 float RPCCluster::GetStart(){
     return StartStamp;
 }
 
+// ****************************************************************************************************
+// *    float GetStop()
+//
+//  Get the private member StopStamp
+// ****************************************************************************************************
+
 float RPCCluster::GetStop(){
     return StopStamp;
 }
+
+// ****************************************************************************************************
+// *    float GetSpread()
+//
+//  Get the private member TimeSpread
+// ****************************************************************************************************
 
 float RPCCluster::GetSpread(){
     return TimeSpread;
 }
 
 // ****************************************************************************************************
-// *    void BuildClusters(vector < pair<int, float> > &v,
-// *                    vector < Cluster > &cluster, bool noflip,int thePartition)
+// *    void BuildClusters(HitList &cluster, ClusterList &clusterList)
 //
 //  Build cluster using the sorted RPC hit arrays
-//  Wee need the following variables:
+//  We need the following variables:
 //  - cluster size
 //  - isolation (nominal, "other side")
 //  - cluster:
@@ -167,7 +243,7 @@ void BuildClusters(HitList &cluster, ClusterList &clusterList){
 // ****************************************************************************************************
 // *   void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
 //
-//  Used to loop over the hit list, create clusters and fill histograms
+//  Used to loop over the hit list, create clusters and fill histograms. Calls BuildClusters.
 // ****************************************************************************************************
 
 void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){

@@ -9,7 +9,10 @@
 // *
 // *    RPCDetector.h
 // *
-// *    To be updated
+// *    Class the defines RPC objects. RPCs are objects
+// *    containing all the useful information about the
+// *    detectors being tested inside of GIF++ needed to
+// *    make the rate and current calculations.
 // *
 // *    Developped by : Alexis Fagot & Salvador Carillo
 // *    22/06/2017
