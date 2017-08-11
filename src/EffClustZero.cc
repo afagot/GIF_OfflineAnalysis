@@ -285,8 +285,8 @@ void GetEffClustZero(string baseName){
 
                     //Get efficiency, cluster size and multiplicity
                     //and evaluate the streamer probability (cls > 5)
-                    float peak = PeakMeanTime[slot][p];
-                    float peakRMS = PeakSpread[slot][p];
+                    float peak = PeakMeanTime.rpc[slot][p];
+                    float peakRMS = PeakSpread.rpc[slot][p];
                     float noise = meanNoiseHitPerns*TIMEBIN;
                     float eff = Efficiency0_H[slot][p]->GetMean()*DataNoiseRatio;
                     float effErr = sqrt(eff*(1.-eff)/nEntries);
@@ -294,8 +294,6 @@ void GetEffClustZero(string baseName){
                     float clsErr = ClusterSize0_H[slot][p]->GetMeanError();
                     float clm = ClusterMult0_H[slot][p]->GetMean();
                     float clmErr = ClusterMult0_H[slot][p]->GetMeanError();
-
-                    float nClusters = ClusterSize0_H[slot][p]->Integral();
 
                     //Write in the output CSV file
                     outputCSV << peak << '\t' << peakRMS << '\t'

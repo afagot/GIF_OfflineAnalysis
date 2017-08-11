@@ -343,6 +343,9 @@ void GetNoiseRate(string baseName){
                 float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
 
                 for(Uint st = 1; st <= nStripsPart; st++){
+                    //Get full RPCCh info usinf format TSCCC
+                    Uint RPCCh = (slot+1)*1e3 + st + p*nStripsPart;
+
                     //Fill noise rates
                     float stripRate = NoiseProf_H[slot][p]->GetBinContent(st)/normalisation;
 

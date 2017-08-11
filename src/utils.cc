@@ -355,7 +355,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
             SetRPCHit(tmpHit, RPCChMap.link[channel], timing, GIFInfra);
             Uint S = tmpHit.Station-1;
             Uint P = tmpHit.Partition-1;
-            tmpTimeProfile[T][P]->Fill(tmpHit.TimeStamp);
+            tmpTimeProfile[S][P]->Fill(tmpHit.TimeStamp);
         }
     }
 
@@ -393,7 +393,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 
     for(Uint sl = 0; sl < NSLOTS; sl++){
         for(Uint p = 0; p < NPARTITIONS; p++){
-            TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit,highlimit);
+            TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit.rpc[sl][p],highlimit.rpc[sl][p]);
             //Amplitude
             peakfit->SetParameter(0,50);
             peakfit->SetParLimits(0,1,100000);
@@ -408,8 +408,8 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                 tmpTimeProfile[sl][p]->Fit(peakfit,"QR");
 
             //Save the peak center and width from gaussian fit
-            PeakTime[sl][p] = peakfit->GetParameter(1);
-            PeakWidth[sl][p] = 3.*peakfit->GetParameter(2);
+            PeakTime.rpc[sl][p] = peakfit->GetParameter(1);
+            PeakWidth.rpc[sl][p] = 3.*peakfit->GetParameter(2);
 
             delete tmpTimeProfile[sl][p];
         }
@@ -481,6 +481,30 @@ float GetTH1StdDev(TH1* H){
     stddev = sqrt(variance/nBins);
 
     return stddev;
+}
+
+// ****************************************************************************************************
+// *    float GetChipBin(TH1* H)
+//
+//  Returns the chip average value from strip histograms by grouping active strips.
+// ****************************************************************************************************
+
+//Get mean of Chip from 1D histograms
+float GetChipBin(TH1* H, Uint chip){
+    Uint start = 1 + chip*NSTRIPSCHIP;
+    int nActive = NSTRIPSCHIP;
+    float mean = 0.;
+
+    for(Uint b = start; b <= (chip+1)*NSTRIPSCHIP; b++){
+        float value = H->GetBinContent(b);
+        mean += value;
+        if(value == 0.) nActive--;
+    }
+
+    if(nActive != 0) mean /= (float)nActive;
+    else mean = 0.;
+
+    return mean;
 }
 
 // ****************************************************************************************************
