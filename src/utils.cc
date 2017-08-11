@@ -184,30 +184,46 @@ void WritePath(string baseName){
 //  Returns the map to translate TDC channels into RPC strips.
 // ****************************************************************************************************
 
-map<int,int> TDCMapping(string baseName){
+Mapping TDCMapping(string baseName){
     //# RPC Channel (TS000 to TS127 : T = trolleys, S = slots, up to 127 strips)
-    int RPCCh;
+    Uint RPCCh = 9999;
 
     //# TDC Channel (M000 to M127 : M modules (from 0), 128 channels)
-    int TDCCh;
+    Uint TDCCh = 9999;
+
+    //Mask (1 is strip is active and 0 if strip is masked)
+    Uint Mask = 1;
 
     //2D Map of the TDC Channels and their corresponding RPC strips
-    map<int,int> Map;
+    Mapping Map;
 
     //File that contains the path to the mapping file located
     //in the scan directory
-    string mapping = baseName.substr(0,baseName.find_last_of("/")) + "/Mapping.csv";
+    string mappingpath = baseName.substr(0,baseName.find_last_of("/")) + "/Mapping.csv";
 
     //Open mapping file
-    ifstream mappingfile(mapping.c_str(), ios::in);
+    ifstream mappingfile(mappingpath.c_str(), ios::in);
     if(mappingfile){
         while (mappingfile.good()) { //Fill the map with RPC and TDC channels
             mappingfile >> RPCCh >> TDCCh;
-            if ( TDCCh != -1 ) Map[TDCCh] = RPCCh;
+
+            //Check the TDC mapping file format (2 columns - old format -
+            //or 3 columns - new format including mask - )
+            char next;
+            mappingfile.get(next);
+            if(next == '\n')
+                Mask = 1;
+            else
+                mappingfile >> Mask;
+
+            if ( TDCCh != 9999 ){
+                Map.link[TDCCh] = RPCCh;
+                Map.mask[RPCCh] = Mask;
+            }
         }
         mappingfile.close();
     } else {
-        MSG_ERROR("[Offline] Couldn't open file " + mapping);
+        MSG_ERROR("[Offline] Couldn't open file " + mappingpath);
         exit(EXIT_FAILURE);
     }
 
@@ -227,7 +243,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.nPartitions = geofile->intType(ID,"Partitions",NPARTITIONS);
     rpc.nGaps       = geofile->intType(ID,"Gaps",0);
 
-    for(unsigned int g = 0 ; g < rpc.nGaps; g++){
+    for(Uint g = 0 ; g < rpc.nGaps; g++){
         string gapID = "Gap" + intToString(g+1);
         rpc.gaps.push_back(geofile->stringType(ID,gapID,""));
 
@@ -238,7 +254,7 @@ void SetRPC(RPC &rpc, string ID, IniFile *geofile){
     rpc.strips      = geofile->intType(ID,"Strips",NSLOTS);
     string partID = "ABCD";
 
-    for(unsigned int p = 0; p < rpc.nPartitions; p++){
+    for(Uint p = 0; p < rpc.nPartitions; p++){
         string areaID  = "ActiveArea-"  + CharToString(partID[p]);
         float area = geofile->floatType(ID,areaID,1.);
         rpc.stripGeo.push_back(area);
@@ -257,7 +273,7 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
     infra.nSlots = geofile->intType("General","nSlots",NSLOTS);
     infra.SlotsID = geofile->stringType("General","SlotsID","");
 
-    for(unsigned int s = 0; s < infra.nSlots; s++){
+    for(Uint s = 0; s < infra.nSlots; s++){
         string rpcID = "S" + CharToString(infra.SlotsID[s]);
 
         RPC temprpc;
@@ -298,12 +314,11 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
 // ****************************************************************************************************
 
 //Set the beam time window
-void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
-                    float (&PeakWidth)[NSLOTS][NPARTITIONS],
-                    TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra){
+void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+                    TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra){
     RAWData mydata;
 
-    mydata.TDCCh = new vector<unsigned int>;
+    mydata.TDCCh = new vector<Uint>;
     mydata.TDCTS = new vector<float>;
     mydata.TDCCh->clear();
     mydata.TDCTS->clear();
@@ -315,10 +330,10 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
 
     TH1F *tmpTimeProfile[NSLOTS][NPARTITIONS];
     float noiseHits[NSLOTS][NPARTITIONS] = {{0.}};
-    int binWidth = 10;
+    int binWidth = TIMEBIN;
 
-    for(unsigned int sl = 0; sl < NSLOTS; sl++)
-        for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint sl = 0; sl < NSLOTS; sl++)
+        for(Uint p = 0; p < NPARTITIONS; p++){
             string name = "tmpTProf" + intToString(sl) +  intToString(p);
             tmpTimeProfile[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/binWidth,0.,BMTDCWINDOW);
     }
@@ -326,41 +341,45 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
     //Loop over the entries to get the hits and fill the time distribution + count the
     //noise hits in the window around the peak
 
-    float lowlimit = 260.;
-    float highlimit = 340.;
-
-    for(unsigned int i = 0; i < mytree->GetEntries(); i++){
+    for(Uint i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
         for(int h = 0; h < mydata.TDCNHits; h++){
             RPCHit tmpHit;
+            Uint channel = mydata.TDCCh->at(h);
+            Uint timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
-            if(mydata.TDCCh->at(h) > 5127) continue;
-            if(RPCChMap[mydata.TDCCh->at(h)] == 0) continue;
+            if(RPCChMap.link[channel] == 0) continue;
 
-            SetRPCHit(tmpHit, RPCChMap[mydata.TDCCh->at(h)], mydata.TDCTS->at(h), GIFInfra);
-            tmpTimeProfile[tmpHit.Station-1][tmpHit.Partition-1]->Fill(tmpHit.TimeStamp);
-
-            //Count the noise outside of the peak area to have an estimation of the noise
-            //per bin of 10ns and subtract it later from the time distribution
-            bool peakrange = (tmpHit.TimeStamp >= lowlimit && tmpHit.TimeStamp < highlimit);
-
-            if(tmpHit.TimeStamp >= TIMEREJECT && !peakrange)
-                noiseHits[tmpHit.Station-1][tmpHit.Partition-1]++;
+            SetRPCHit(tmpHit, RPCChMap.link[channel], timing, GIFInfra);
+            Uint S = tmpHit.Station-1;
+            Uint P = tmpHit.Partition-1;
+            tmpTimeProfile[T][P]->Fill(tmpHit.TimeStamp);
         }
     }
 
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
     //distribution
-    float timeWdw = BMTDCWINDOW - TIMEREJECT - (highlimit-lowlimit);
+    muonPeak center;
+    muonPeak lowlimit;
+    muonPeak highlimit;
 
-    for(unsigned int sl = 0; sl < NSLOTS; sl++){
-        for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint sl = 0; sl < NSLOTS; sl++){
+        for(Uint p = 0; p < NPARTITIONS; p++){
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.){
-                noiseHits[sl][p] = (float)binWidth * noiseHits[sl][p] / timeWdw;
+                center.rpc[sl][p] = (float)tmpTimeProfile[sl][p]->GetMaximumBin()*TIMEBIN;
+                lowlimit.rpc[sl][p] = center.rpc[sl][p] - 40.;
+                highlimit.rpc[sl][p] = center.rpc[sl][p] + 40.;
 
-                for(unsigned int b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                float timeWdw = BMTDCWINDOW-TIMEREJECT-(highlimit.rpc[sl][p]-lowlimit.rpc[sl][p]);
+
+                int nNoiseHitsLow = tmpTimeProfile[sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit.rpc[sl][p]/TIMEBIN);
+                int nNoiseHitsHigh = tmpTimeProfile[sl][p]->Integral(highlimit.rpc[sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
+
+                noiseHits[sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
+
+                for(Uint b = 1; b <= BMTDCWINDOW/binWidth; b++){
                     float binContent = (float)tmpTimeProfile[sl][p]->GetBinContent(b);
                     float correctedContent = (binContent < noiseHits[sl][p]) ? 0. : binContent-noiseHits[sl][p];
                     tmpTimeProfile[sl][p]->SetBinContent(b,correctedContent);
@@ -371,19 +390,19 @@ void SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
 
     //Fit with a gaussian the muon peak and extract the peak center as well as its width
     //defined as 3 standard deviation (99.7% of the peak area)
-    TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit,highlimit);
 
-    for(unsigned int sl = 0; sl < NSLOTS; sl++){
-        for(unsigned int p = 0; p < NPARTITIONS; p++){
+    for(Uint sl = 0; sl < NSLOTS; sl++){
+        for(Uint p = 0; p < NPARTITIONS; p++){
+            TF1 *peakfit = new TF1("peakfit","gaus(0)",lowlimit,highlimit);
             //Amplitude
             peakfit->SetParameter(0,50);
             peakfit->SetParLimits(0,1,100000);
             //Mean value
-            peakfit->SetParameter(1,300);
-            peakfit->SetParLimits(1,280,320);
+            peakfit->SetParameter(1,center.rpc[sl][p]);
+            peakfit->SetParLimits(1,lowlimit.rpc[sl][p],highlimit.rpc[sl][p]);
             //RMS
-            peakfit->SetParameter(2,7);
-            peakfit->SetParLimits(2,1,10);
+            peakfit->SetParameter(2,20);
+            peakfit->SetParLimits(2,1,40);
 
             if(tmpTimeProfile[sl][p]->GetEntries() > 0.)
                 tmpTimeProfile[sl][p]->Fit(peakfit,"QR");

@@ -62,7 +62,7 @@ void GetEffClustZero(string baseName){
 
         //****************** MAPPING *************************************
 
-        map<int,int> RPCChMap = TDCMapping(daqName);
+        Mapping RPCChMap = TDCMapping(daqName);
 
         //****************** PEAK TIME ***********************************
 
@@ -77,8 +77,8 @@ void GetEffClustZero(string baseName){
 
         if(RunType->CompareTo("efficiency") == 0) {
 
-            float PeakMeanTime[NSLOTS][NPARTITIONS] = {{0.}};
-            float PeakSpread[NSLOTS][NPARTITIONS] = {{0.}};
+            muonPeak PeakMeanTime;
+            muonPeak PeakSpread;
 
             SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
 
@@ -105,18 +105,18 @@ void GetEffClustZero(string baseName){
             char hisname[50];                    //ID name of the histogram
             char histitle[50];                   //Title of the histogram
 
-            unsigned int nSlots = GIFInfra.nSlots;
+            Uint nSlots = GIFInfra.nSlots;
 
-            for (unsigned int s = 0; s < nSlots; s++){
-                unsigned int nPartRPC = GIFInfra.RPCs[s].nPartitions;
-                unsigned int slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
+            for(Uint s = 0; s < nSlots; s++){
+                Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
+                Uint slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
                 //Get the chamber ID in terms of slot position SX
                 string rpcID = GIFInfra.RPCs[s].name;
 
-                for (unsigned int p = 0; p < nPartRPC; p++){
+                for(Uint p = 0; p < nPartRPC; p++){
                     //Set bining
-                    unsigned int nStrips = GIFInfra.RPCs[s].strips;
+                    Uint nStrips = GIFInfra.RPCs[s].strips;
 
                     //Initialisation of the histograms
 
@@ -146,9 +146,9 @@ void GetEffClustZero(string baseName){
             int inTimeHits[NSLOTS][NPARTITIONS] = {{0}};
             int noiseHits[NSLOTS][NPARTITIONS] = {{0}};
 
-            unsigned int nEntries = dataTree->GetEntries();
+            Uint nEntries = dataTree->GetEntries();
 
-            for(unsigned int i = 0; i < nEntries; i++){
+            for(Uint i = 0; i < nEntries; i++){
                 dataTree->GetEntry(i);
 
                 //Vectors to store the hits and reconstruct clusters
@@ -161,31 +161,31 @@ void GetEffClustZero(string baseName){
 
                     //Get rid of the noise hits outside of the connected channels
                     if(data.TDCCh->at(h) < 3000 || data.TDCCh->at(h) > 3127) continue;
-                    if(RPCChMap[data.TDCCh->at(h)] == 0) continue;
+                    if(RPCChMap.link[data.TDCCh->at(h)] == 0) continue;
 
-                    SetRPCHit(hit, RPCChMap[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                    SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                    Uint S = hit.Station-1;
+                    Uint P = hit.Partition-1;
 
                     //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime[hit.Station-1][hit.Partition-1]
-                            - PeakSpread[hit.Station-1][hit.Partition-1];
-                    float highlimit = PeakMeanTime[hit.Station-1][hit.Partition-1]
-                            + PeakSpread[hit.Station-1][hit.Partition-1];
+                    float lowlimit = PeakMeanTime.rpc[S][P] - PeakSpread.rpc[S][P];
+                    float highlimit = PeakMeanTime.rpc[S][P] + PeakSpread.rpc[S][P];
 
                     bool peakrange = (hit.TimeStamp >= lowlimit && hit.TimeStamp < highlimit);
 
                     if(peakrange){
-                        RPCHits[hit.Station-1][hit.Partition-1].push_back(hit);
-                        inTimeHits[hit.Station-1][hit.Partition-1]++;
+                        RPCHits[S][P].push_back(hit);
+                        inTimeHits[S][P]++;
                     } else if(hit.TimeStamp >= TIMEREJECT)
-                        noiseHits[hit.Station-1][hit.Partition-1]++;
+                        noiseHits[S][P]++;
                 }
 
                 //Get effiency and cluster size
-                for(unsigned int sl=0; sl<nSlots; sl++){
-                    unsigned int nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-                    unsigned int slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
+                for(Uint sl=0; sl<nSlots; sl++){
+                    Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
+                    Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
-                    for (unsigned int p = 0; p < nPartRPC; p++){
+                    for(Uint p = 0; p < nPartRPC; p++){
                         if(RPCHits[slot][p].size() > 0){
                             sort(RPCHits[slot][p].begin(),RPCHits[slot][p].end(),SortStrips);
 
@@ -194,7 +194,7 @@ void GetEffClustZero(string baseName){
                             tmpCluster.Partition = p;
 
                             //Default previous strip value
-                            unsigned int previousstrip = 0;
+                            Uint previousstrip = 0;
 
                             //Loop over the hits
                             for(vector<RPCHit>::iterator it = RPCHits[slot][p].begin(); it != RPCHits[slot][p].end(); it++){
@@ -254,11 +254,11 @@ void GetEffClustZero(string baseName){
             outputCSV << HVstep << '\t';
 
             //Write histograms into ROOT file
-            for (unsigned int s = 0; s < nSlots; s++){
-                unsigned int nPartRPC = GIFInfra.RPCs[s].nPartitions;
-                unsigned int slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
+            for(Uint s = 0; s < nSlots; s++){
+                Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
+                Uint slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
-                for (unsigned int p = 0; p < nPartRPC; p++){
+                for(Uint p = 0; p < nPartRPC; p++){
                     string partID = "ABCD";
                     string partName = GIFInfra.RPCs[s].name + "-" + partID[p];
                     //Write the header file
@@ -271,15 +271,14 @@ void GetEffClustZero(string baseName){
                             << "ClS-" << partName << '\t'
                             << "ClS-" << partName << "_Err\t"
                             << "ClM-" << partName << '\t'
-                            << "ClM-" << partName << "_Err\t"
-                            << "StrProb-" << partName << '\t';
+                            << "ClM-" << partName << "_Err\t";
 
                     //For each cases, evaluate the proportion of noise
                     //with respect to the actual muon data. The efficiency
                     //will then be corrected using this factor to "substract"
                     //the fake efficiency caused by the noise
-                    float meanNoiseHitPerns = (float)noiseHits[slot][p]/(BMTDCWINDOW-TIMEREJECT-2*PeakSpread[slot][p]);
-                    float integralNoise = 2*PeakSpread[slot][p]*meanNoiseHitPerns;
+                    float meanNoiseHitPerns = (float)noiseHits[slot][p]/(BMTDCWINDOW-TIMEREJECT-2*PeakSpread.rpc[slot][p]);
+                    float integralNoise = 2*PeakSpread.rpc[slot][p]*meanNoiseHitPerns;
                     float integralPeak = (float)inTimeHits[slot][p];
 
                     float DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
@@ -297,16 +296,13 @@ void GetEffClustZero(string baseName){
                     float clmErr = ClusterMult0_H[slot][p]->GetMeanError();
 
                     float nClusters = ClusterSize0_H[slot][p]->Integral();
-                    float nStreamers = ClusterSize0_H[slot][p]->Integral(6.,40.);
-                    float strProb = nStreamers/nClusters;
 
                     //Write in the output CSV file
                     outputCSV << peak << '\t' << peakRMS << '\t'
                               << noise << '\t' << DataNoiseRatio << '\t'
                               << eff << '\t' << effErr << '\t'
                               << cls << '\t' << clsErr << '\t'
-                              << clm << '\t' << clmErr << '\t'
-                              << strProb << '\t';
+                              << clm << '\t' << clmErr << '\t';
 
                     Efficiency0_H[slot][p]->Write();
                     ClusterSize0_H[slot][p]->Write();

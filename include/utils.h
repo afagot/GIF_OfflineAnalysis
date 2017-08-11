@@ -30,6 +30,11 @@ using namespace std;
 
 //****************************************************************************
 
+typedef unsigned int Uint;
+typedef map<Uint,Uint> mapping;
+
+//****************************************************************************
+
 //List of global variables used as default values
 //in case of problems to read Dimensions.ini
 const float TIMEREJECT   = 100.;
@@ -38,14 +43,17 @@ const float BMTDCWINDOW  = 24.*25.;
 const float RDMTDCWINDOW = 400.*25.;
 const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
 
-const unsigned int NTROLLEYS   = 5;
-const unsigned int NSLOTS      = 9;
-const unsigned int NPARTITIONS = 4;
+const Uint NSLOTS      = 9;
+const Uint NPARTITIONS = 4;
 
-const unsigned int NSTRIPSRPC  = 128;
-const unsigned int NSTRIPSPART = 48;
-const unsigned int NSTRIPSCONN = 16;
-const unsigned int NSTRIPSCHIP = 8;
+const Uint NSTRIPSRPC  = 128;
+const Uint NSTRIPSPART = 48;
+const Uint NSTRIPSCONN = 16;
+const Uint NSTRIPSCHIP = 8;
+
+//****************************************************************************
+
+typedef struct muonPeak { float rpc[NSLOTS][NPARTITIONS]; } muonPeak;
 
 //****************************************************************************
 
@@ -66,16 +74,16 @@ const string __logpath = __rundir + "log-offline";
 
 struct RPC{
     string          name;        //RPC name as in webDCS database
-    unsigned int    nGaps;       //Number of gaps in the RPC
+    Uint            nGaps;       //Number of gaps in the RPC
     vector<string>  gaps;        //List of gap labels (BOT, TOP, etc...)
     vector<float>   gapGeo;      //List of gap active areas
-    unsigned int    nPartitions; //Number of partitions in the RPC
-    unsigned int    strips;      //Number of strips per partition
+    Uint            nPartitions; //Number of partitions in the RPC
+    Uint            strips;      //Number of strips per partition
     vector<float>   stripGeo;    //List of strip active areas
 };
 
 struct Infrastructure {
-    unsigned int nSlots;  //Number of active RPCs in the considered trolley
+    Uint         nSlots;  //Number of active RPCs in the considered trolley
     string       SlotsID; //Active RPC IDs written into a string
     vector<RPC>  RPCs;    //List of active RPCs (struct)
 };
@@ -89,57 +97,61 @@ struct Infrastructure {
 //  data, assigning each hit to a RPC strip
 
 struct RAWData {
-    int                     iEvent;   //Event i
-    int                     TDCNHits; //Number of hits in event i
-    vector<unsigned int>   *TDCCh;    //List of channels giving hits per event
-    vector<float>          *TDCTS;    //List of the corresponding time stamps
+    int            iEvent;   //Event i
+    int            TDCNHits; //Number of hits in event i
+    vector<Uint>  *TDCCh;    //List of channels giving hits per event
+    vector<float> *TDCTS;    //List of the corresponding time stamps
 };
 
 //Hit in the RPC
 struct RPCHit {
-    unsigned int    Channel;    //RPC Channel (4 digit numbers like X000 - X128)
-    unsigned int    Station;    //Place in the cosmic stand (S1 to S9 - 1st digit)
-    unsigned int    Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
-    unsigned int    Partition;  //Partition (1 to 4)
-    float           TimeStamp;  //TDC time stamp
+    Uint  Channel;    //RPC Channel (4 digit numbers like X000 - X128)
+    Uint  Station;    //Place in the cosmic stand (S1 to S9 - 1st digit)
+    Uint  Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
+    Uint  Partition;  //Partition (1 to 4)
+    float TimeStamp;  //TDC time stamp
+};
+
+struct Mapping {
+    mapping link;
+    mapping mask;
 };
 
 //Cluster of hits in a partition of the RPC
 struct RPCCluster {
-    unsigned int    Station;    //Station
-    unsigned int    Partition;  //Partition
-    unsigned int    FirstStrip; //First strip of the cluster
-    unsigned int    LastStrip;  //Last strip of the cluster
-    float           Center;     //Central strip ( (First + Last) / 2 )
-    unsigned int    Size;       //Cluster size
-    float           TimeStamp;  //TDC time stamp
+    Uint  Station;    //Station
+    Uint  Partition;  //Partition
+    Uint  FirstStrip; //First strip of the cluster
+    Uint  LastStrip;  //Last strip of the cluster
+    float Center;     //Central strip ( (First + Last) / 2 )
+    Uint  Size;       //Cluster size
+    float TimeStamp;  //TDC time stamp
 };
 
 //****************************************************************************
 
 //Functions (more details in utils.cc)
 
-unsigned int CharToInt(char& C);
-string       CharToString(char& C);
-string       intToString(int value);
-string       longTostring(long value);
-string       floatTostring(float value);
-bool         existFile(string ROOTName);
-string       GetLogTimeStamp();
-void         WritePath(string basename);
-map<int,int> TDCMapping(string baseName);
-void         SetRPC(RPC& rpc, string ID, IniFile* geofile);
-void         SetInfrastructure(Infrastructure& infra, IniFile* geofile);
-void         SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
-void         SetBeamWindow (float (&PeakTime)[NSLOTS][NPARTITIONS],
-                            float (&PeakWidth)[NSLOTS][NPARTITIONS],
-                            TTree* mytree, map<int,int> RPCChMap, Infrastructure GIFInfra);
-bool         SortStrips (RPCHit A, RPCHit B);
-void         SetTitleName(string rpcID, unsigned int partition,
-                          char* Name, char* Title, string Namebase, string Titlebase);
-float        GetTH1Mean(TH1* H);
-float        GetTH1StdDev(TH1* H);
-void         SetTH1(TH1* H, string xtitle, string ytitle);
-void         SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
+Uint    CharToInt(char& C);
+string  CharToString(char& C);
+string  intToString(int value);
+string  longTostring(long value);
+string  floatTostring(float value);
+bool    existFile(string ROOTName);
+string  GetLogTimeStamp();
+void    WritePath(string basename);
+Mapping TDCMapping(string baseName);
+void    SetRPC(RPC& rpc, string ID, IniFile* geofile);
+void    SetInfrastructure(Infrastructure& infra, IniFile* geofile);
+void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra);
+void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+                       TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
+bool    SortStrips (RPCHit A, RPCHit B);
+void    SetTitleName(string rpcID, unsigned int partition,
+                     char* Name, char* Title, string Namebase, string Titlebase);
+float   GetTH1Mean(TH1* H);
+float   GetTH1StdDev(TH1* H);
+void    SetTH1(TH1* H, string xtitle, string ytitle);
+void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
 
 #endif // UTILS_H
