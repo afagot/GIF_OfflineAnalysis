@@ -30,7 +30,7 @@ using namespace std;
 
 //****************************************************************************
 
-typedef Uint Uint;
+typedef unsigned int Uint;
 typedef map<Uint,Uint> mapping;
 
 //****************************************************************************
