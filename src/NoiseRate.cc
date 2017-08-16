@@ -244,7 +244,7 @@ void GetNoiseRate(string baseName){
                 if(data.TDCCh->at(h) < 3000 || data.TDCCh->at(h) > 3127) continue;
                 if(RPCChMap.link[data.TDCCh->at(h)] == 0) continue;
 
-                SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDClTS->at(h), GIFInfra);
+                SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCtTS->at(h), GIFInfra);
                 Uint S = hit.Station-1;
                 Uint P = hit.Partition-1;
 

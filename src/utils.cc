@@ -351,7 +351,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
         for(int h = 0; h < mydata.TDCNHits; h++){
             RPCHit tmpHit;
             Uint channel = mydata.TDCCh->at(h);
-            Uint timing = mydata.TDClTS->at(h);
+            Uint timing = mydata.TDCtTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
             if(RPCChMap.link[channel] == 0) continue;
