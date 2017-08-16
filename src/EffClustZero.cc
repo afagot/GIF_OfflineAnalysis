@@ -112,7 +112,7 @@ void GetEffClustZero(string baseName){
 
             for(Uint s = 0; s < nSlots; s++){
                 Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
-                Uint slot = CharToInt(GIFInfra.SlotsID[s]);
+                Uint slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
                 //Get the chamber ID in terms of slot position SX
                 string rpcID = GIFInfra.RPCs[s].name;
@@ -186,7 +186,7 @@ void GetEffClustZero(string baseName){
                 //Get effiency and cluster size
                 for(Uint sl=0; sl<nSlots; sl++){
                     Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-                    Uint slot = CharToInt(GIFInfra.SlotsID[sl]);
+                    Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
                     for(Uint p = 0; p < nPartRPC; p++){
                         if(RPCHits[slot][p].size() > 0){
@@ -259,7 +259,7 @@ void GetEffClustZero(string baseName){
             //Write histograms into ROOT file
             for(Uint s = 0; s < nSlots; s++){
                 Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
-                Uint slot = CharToInt(GIFInfra.SlotsID[s]);
+                Uint slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
                 for(Uint p = 0; p < nPartRPC; p++){
                     string partID = "ABCD";

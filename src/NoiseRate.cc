@@ -124,7 +124,7 @@ void GetNoiseRate(string baseName){
 
         for (Uint s = 0; s < nSlots; s++){
             Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
-            Uint slot = CharToInt(GIFInfra.SlotsID[s]);
+            Uint slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
 
             //Get the chamber ID in terms of slot position SX
             string rpcID = GIFInfra.RPCs[s].name;
@@ -278,7 +278,7 @@ void GetNoiseRate(string baseName){
 
             for(Uint sl=0; sl<nSlots; sl++){
                 Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-                Uint slot = CharToInt(GIFInfra.SlotsID[sl]);
+                Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
                 for (Uint p = 0; p < nPartRPC; p++){
                     HitMultiplicity_H[slot][p]->Fill(Multiplicity[slot][p]);
@@ -306,7 +306,7 @@ void GetNoiseRate(string baseName){
 
         for(Uint sl = 0; sl < nSlots; sl++){
             Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-            Uint slot = CharToInt(GIFInfra.SlotsID[sl]);
+            Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
 
             //Get the total chamber rate
             //we need to now the total chamber surface (sum active areas)
