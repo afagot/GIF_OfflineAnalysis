@@ -30,7 +30,7 @@ using namespace std;
 
 //****************************************************************************
 
-typedef unsigned int Uint;
+typedef Uint Uint;
 typedef map<Uint,Uint> mapping;
 
 //****************************************************************************
@@ -149,7 +149,7 @@ void    SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infr
 void    SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping RPCChMap, Infrastructure GIFInfra);
 bool    SortStrips (RPCHit A, RPCHit B);
-void    SetTitleName(string rpcID, unsigned int partition,
+void    SetTitleName(string rpcID, Uint partition,
                      char* Name, char* Title, string Namebase, string Titlebase);
 float   GetTH1Mean(TH1* H);
 float   GetTH1StdDev(TH1* H);

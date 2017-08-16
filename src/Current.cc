@@ -31,7 +31,7 @@ void GetCurrent(string baseName){
     //****************** HVSTEP **************************************
 
     //Get the HVstep number from the file name
-    unsigned int length = caenName.rfind("_") - caenName.rfind("HV") - 2;
+    Uint length = caenName.rfind("_") - caenName.rfind("HV") - 2;
     string HVstep = caenName.substr(caenName.find_last_of("_")-length,length);
 
     //****************** CAEN ROOT FILE ******************************
@@ -68,12 +68,12 @@ void GetCurrent(string baseName){
         ofstream listCSV(listName.c_str(),ios::out);
         listCSV << "HVstep\t";
 
-        unsigned int nSlots = GIFInfra.nSlots;
+        Uint nSlots = GIFInfra.nSlots;
 
-        for (unsigned int s = 0; s < nSlots; s++){
-            unsigned int nGapsRPC = GIFInfra.RPCs[s].nGaps;
+        for (Uint s = 0; s < nSlots; s++){
+            Uint nGapsRPC = GIFInfra.RPCs[s].nGaps;
 
-            for(unsigned int g = 0; g < nGapsRPC; g++){
+            for(Uint g = 0; g < nGapsRPC; g++){
                 string gapID = GIFInfra.RPCs[s].gaps[g];
                 float areagap = GIFInfra.RPCs[s].gapGeo[g];
                 string ImonHisto, HVeffHisto, ADCHisto;

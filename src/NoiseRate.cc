@@ -120,22 +120,22 @@ void GetNoiseRate(string baseName){
         char hisname[50];  //ID name of the histogram
         char histitle[50]; //Title of the histogram
 
-        unsigned int nSlots = GIFInfra.nSlots;
+        Uint nSlots = GIFInfra.nSlots;
 
-        for (unsigned int s = 0; s < nSlots; s++){
-            unsigned int nPartRPC = GIFInfra.RPCs[s].nPartitions;
-            unsigned int slot = CharToInt(GIFInfra.SlotsID[s]) - 1;
+        for (Uint s = 0; s < nSlots; s++){
+            Uint nPartRPC = GIFInfra.RPCs[s].nPartitions;
+            Uint slot = CharToInt(GIFInfra.SlotsID[s]);
 
             //Get the chamber ID in terms of slot position SX
             string rpcID = GIFInfra.RPCs[s].name;
 
-            for (unsigned int p = 0; p < nPartRPC; p++){
+            for (Uint p = 0; p < nPartRPC; p++){
                 //Set bining
-                unsigned int nStrips = GIFInfra.RPCs[s].strips;
+                Uint nStrips = GIFInfra.RPCs[s].strips;
                 float low_s = nStrips*p + 0.5;
                 float high_s = nStrips*(p+1) + 0.5;
 
-                unsigned int nBinsMult = 101;
+                Uint nBinsMult = 101;
                 float lowBin = -0.5;
                 float highBin = (float)nBinsMult + lowBin;
 
@@ -278,9 +278,9 @@ void GetNoiseRate(string baseName){
 
             for(Uint sl=0; sl<nSlots; sl++){
                 Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-                Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
+                Uint slot = CharToInt(GIFInfra.SlotsID[sl]);
 
-                for (unsigned int p = 0; p < nPartRPC; p++){
+                for (Uint p = 0; p < nPartRPC; p++){
                     HitMultiplicity_H[slot][p]->Fill(Multiplicity[slot][p]);
                     Multiplicity[slot][p] = 0;
                 }
@@ -306,7 +306,7 @@ void GetNoiseRate(string baseName){
 
         for(Uint sl = 0; sl < nSlots; sl++){
             Uint nPartRPC = GIFInfra.RPCs[sl].nPartitions;
-            Uint slot = CharToInt(GIFInfra.SlotsID[sl]) - 1;
+            Uint slot = CharToInt(GIFInfra.SlotsID[sl]);
 
             //Get the total chamber rate
             //we need to now the total chamber surface (sum active areas)

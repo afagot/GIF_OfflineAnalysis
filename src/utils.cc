@@ -38,11 +38,11 @@ using namespace std;
 //  Function that casts a char into an int
 // ****************************************************************************************************
 
-unsigned int CharToInt(char &C){
+Uint CharToInt(char &C){
     stringstream ss;
     ss << C;
 
-    unsigned int I;
+    Uint I;
     ss >> I;
     return I;
 }
@@ -294,7 +294,7 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
     Hit.Strip   = Channel%1000; //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-    for(unsigned int i = 0; i < Infra.nSlots; i++){
+    for(Uint i = 0; i < Infra.nSlots; i++){
             if(CharToInt(Infra.SlotsID[i]) == Hit.Station)
                 nStripsPart = Infra.RPCs[i].strips;
     }
@@ -432,14 +432,14 @@ bool SortStrips (RPCHit A, RPCHit B){
 }
 
 // ****************************************************************************************************
-// *    void SetTitleName(string rpcID, unsigned int partition,
+// *    void SetTitleName(string rpcID, Uint partition,
 // *                      char* Name, char* Title, string Namebase, string Titlebase)
 //
 //  Builds the name and title of ROOT objects.
 // ****************************************************************************************************
 
 //Name of histograms
-void SetTitleName(string rpcID, unsigned int partition,
+void SetTitleName(string rpcID, Uint partition,
                   char* Name, char* Title, string Namebase, string Titlebase){
 
     string P[4] = {"A","B","C","D"};
