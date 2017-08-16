@@ -86,15 +86,18 @@ void GetEffClustZero(string baseName){
 
             RAWData data;
 
-            data.TDCCh = new vector<unsigned int>;
-            data.TDCTS = new vector<float>;
+            data.TDCCh = new vector<Uint>;
+            data.TDClTS = new vector<float>;
+            data.TDCtTS = new vector<float>;
             data.TDCCh->clear();
-            data.TDCTS->clear();
+            data.TDClTS->clear();
+            data.TDCtTS->clear();
 
             dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
             dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
             dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-            dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+            dataTree->SetBranchAddress("TDC_leadingTS",  &data.TDClTS);
+            dataTree->SetBranchAddress("TDC_trailingTS", &data.TDCtTS);
 
             //****************** HISTOGRAMS & CANVAS *************************
 
@@ -163,7 +166,7 @@ void GetEffClustZero(string baseName){
                     if(data.TDCCh->at(h) < 3000 || data.TDCCh->at(h) > 3127) continue;
                     if(RPCChMap.link[data.TDCCh->at(h)] == 0) continue;
 
-                    SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDCTS->at(h), GIFInfra);
+                    SetRPCHit(hit, RPCChMap.link[data.TDCCh->at(h)], data.TDClTS->at(h), GIFInfra);
                     Uint S = hit.Station-1;
                     Uint P = hit.Partition-1;
 

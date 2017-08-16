@@ -289,9 +289,9 @@ void SetInfrastructure(Infrastructure &infra, IniFile *geofile){
 // ****************************************************************************************************
 
 void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
-    Hit.Channel     = Channel;      //RPC channel according to mapping (4 digits)
-    Hit.Station     = Channel/1000; //From 1 to 9 (1st digit)
-    Hit.Strip       = Channel%1000; //From 1 to 128 (3 last digits)
+    Hit.Channel = Channel;      //RPC channel according to mapping (4 digits)
+    Hit.Station = Channel/1000; //From 1 to 9 (1st digit)
+    Hit.Strip   = Channel%1000; //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
     for(unsigned int i = 0; i < Infra.nSlots; i++){
@@ -299,8 +299,9 @@ void SetRPCHit(RPCHit& Hit, int Channel, float TimeStamp, Infrastructure Infra){
                 nStripsPart = Infra.RPCs[i].strips;
     }
 
-    Hit.Partition   = (Hit.Strip-1)/nStripsPart+1; //From 1 to 4
-    Hit.TimeStamp   = TimeStamp;
+    Hit.Partition = (Hit.Strip-1)/nStripsPart+1; //From 1 to 4
+    Hit.TimeStamp = TimeStamp;
+    Hit.isLeading = true;
 }
 
 // ****************************************************************************************************
@@ -319,14 +320,17 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     RAWData mydata;
 
     mydata.TDCCh = new vector<Uint>;
-    mydata.TDCTS = new vector<float>;
+    mydata.TDClTS = new vector<float>;
+    mydata.TDCtTS = new vector<float>;
     mydata.TDCCh->clear();
-    mydata.TDCTS->clear();
+    mydata.TDClTS->clear();
+    mydata.TDCtTS->clear();
 
     mytree->SetBranchAddress("EventNumber",    &mydata.iEvent);
     mytree->SetBranchAddress("number_of_hits", &mydata.TDCNHits);
     mytree->SetBranchAddress("TDC_channel",    &mydata.TDCCh);
-    mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
+    mytree->SetBranchAddress("TDC_leadingTS",  &mydata.TDClTS);
+    mytree->SetBranchAddress("TDC_trailingTS", &mydata.TDCtTS);
 
     TH1F *tmpTimeProfile[NSLOTS][NPARTITIONS];
     float noiseHits[NSLOTS][NPARTITIONS] = {{0.}};
@@ -347,7 +351,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
         for(int h = 0; h < mydata.TDCNHits; h++){
             RPCHit tmpHit;
             Uint channel = mydata.TDCCh->at(h);
-            Uint timing = mydata.TDCTS->at(h);
+            Uint timing = mydata.TDClTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
             if(RPCChMap.link[channel] == 0) continue;

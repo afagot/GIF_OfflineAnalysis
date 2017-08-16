@@ -100,7 +100,8 @@ struct RAWData {
     int            iEvent;   //Event i
     int            TDCNHits; //Number of hits in event i
     vector<Uint>  *TDCCh;    //List of channels giving hits per event
-    vector<float> *TDCTS;    //List of the corresponding time stamps
+    vector<float> *TDCtTS;   //List of the corresponding time stamps (trailing)
+    vector<float> *TDClTS;   //List of the corresponding time stamps (leading)
 };
 
 //Hit in the RPC
@@ -110,6 +111,7 @@ struct RPCHit {
     Uint  Strip;      //Strip (1 to 128 depending on the chamber - 3 last digits)
     Uint  Partition;  //Partition (1 to 4)
     float TimeStamp;  //TDC time stamp
+    bool  isLeading;
 };
 
 struct Mapping {
