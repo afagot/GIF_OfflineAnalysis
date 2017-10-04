@@ -31,6 +31,7 @@
 #include "TH2F.h"
 #include "TProfile.h"
 #include "TMath.h"
+#include "TF1.h"
 
 #include "../include/OfflineAnalysis.h"
 #include "../include/IniFile.h"
@@ -155,10 +156,6 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    Uint nBinsMult = meanNHits/GIFInfra->GetNSlots(tr);
-                    float lowBin = -0.5;
-                    float highBin = (float)nBinsMult + lowBin;
-
                     //Time profile binning
                     float timeWidth = 1.;
 
@@ -183,7 +180,8 @@ void OfflineAnalysis(string baseName){
 
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
-                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
+                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
+                    HitMultiplicity_H.rpc[T][S][p]->SetCanExtend(TH1::kXAxis);
                     SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
 
                     //****************************************** Strip granularuty level histograms
@@ -220,7 +218,8 @@ void OfflineAnalysis(string baseName){
 
                     //Noise/gamma cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
+                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
+                    NoiseCMult_H.rpc[T][S][p]->SetCanExtend(TH1::kXAxis);
                     SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
                     //****************************************** Chip granularuty level histograms
@@ -442,8 +441,22 @@ void OfflineAnalysis(string baseName){
 
                     //Get the mean noise on the strips and chips using the noise hit
                     //profile. Normalise the number of hits in each bin by the integrated
-                    //time and the strip sruface (counts/s/cm2)
+                    //time and the strip sruface (counts/s/cm2).
                     float normalisation = 0.;
+
+                    //Evaluate the amount of empty events due to bad data transfer and
+                    //remove them from the normalisation.
+                    int nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+
+                    double binwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth();
+                    int nBins = HitMultiplicity_H.rpc[T][S][p]->GetNbinsX();
+                    double max = binwidth*nBins;
+                    TF1* PoissonFit = new TF1("poissonfit","[0]*TMath::Poisson(x,[1])",0,max);
+
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(PoissonFit,"QR",1,max);
+                    int nPhysics = (int)PoissonFit->Eval(0,0,0,0);
+
+                    nEmptyEvent = nEmptyEvent - nPhysics;
 
                     //Get the number of noise hits
                     int nNoise = StripNoiseProfile_H.rpc[T][S][p]->GetEntries();
@@ -453,9 +466,9 @@ void OfflineAnalysis(string baseName){
 
                     if(IsEfficiencyRun(RunType)){
                         float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
-                        normalisation = nEntries*noiseWindow*1e-9*stripArea;
+                        normalisation = (nEntries-nEmptyEvent)*noiseWindow*1e-9*stripArea;
                     } else
-                        normalisation = nEntries*RDMNOISEWDW*1e-9*stripArea;
+                        normalisation = (nEntries-nEmptyEvent)*RDMNOISEWDW*1e-9*stripArea;
 
                     //Get the average number of hits per strip to normalise the activity
                     //histogram (this number is the same for both Strip and Chip histos).
