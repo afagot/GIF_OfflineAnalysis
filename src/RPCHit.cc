@@ -50,7 +50,7 @@ RPCHit::RPCHit(){
 //  Constructor
 // ****************************************************************************************************
 
-RPCHit::RPCHit(int channel, float time, Infrastructure* Infra){
+RPCHit::RPCHit(Uint channel, float time, Infrastructure* Infra){
     Channel     = channel;              //RPC channel according to mapping (5 digits)
     Trolley     = channel/10000;        //0, 1 or 3 (1st digit of the RPC channel)
     Station     = (channel%10000)/1000; //From 1 to 4 (2nd digit)
@@ -237,12 +237,11 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 
         for(int h = 0; h < mydata.TDCNHits; h++){
             Uint channel = mydata.TDCCh->at(h);
-            Uint timing = mydata.TDCTS->at(h);
+            float timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
             if(channel > 5127) continue;
             if(RPCChMap->GetLink(channel) == 0) continue;
-
             RPCHit tmpHit(RPCChMap->GetLink(channel), timing, Infra);
             Uint T = tmpHit.GetTrolley();
             Uint S = tmpHit.GetStation()-1;
