@@ -181,7 +181,7 @@ void OfflineAnalysis(string baseName){
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
                     HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
-                    HitMultiplicity_H.rpc[T][S][p]->SetCanExtend(TH1::kXAxis);
+                    HitMultiplicity_H.rpc[T][S][p]->SetCanExtend(TH1::kXaxis);
                     SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
 
                     //****************************************** Strip granularuty level histograms
@@ -219,7 +219,7 @@ void OfflineAnalysis(string baseName){
                     //Noise/gamma cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
                     NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
-                    NoiseCMult_H.rpc[T][S][p]->SetCanExtend(TH1::kXAxis);
+                    NoiseCMult_H.rpc[T][S][p]->SetCanExtend(TH1::kXaxis);
                     SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
                     //****************************************** Chip granularuty level histograms
@@ -448,12 +448,12 @@ void OfflineAnalysis(string baseName){
                     //remove them from the normalisation.
                     int nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
 
-                    double binwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth();
+                    double binwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth(1);
                     int nBins = HitMultiplicity_H.rpc[T][S][p]->GetNbinsX();
                     double max = binwidth*nBins;
                     TF1* PoissonFit = new TF1("poissonfit","[0]*TMath::Poisson(x,[1])",0,max);
 
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(PoissonFit,"QR",1,max);
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(PoissonFit,"QR","",1,max);
                     int nPhysics = (int)PoissonFit->Eval(0,0,0,0);
 
                     nEmptyEvent = nEmptyEvent - nPhysics;
