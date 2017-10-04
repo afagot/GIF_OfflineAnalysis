@@ -156,6 +156,10 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
+                    Uint nBinsMult = meanNHits/GIFInfra->GetNSlots(tr);
+                    float lowBin = -0.5;
+                    float highBin = (float)nBinsMult + lowBin;
+
                     //Time profile binning
                     float timeWidth = 1.;
 
@@ -180,8 +184,7 @@ void OfflineAnalysis(string baseName){
 
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
-                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
-                    HitMultiplicity_H.rpc[T][S][p]->SetCanExtend(TH1::kXaxis);
+                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
                     SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
 
                     //****************************************** Strip granularuty level histograms
@@ -218,8 +221,7 @@ void OfflineAnalysis(string baseName){
 
                     //Noise/gamma cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, 1, 0, 1);
-                    NoiseCMult_H.rpc[T][S][p]->SetCanExtend(TH1::kXaxis);
+                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
                     SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
                     //****************************************** Chip granularuty level histograms
