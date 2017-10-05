@@ -157,7 +157,7 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    Uint nBinsMult = meanNHits/GIFInfra->GetNSlots(tr);
+                    Uint nBinsMult = 3*meanNHits/GIFInfra->GetNSlots(tr); //3 is arbitrary
                     float lowBin = -0.5;
                     float highBin = (float)nBinsMult + lowBin;
 
@@ -464,11 +464,9 @@ void OfflineAnalysis(string baseName){
                     //variation of less than 5% with respect to the data.
 
                     //Start by getting the x range on wich we should perform the fit
-                    //To to so, get the bin width and the number of bins
-                    //Then give an extra factor 2 for safety
-                    double Xbinwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth(1);
-                    int nBins = HitMultiplicity_H.rpc[T][S][p]->GetNbinsX();
-                    double Xmax = 2*Xbinwidth*nBins;
+                    //We will re-use the same definition than for the multiplicity
+                    //histogram range
+                    double Xmax = 3*meanNHits/(double)GIFInfra->GetNSlots(tr);
 
                     //Then fit : Gauss then Skew (gauss divided by sigmoid to introduce
                     //an asymmetry)
@@ -476,7 +474,7 @@ void OfflineAnalysis(string baseName){
                     GaussFit->SetParameter(0,100);
                     GaussFit->SetParameter(1,10);
                     GaussFit->SetParameter(2,1);
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"QR","",1,Xmax);
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"LIQR","",0.5,Xmax);
 
                     TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,Xmax);
                     SkewFit->SetParameter(0,GaussFit->GetParameter(0));
@@ -484,7 +482,7 @@ void OfflineAnalysis(string baseName){
                     SkewFit->SetParameter(2,GaussFit->GetParameter(2));
                     SkewFit->SetParameter(3,1);
                     SkewFit->SetParameter(4,1);
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"QR","",1,Xmax);
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"LIQR","",0.5,Xmax);
 
                     //Evaluate the amount of empty events due to bad data transfer
                     //Initialise the value to 0, and check that the fit worked with
