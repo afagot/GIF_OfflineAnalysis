@@ -496,21 +496,22 @@ void OfflineAnalysis(string baseName){
                     int nEmptyEvent = 0;
                     int nPhysics = 0;
 
-                    double fitValue = SkewFit->Eval(1,0,0,0);
-                    double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
+                    //double fitValue = SkewFit->Eval(1,0,0,0);
+                    //double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
 
-                    double fitTOdata_ratio = 0;
-                    if(dataValue != 0) fitValue / dataValue;
-                    if((fitTOdata_ratio > 0.95 && fitTOdata_ratio < 1.05) || dataValue == 0){
+                    //double fitTOdata_ratio = 0;
+                    //if(dataValue != 0) fitValue / dataValue;
+                    //if((fitTOdata_ratio > 0.95 && fitTOdata_ratio < 1.05) || dataValue == 0){
                         nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
                         nPhysics = (int)SkewFit->Eval(0,0,0,0);
                         if(nPhysics < nEmptyEvent)
                             nEmptyEvent = nEmptyEvent-nPhysics;
-                    }
+                    //}
 
                     //Print the percentage of corrupted data
-                    double corrupt_ratio = 100.*(double)nEmptyEvent/nEntries;
-                    outputCorrCSV << corrupt_ratio << '\t';
+                    //double corrupt_ratio = 100.*(double)nEmptyEvent/nEntries;
+                    //outputCorrCSV << corrupt_ratio << '\t';
+                    outputCorrCSV << nEmptyEvent << '\t';
 
                     //Now we can proceed with getting the number of noise/gamma hits
                     //and convert it into a noise/gamma rate per unit area.
