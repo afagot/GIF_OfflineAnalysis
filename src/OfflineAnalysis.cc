@@ -496,8 +496,12 @@ void OfflineAnalysis(string baseName){
                     int nEmptyEvent = 0;
                     int nPhysics = 0;
 
-                    double fitTOdata_ratio = SkewFit->Eval(0,0,0,0) / (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
-                    if(fitTOdata_ratio > 0.95 && fitTOdata_ratio < 1.05){
+                    double fitValue = SkewFit->Eval(1,0,0,0);
+                    double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
+
+                    double fitTOdata_ratio = 0;
+                    if(dataValue != 0) fitValue / dataValue;
+                    if((fitTOdata_ratio > 0.95 && fitTOdata_ratio < 1.05) || dataValue == 0){
                         nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
                         nPhysics = (int)SkewFit->Eval(0,0,0,0);
                         if(nPhysics < nEmptyEvent)
