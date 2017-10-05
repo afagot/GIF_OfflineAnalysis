@@ -453,10 +453,19 @@ void OfflineAnalysis(string baseName){
                     double binwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth(1);
                     int nBins = HitMultiplicity_H.rpc[T][S][p]->GetNbinsX();
                     double max = binwidth*nBins;
+
+                    TF1* GaussFit = new TF1("gaussfit","[0]*exp(-0.5*((x-[1])/[2])**2)",0,max);
+                    GaussFit->SetParameter(0,100);
+                    GaussFit->SetParameter(1,10);
+                    GaussFit->SetParameter(2,1);
+
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"QR","",1,max);
+
+
                     TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,max);
-                    SkewFit->SetParameter(0,100);
-                    SkewFit->SetParameter(1,10);
-                    SkewFit->SetParameter(2,1);
+                    SkewFit->SetParameter(0,GaussFit->GetParameter(0));
+                    SkewFit->SetParameter(1,GaussFit->GetParameter(1));
+                    SkewFit->SetParameter(2,GaussFit->GetParameter(2));
                     SkewFit->SetParameter(3,1);
                     SkewFit->SetParameter(4,1);
 
