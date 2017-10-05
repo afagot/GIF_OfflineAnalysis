@@ -32,6 +32,7 @@
 #include "TProfile.h"
 #include "TMath.h"
 #include "TF1.h"
+#include "TLatex.h"
 
 #include "../include/OfflineAnalysis.h"
 #include "../include/IniFile.h"
@@ -494,6 +495,17 @@ void OfflineAnalysis(string baseName){
                         if(nPhysics < nEmptyEvent)
                             nEmptyEvent = nEmptyEvent-nPhysics;
                     }
+
+                    //Print the percentage of corrupted data on the plot for control
+                    double corrupt_ratio = 100.*(double)nEmptyEvent/nEntries;
+                    char labelvalue[10];
+                    sprintf(labelvalue,"%0.5f \%",corrupt_ratio);
+
+                    TLatex* CurruptLabel = new TLatex();
+                    CurruptLabel->SetNDC();
+                    CurruptLabel->SetTextFont(43);
+                    CurruptLabel->SetTextSize(17.5);
+                    CurruptLabel->DrawLatex(0.2, 0.85, labelvalue);
 
                     //Now we can proceed with getting the number of noise/gamma hits
                     //and convert it into a noise/gamma rate per unit area.
