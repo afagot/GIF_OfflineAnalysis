@@ -446,34 +446,57 @@ void OfflineAnalysis(string baseName){
                     //time and the strip sruface (counts/s/cm2).
                     float normalisation = 0.;
 
-                    //Evaluate the amount of empty events due to bad data transfer and
-                    //remove them from the normalisation.
-                    int nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                    //First of all, we will fit the multiplicity using first a gaussian
+                    //that is used to get parameter initialisation for a skew fit (it
+                    //works better to first fit with a gaussian).
+                    //BUT! the fit will hardly work in the case the mean of the distribution
+                    //is low and close to 0. To check that the fit worked, we will compare
+                    //the value given by the fit for multiplicity 1 (x=1) and ask for a
+                    //variation of less than 5% with respect to the data.
 
-                    double binwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth(1);
+                    //Start by getting the x range on wich we should perform the fit
+                    //To to so, get the bin width and the number of bins
+                    //Then give an extra factor 2 for safety
+                    double Xbinwidth = HitMultiplicity_H.rpc[T][S][p]->GetBinWidth(1);
                     int nBins = HitMultiplicity_H.rpc[T][S][p]->GetNbinsX();
-                    double max = binwidth*nBins;
+                    double Xmax = 2*Xbinwidth*nBins;
 
-                    TF1* GaussFit = new TF1("gaussfit","[0]*exp(-0.5*((x-[1])/[2])**2)",0,max);
+                    //Then fit : Gauss then Skew (gauss divided by sigmoid to introduce
+                    //an asymmetry)
+                    TF1* GaussFit = new TF1("gaussfit","[0]*exp(-0.5*((x-[1])/[2])**2)",0,Xmax);
                     GaussFit->SetParameter(0,100);
                     GaussFit->SetParameter(1,10);
                     GaussFit->SetParameter(2,1);
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"QR","",1,Xmax);
 
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"QR","",1,max);
-
-
-                    TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,max);
+                    TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,Xmax);
                     SkewFit->SetParameter(0,GaussFit->GetParameter(0));
                     SkewFit->SetParameter(1,GaussFit->GetParameter(1));
                     SkewFit->SetParameter(2,GaussFit->GetParameter(2));
                     SkewFit->SetParameter(3,1);
                     SkewFit->SetParameter(4,1);
+                    HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"QR","",1,Xmax);
 
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"QR","",1,max);
-                    int nPhysics = (int)SkewFit->Eval(0,0,0,0);
+                    //Evaluate the amount of empty events due to bad data transfer
+                    //Initialise the value to 0, and check that the fit worked with
+                    //a variation to data lower than 5%.
+                    //Moreover, if the fit is good but the value of the fit for
+                    //multiplicity 0 (x=0) is higher than the content of the data
+                    //bin, keep the number of empty events to 0 to make sure it does
+                    //not turn negative.
+                    int nEmptyEvent = 0;
+                    int nPhysics = 0;
 
-                    nEmptyEvent = nEmptyEvent - nPhysics;
+                    double fitTOdata_ratio = SkewFit->Eval(0,0,0,0) / (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                    if(fitTOdata_ratio > 0.95 && fitTOdata_ratio < 1.05){
+                        nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                        nPhysics = (int)SkewFit->Eval(0,0,0,0);
+                        if(nPhysics < nEmptyEvent)
+                            nEmptyEvent = nEmptyEvent-nPhysics;
+                    }
 
+                    //Now we can proceed with getting the number of noise/gamma hits
+                    //and convert it into a noise/gamma rate per unit area.
                     //Get the number of noise hits
                     int nNoise = StripNoiseProfile_H.rpc[T][S][p]->GetEntries();
 
