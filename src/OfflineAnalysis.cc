@@ -400,6 +400,14 @@ void OfflineAnalysis(string baseName){
         //Print the HV step as first column
         outputRateCSV << HVstep << '\t';
 
+        //*********************************************** Corrupted data
+        //output csv file to save the percentage of corrupted data
+        //Corrupted.csv
+        string csvNameCorr = baseName.substr(0,baseName.find_last_of("/")) + "/Corrupted.csv";
+        ofstream outputCorrCSV(csvNameCorr.c_str(),ios::app);
+        //Print the HV step as first column
+        outputCorrCSV << HVstep << '\t';
+
         //********************************* Efficiency, muon cluster
         //output csv file to save the list of parameters saved into the
         //Offline-L0-EffCl.csv file - it represents the header of that file
@@ -496,16 +504,9 @@ void OfflineAnalysis(string baseName){
                             nEmptyEvent = nEmptyEvent-nPhysics;
                     }
 
-                    //Print the percentage of corrupted data on the plot for control
+                    //Print the percentage of corrupted data
                     double corrupt_ratio = 100.*(double)nEmptyEvent/nEntries;
-                    char labelvalue[10];
-                    sprintf(labelvalue,"%0.5f \%",corrupt_ratio);
-
-                    TLatex* CurruptLabel = new TLatex();
-                    CurruptLabel->SetNDC();
-                    CurruptLabel->SetTextFont(43);
-                    CurruptLabel->SetTextSize(17.5);
-                    CurruptLabel->DrawLatex(0.2, 0.85, labelvalue);
+                    outputCorrCSV << corrupt_ratio << '\t';
 
                     //Now we can proceed with getting the number of noise/gamma hits
                     //and convert it into a noise/gamma rate per unit area.
@@ -693,6 +694,9 @@ void OfflineAnalysis(string baseName){
 
         outputRateCSV << '\n';
         outputRateCSV.close();
+
+        outputCorrCSV << '\n';
+        outputCorrCSV.close();
 
         headEffCSV << '\n';
         headEffCSV.close();
