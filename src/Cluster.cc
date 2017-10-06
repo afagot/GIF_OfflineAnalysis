@@ -265,14 +265,7 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
         //cluster with what has been saved into the cluster
         //vector
         if(abs(timediff) > 25. && lastime > 0.){
-            clusterList.clear();
             BuildClusters(cluster,clusterList);
-
-            for(Uint i = 0; i < clusterList.size(); i++)
-                if(clusterList[i].GetSize() > 0)
-                    hcSize->Fill(clusterList[i].GetSize());
-
-            multiplicity += clusterList.size();
             cluster.clear();
         }
 
@@ -283,14 +276,12 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
     //Make cluster with the very last part of data saved in the list
     if(cluster.size() > 0){
         BuildClusters(cluster,clusterList);
-
-        for(Uint i = 0; i < clusterList.size(); i++)
-            if(clusterList[i].GetSize() > 0)
-                hcSize->Fill(clusterList[i].GetSize());
-
-        multiplicity += clusterList.size();
         cluster.clear();
     }
 
-    hcMult->Fill(multiplicity);
+    for(Uint i = 0; i < clusterList.size(); i++)
+        if(clusterList[i].GetSize() > 0)
+            hcSize->Fill(clusterList[i].GetSize());
+
+    hcMult->Fill(clusterList.size());
 }
