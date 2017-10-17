@@ -24,6 +24,8 @@
 #include "TH2.h"
 
 #include "types.h"
+#include "Mapping.h"
+#include "Infrastructure.h"
 
 using namespace std;
 
@@ -47,5 +49,7 @@ float   GetTH1StdDev(TH1* H);
 float   GetChipBin(TH1* H, Uint chip);
 void    SetTH1(TH1* H, string xtitle, string ytitle);
 void    SetTH2(TH2* H, string xtitle, string ytitle, string ztitle);
+Uint    GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra,
+                     Uint trolley, Uint slot, Uint part);
 
 #endif // UTILS_H

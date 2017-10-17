@@ -115,6 +115,7 @@ int Mapping::Read(){
 
             if(CheckIfTDCCh(TDCCh)){
                 Link[TDCCh] = RPCCh;
+                ReverseLink[RPCCh] = TDCCh;
                 Mask[RPCCh] = mask;
             }
         }
@@ -138,6 +139,16 @@ int Mapping::Read(){
 
 Uint Mapping::GetLink(Uint tdcchannel){
     return Link[tdcchannel];
+}
+
+// ****************************************************************************************************
+// *    Uint GetReverse(Uint rpcchannel)
+//
+//  Get link in betweeen RPC channel tdcchannel and the corresponding TDC channel.
+// ****************************************************************************************************
+
+Uint Mapping::GetReverse(Uint rpcchannel){
+    return ReverseLink[rpcchannel];
 }
 
 // ****************************************************************************************************

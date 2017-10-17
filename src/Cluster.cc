@@ -255,7 +255,6 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
 
     float timediff = 0.;
     float lastime = 0.;
-    Uint multiplicity = 0;
 
     for(Uint h = 0; h < hits.size(); h ++){
         timediff = hits[h].GetTime()-lastime;

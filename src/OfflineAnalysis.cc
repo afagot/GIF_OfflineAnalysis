@@ -157,7 +157,7 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    Uint nBinsMult = 3*meanNHits/GIFInfra->GetNSlots(tr); //3 is arbitrary
+                    Uint nBinsMult = 1 + GetMultRange(dataTree,RPCChMap,GIFInfra,tr,sl,p);
                     float lowBin = -0.5;
                     float highBin = (float)nBinsMult + lowBin;
 

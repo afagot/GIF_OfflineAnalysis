@@ -44,6 +44,7 @@ class Mapping {
         bool        CheckIfTDCCh(Uint channel);
         string      FileName;
         MappingData Link;
+        MappingData ReverseLink;
         MappingData Mask;
         int         Error;
 
@@ -55,6 +56,7 @@ class Mapping {
         void SetFileName(const string filename);
         int Read();
         Uint GetLink(Uint tdcchannel);
+        Uint GetReverse(Uint rpcchannel);
         Uint GetMask(Uint rpcchannel);
 };
 

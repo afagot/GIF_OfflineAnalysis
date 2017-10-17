@@ -26,9 +26,12 @@
 #include "TF1.h"
 #include "TStyle.h"
 #include "THistPainter.h"
+#include "TMath.h"
 
 #include "../include/types.h"
 #include "../include/utils.h"
+#include "../include/Mapping.h"
+#include "../include/Infrastructure.h"
 
 using namespace std;
 
@@ -255,4 +258,37 @@ void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
     H->SetXTitle(ztitle.c_str());
+}
+
+// ****************************************************************************************************
+// *    Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra,
+//                        Uint trolley, Uint slot, Uint part)
+//
+//  Returns the range to use for multiplicity histograms for each chamber partitions.
+// ****************************************************************************************************
+
+//Draw 2D histograms
+Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra, Uint trolley, Uint slot, Uint part){
+    Uint nStrips = infra->GetNStrips(trolley,slot);
+    Uint lowstrip = trolley*1e4 + slot*1e3 + nStrips*part + 1;
+    Uint highstrip = trolley*1e4 + slot*1e3 + nStrips*(part+1);
+
+    Uint lowTDC = map->GetReverse(lowstrip);
+    Uint highTDC = map->GetReverse(highstrip);
+
+    char rangeoption[100];
+
+    float meanNHits = 0.;
+
+    if(lowTDC < highTDC){
+        sprintf(rangeoption,"TDC_channel >= %u && TDC_channel <= %u",lowTDC,highTDC);
+        tree->Draw("number_of_hits",rangeoption,"goff");
+        meanNHits = TMath::Mean(tree->GetSelectedRows(),tree->GetV1());
+    } else {
+        sprintf(rangeoption,"TDC_channel >= %u && TDC_channel <= %u",highTDC,lowTDC);
+        tree->Draw("number_of_hits",rangeoption,"goff");
+        meanNHits = TMath::Mean(tree->GetSelectedRows(),tree->GetV1());
+    }
+
+    return 2*(Uint)TMath::Abs(meanNHits);
 }
