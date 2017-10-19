@@ -486,10 +486,12 @@ void OfflineAnalysis(string baseName){
                     HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"LIQR","",0.5,Xmax);
 
                     //Evaluate the amount of empty events due to bad data transfer
-                    //Initialise the value to 0, and check that the fit worked with
-                    //a variation to data lower than 5%.
-                    //Moreover, if the fit is good but the value of the fit for
-                    //multiplicity 0 (x=0) is higher than the content of the data
+                    //Initialise the value to 0, and check that the fit worked:
+                    //  - make sure fit gives a value close enough to multiplicity = 1 bin
+                    //  - make sure there is enough statistics (most of the data not
+                    //contained but multiplicity =0 bin)
+                    //Then, if the fit is good but the value of the fit for
+                    //multiplicity = 0 is higher than the content of the data
                     //bin, keep the number of empty events to 0 to make sure it does
                     //not turn negative.
                     int nEmptyEvent = 0;

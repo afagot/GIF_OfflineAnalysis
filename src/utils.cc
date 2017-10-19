@@ -269,9 +269,12 @@ void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
 
 //Draw 2D histograms
 Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra, Uint trolley, Uint slot, Uint part){
+    Uint T = infra->GetTrolleyID(trolley);
+    Uint S = infra->GetSlotID(trolley,slot);
+
     Uint nStrips = infra->GetNStrips(trolley,slot);
-    Uint lowstrip = trolley*1e4 + slot*1e3 + nStrips*part + 1;
-    Uint highstrip = trolley*1e4 + slot*1e3 + nStrips*(part+1);
+    Uint lowstrip = T*1e4 + S*1e3 + nStrips*part + 1;
+    Uint highstrip = T*1e4 + S*1e3 + nStrips*(part+1);
 
     Uint lowTDC = map->GetReverse(lowstrip);
     Uint highTDC = map->GetReverse(highstrip);
