@@ -497,9 +497,14 @@ void OfflineAnalysis(string baseName){
                     double fitValue = SkewFit->Eval(1,0,0,0);
                     double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
                     double difference = TMath::Abs(dataValue - fitValue);
-
                     double fitTOdataVSentries_ratio = difference / (double)nEntries;
-                    if(fitTOdataVSentries_ratio < 0.01){
+                    bool isFitGOOD = fitTOdataVSentries_ratio < 0.01;
+
+                    double nSinglehit = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                    double lowMultRatio = nSinglehit / (double)nEntries;
+                    bool isMultLOW = lowMultRatio > 0.4;
+
+                    if(isFitGOOD && isMultLOW){
                         nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
                         nPhysics = (int)SkewFit->Eval(0,0,0,0);
                         if(nPhysics < nEmptyEvent)
