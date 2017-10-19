@@ -157,7 +157,8 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    Uint nBinsMult = 1 + GetMultRange(dataTree,RPCChMap,GIFInfra,tr,sl,p);
+                    //Use a minimum of 5 bins for the histogram
+                    Uint nBinsMult = 5 + GetMultRange(dataTree,RPCChMap,GIFInfra,tr,sl,p);
                     float lowBin = -0.5;
                     float highBin = (float)nBinsMult + lowBin;
 
@@ -504,7 +505,7 @@ void OfflineAnalysis(string baseName){
                     double lowMultRatio = nSinglehit / (double)nEntries;
                     bool isMultLOW = lowMultRatio > 0.4;
 
-                    if(isFitGOOD && isMultLOW){
+                    if(isFitGOOD && !isMultLOW){
                         nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
                         nPhysics = (int)SkewFit->Eval(0,0,0,0);
                         if(nPhysics < nEmptyEvent)
