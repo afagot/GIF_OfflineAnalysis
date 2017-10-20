@@ -274,24 +274,16 @@ Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra, Uint trolley
 
     Uint nStrips = infra->GetNStrips(trolley,slot);
     Uint lowstrip = T*1e4 + S*1e3 + nStrips*part + 1;
-    Uint highstrip = T*1e4 + S*1e3 + nStrips*(part+1);
-
-    Uint lowTDC = map->GetReverse(lowstrip);
-    Uint highTDC = map->GetReverse(highstrip);
+    Uint middlestrip = lowstrip + nStrips/2;
+    Uint TDCchannel = map->GetReverse(middlestrip);
 
     char rangeoption[100];
 
-    float meanNHits = 0.;
+    Uint meanNHits = 0.;
 
-    if(lowTDC < highTDC){
-        sprintf(rangeoption,"TDC_channel >= %u && TDC_channel <= %u",lowTDC,highTDC);
-        tree->Draw("number_of_hits",rangeoption,"goff");
-        meanNHits = TMath::Mean(tree->GetSelectedRows(),tree->GetV1());
-    } else {
-        sprintf(rangeoption,"TDC_channel >= %u && TDC_channel <= %u",highTDC,lowTDC);
-        tree->Draw("number_of_hits",rangeoption,"goff");
-        meanNHits = TMath::Mean(tree->GetSelectedRows(),tree->GetV1());
-    }
+    sprintf(rangeoption,"TDC_channel == %u",TDCchannel);
+    tree->Draw("number_of_hits",rangeoption,"goff");
+    meanNHits = tree->GetSelectedRows();
 
-    return 2*(Uint)TMath::Abs(meanNHits);
+    return 2*meanNHits;
 }
