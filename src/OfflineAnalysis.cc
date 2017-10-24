@@ -137,10 +137,11 @@ void OfflineAnalysis(string baseName){
         char hisname[50];  //ID name of the histogram
         char histitle[50]; //Title of the histogram
 
-        //Get the mean number of hits in the TBranch to define the range of
-        //multiplicity histograms
-        dataTree->Draw("number_of_hits","","goff");
-        float meanNHits = TMath::Mean(dataTree->GetSelectedRows(),dataTree->GetV1());
+        //Set a table to get the ranges of different multiplicity
+        //histograms in an almost dynamical way (range is adapted
+        //every time the multiplicity value goes beyond the actual
+        //range). This variable will also be used to later know the
+        //fitting range of multiplicity histograms.
         GIFnBinsMult nBinsMult;
 
         for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
@@ -374,9 +375,11 @@ void OfflineAnalysis(string baseName){
 
                         //In case the value of the multiplicity is beyond the actual
                         //range, create a new histo with a wider range to store the data.
-                        //Do this work for all 3 multiplicity histograms.
+                        //Do this work for all 3 multiplicity histograms. To make sure to
+                        //avoid repeating this operation too often, the range is chosen to
+                        //be the value that exceeds the range + 10.
                         if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
-                            nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 1;
+                            nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 10;
 
                             //Hit multiplicity
                             TList *listHM = new TList;
@@ -523,7 +526,7 @@ void OfflineAnalysis(string baseName){
                     //Start by getting the x range on wich we should perform the fit
                     //We will re-use the same definition than for the multiplicity
                     //histogram range
-                    double Xmax = 3*meanNHits/(double)GIFInfra->GetNSlots(tr);
+                    double Xmax = (double)nBinsMult.rpc[T][S][p];
 
                     //Then fit : Gauss then Skew (gauss divided by sigmoid to introduce
                     //an asymmetry)
