@@ -41,6 +41,7 @@ const Uint NSTRIPSCHIP = 8;
 
 //****************************************************************************
 
+typedef struct GIFnBinsMult { Uint rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFnBinsMult;
 typedef struct GIFH1Array { TH1* rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFH1Array;
 typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintArray;
 typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;

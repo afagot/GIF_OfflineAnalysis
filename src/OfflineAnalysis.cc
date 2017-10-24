@@ -141,6 +141,7 @@ void OfflineAnalysis(string baseName){
         //multiplicity histograms
         dataTree->Draw("number_of_hits","","goff");
         float meanNHits = TMath::Mean(dataTree->GetSelectedRows(),dataTree->GetV1());
+        GIFnBinsMult nBinsMult;
 
         for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
             Uint T = GIFInfra->GetTrolleyID(tr);
@@ -157,10 +158,10 @@ void OfflineAnalysis(string baseName){
                     float low_s = nStrips*p + 0.5;
                     float high_s = nStrips*(p+1) + 0.5;
 
-                    //Use a minimum of 5 bins for the histogram
-                    Uint nBinsMult = 5 + GetMultRange(dataTree,RPCChMap,GIFInfra,tr,sl,p);
+                    //Initialise the number of bins to 10 for multiplicity histograms
+                    nBinsMult.rpc[T][S][p] = 10;
                     float lowBin = -0.5;
-                    float highBin = (float)nBinsMult + lowBin;
+                    float highBin = (float)nBinsMult.rpc[T][S][p] + lowBin;
 
                     //Time profile binning
                     float timeWidth = 1.;
@@ -186,7 +187,7 @@ void OfflineAnalysis(string baseName){
 
                     //Hit multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
-                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
+                    HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[T][S][p], lowBin, highBin);
                     SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
 
                     //****************************************** Strip granularuty level histograms
@@ -204,6 +205,7 @@ void OfflineAnalysis(string baseName){
                     //Noise/gamma homogeneity
                     SetTitleName(rpcID,p,hisname,histitle,"Strip_Homogeneity","Strip homogeneity");
                     StripHomogeneity_H.rpc[T][S][p] = new TH1F(hisname, histitle, 1, 0, 1);
+                    StripHomogeneity_H.rpc[T][S][p]->SetOption("TEXT");
                     SetTH1(StripHomogeneity_H.rpc[T][S][p],"","Homogeneity");
 
                     //Masked strip mean noise/gamma rate profile
@@ -223,7 +225,7 @@ void OfflineAnalysis(string baseName){
 
                     //Noise/gamma cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult, lowBin, highBin);
+                    NoiseCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle,  nBinsMult.rpc[T][S][p], lowBin, highBin);
                     SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
                     //****************************************** Chip granularuty level histograms
@@ -241,6 +243,7 @@ void OfflineAnalysis(string baseName){
                     //Noise homogeneity
                     SetTitleName(rpcID,p,hisname,histitle,"Chip_Homogeneity","Chip homogeneity");
                     ChipHomogeneity_H.rpc[T][S][p] = new TH1F(hisname, histitle, 1, 0, 1);
+                    ChipHomogeneity_H.rpc[T][S][p]->SetOption("TEXT");
                     SetTH1(ChipHomogeneity_H.rpc[T][S][p],"","Homogeneity");
 
                     //****************************************** Muon histogram
@@ -260,9 +263,9 @@ void OfflineAnalysis(string baseName){
                     MuonCSize_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips, 0.5, nStrips+0.5);
                     SetTH1(MuonCSize_H.rpc[T][S][p],"Cluster size","Number of events");
 
-                    //Noise/gamma cluster multiplicity
+                    //Muon cluster multiplicity
                     SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                    MuonCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips+1, -0.5, nStrips+0.5);
+                    MuonCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[T][S][p], lowBin, highBin);
                     SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
                 }
             }
@@ -365,8 +368,61 @@ void OfflineAnalysis(string baseName){
 
                 for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
                     Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
+                    string rpcID = GIFInfra->GetName(tr,sl);
 
                     for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
+
+                        //In case the value of the multiplicity is beyond the actual
+                        //range, create a new histo with a wider range to store the data.
+                        //Do this work for all 3 multiplicity histograms.
+                        if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
+                            nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 1;
+
+                            //Hit multiplicity
+                            TList *listHM = new TList;
+                            listHM->Add(HitMultiplicity_H.rpc[T][S][p]);
+
+                            TH1* newHitMultiplicity_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                            newHitMultiplicity_H->Merge(listHM);
+
+                            delete HitMultiplicity_H.rpc[T][S][p];
+                            delete listHM;
+                            HitMultiplicity_H.rpc[T][S][p] = newHitMultiplicity_H;
+
+                            SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit Multiplicity");
+                            HitMultiplicity_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                            SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
+
+                            //Noise/gamma cluster multiplicity
+                            TList *listNCM = new TList;
+                            listNCM->Add(NoiseCMult_H.rpc[T][S][p]);
+
+                            TH1* newNoiseCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                            newNoiseCMult_H->Merge(listNCM);
+
+                            delete NoiseCMult_H.rpc[T][S][p];
+                            delete listNCM;
+                            NoiseCMult_H.rpc[T][S][p] = newNoiseCMult_H;
+
+                            SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
+                            NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                            SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+
+                            //Muon cluster multiplicity
+                            TList *listMCM = new TList;
+                            listMCM->Add(MuonCMult_H.rpc[T][S][p]);
+
+                            TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                            newMuonCMult_H->Merge(listMCM);
+
+                            delete MuonCMult_H.rpc[T][S][p];
+                            delete listMCM;
+                            MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
+
+                            SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
+                            MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                            SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                        }
                         HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
                         Multiplicity.rpc[T][S][p] = 0;
 
@@ -599,14 +655,14 @@ void OfflineAnalysis(string baseName){
                     //This gives idea about noisy strips and dead strips.
                     float MeanPartSDev = GetTH1StdDev(StripNoiseProfile_H.rpc[T][S][p]);
                     float strip_homog = exp(-MeanPartSDev/MeanPartRate);
-                    StripHomogeneity_H.rpc[T][S][p]->Fill(0.,strip_homog);
+                    StripHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Strip Rate}}{#mu_{Strip Rate}}#right)",strip_homog);
                     StripHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
                     float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H.rpc[T][S][p]);
 
                     float chip_homog = exp(-ChipStDevMean/MeanPartRate);
-                    ChipHomogeneity_H.rpc[T][S][p]->Fill(0.,chip_homog);
+                    ChipHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Chip Rate}}{#mu_{Chip Rate}}#right)",chip_homog);
                     ChipHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Push the partition results into the chamber level

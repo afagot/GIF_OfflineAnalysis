@@ -259,31 +259,3 @@ void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetYTitle(ytitle.c_str());
     H->SetXTitle(ztitle.c_str());
 }
-
-// ****************************************************************************************************
-// *    Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra,
-//                        Uint trolley, Uint slot, Uint part)
-//
-//  Returns the range to use for multiplicity histograms for each chamber partitions.
-// ****************************************************************************************************
-
-//Draw 2D histograms
-Uint GetMultRange(TTree* tree, Mapping* map, Infrastructure* infra, Uint trolley, Uint slot, Uint part){
-    Uint T = infra->GetTrolleyID(trolley);
-    Uint S = infra->GetSlotID(trolley,slot);
-
-    Uint nStrips = infra->GetNStrips(trolley,slot);
-    Uint lowstrip = T*1e4 + S*1e3 + nStrips*part + 1;
-    Uint middlestrip = lowstrip + nStrips/2;
-    Uint TDCchannel = map->GetReverse(middlestrip);
-
-    char rangeoption[100];
-
-    Uint meanNHits = 0.;
-
-    sprintf(rangeoption,"TDC_channel == %u",TDCchannel);
-    tree->Draw("number_of_hits",rangeoption,"goff");
-    meanNHits = tree->GetSelectedRows();
-
-    return 2*meanNHits;
-}
