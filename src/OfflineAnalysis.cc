@@ -462,8 +462,13 @@ void OfflineAnalysis(string baseName){
 
         //*********************************************** Corrupted data
         //output csv file to save the percentage of corrupted data
-        //Corrupted.csv
-        string csvNameCorr = baseName.substr(0,baseName.find_last_of("/")) + "/Corrupted.csv";
+        //Offline-Corrupted-Header.csv
+        string headNameCorr = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Corrupted-Header.csv";
+        ofstream headCorrCSV(headNameCorr.c_str(),ios::out);
+        headCorrCSV << "HVstep\t";
+
+        //Offline-Corrupted.csv
+        string csvNameCorr = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Corrupted.csv";
         ofstream outputCorrCSV(csvNameCorr.c_str(),ios::app);
         //Print the HV step as first column
         outputCorrCSV << HVstep << '\t';
@@ -501,7 +506,7 @@ void OfflineAnalysis(string baseName){
                     string partName = GIFInfra->GetName(tr,sl) + "-" + partID[p];
 
                     //***************************************************************************
-                    //Write the rate header file
+                    //Write the rate header file as well as the corrupted header file
                     headRateCSV << "Rate-" << partName << "\t"
                                 << "ClS-" << partName << "\t"
                                 << "ClS-" << partName << "_Err\t"
@@ -509,6 +514,8 @@ void OfflineAnalysis(string baseName){
                                 << "ClM-" << partName << "_Err\t"
                                 << "ClRate-" << partName << "\t"
                                 << "ClRate-" << partName << "_Err\t";
+
+                    headCorrCSV << "Corr-" << partName << "\t";
 
                     //Get the mean noise on the strips and chips using the noise hit
                     //profile. Normalise the number of hits in each bin by the integrated
@@ -573,7 +580,7 @@ void OfflineAnalysis(string baseName){
                             nEmptyEvent = nEmptyEvent-nPhysics;
                     }
 
-                    //Print the percentage of corrupted data
+                    //Print the percentage of corrupted data and the corresponding header
                     double corrupt_ratio = 100.*(double)nEmptyEvent / (double)nEntries;
                     outputCorrCSV << corrupt_ratio << '\t';
 
@@ -763,6 +770,9 @@ void OfflineAnalysis(string baseName){
 
         outputRateCSV << '\n';
         outputRateCSV.close();
+
+        headCorrCSV << '\n';
+        headCorrCSV.close();
 
         outputCorrCSV << '\n';
         outputCorrCSV.close();
