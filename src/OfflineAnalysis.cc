@@ -61,6 +61,11 @@ void OfflineAnalysis(string baseName){
     if(dataFile.IsOpen()){
         TTree*  dataTree = (TTree*)dataFile.Get("RAWData");
 
+        //Check if we are about to analyse an old format file or a new one
+        //The newest files contain an extra branch called "Quality_flag"
+        //that helps on rejecting any corrupted data.
+        bool isNewFormat = dataTree->GetListOfBranches()->Contains("Quality_flag");
+
         //Then get the HVstep number from the ID histogram
         string HVstep = baseName.substr(baseName.find_last_of("_HV")+1);
 
@@ -110,6 +115,9 @@ void OfflineAnalysis(string baseName){
         dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
         dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
         dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
+
+        if(isNewFormat)
+            dataTree->SetBranchAddress("Quality_flag", &data.QFlag);
 
         //****************** HISTOGRAMS & CANVAS *************************
 
@@ -295,6 +303,10 @@ void OfflineAnalysis(string baseName){
             GIFHitList MuonHitList;
             //and for noise/gammas
             GIFHitList NoiseHitList;
+
+            //Get quality flag in case of new format file
+            //and discard events with corrupted data.
+            if(isNewFormat && data.QFlag == 0) continue;
 
             //Loop over the TDC hits
             for(int h = 0; h < data.TDCNHits; h++){
@@ -505,8 +517,20 @@ void OfflineAnalysis(string baseName){
                     string partID = "ABCD";
                     string partName = GIFInfra->GetName(tr,sl) + "-" + partID[p];
 
-                    //***************************************************************************
+                    //************************* CORRUPTED DATA ESTIMATION *************************
+
+                    //In case of old format files (no quality flag), it is need to estimate
+                    //the amount of corrupted data via a fit as the corrupted data will
+                    //always fill events with a fake "0 multiplicity". Indeed, at first,
+                    //as this problem was believed to be small and negligible, no good
+                    //was put in trying to reject it directly using a quality flag. 2017
+                    //data showed us otherwise.
+                    int nEmptyEvent = 0;
+                    int nPhysics = 0;
+
                     //Write the rate header file as well as the corrupted header file
+                    //This file will still be writen even after the new file format
+                    //has been used.
                     headRateCSV << "Rate-" << partName << "\t"
                                 << "ClS-" << partName << "\t"
                                 << "ClS-" << partName << "_Err\t"
@@ -517,72 +541,72 @@ void OfflineAnalysis(string baseName){
 
                     headCorrCSV << "Corr-" << partName << "\t";
 
-                    //Get the mean noise on the strips and chips using the noise hit
-                    //profile. Normalise the number of hits in each bin by the integrated
-                    //time and the strip sruface (counts/s/cm2).
-                    float normalisation = 0.;
+                    if(!isNewFormat){
 
-                    //First of all, we will fit the multiplicity using first a gaussian
-                    //that is used to get parameter initialisation for a skew fit (it
-                    //works better to first fit with a gaussian).
-                    //BUT! the fit will hardly work in the case the mean of the distribution
-                    //is low and close to 0. To check that the fit worked, we will compare
-                    //the value given by the fit for multiplicity 1 (x=1) and ask for a
-                    //variation of less than 5% with respect to the data.
+                        //First of all, we will fit the multiplicity using first a gaussian
+                        //that is used to get parameter initialisation for a skew fit (it
+                        //works better to first fit with a gaussian).
+                        //BUT! the fit will hardly work in the case the mean of the distribution
+                        //is low and close to 0. To check that the fit worked, we will compare
+                        //the value given by the fit for multiplicity 1 (x=1) and ask for a
+                        //variation of less than 5% with respect to the data.
 
-                    //Start by getting the x range on wich we should perform the fit
-                    //We will re-use the same definition than for the multiplicity
-                    //histogram range
-                    double Xmax = (double)nBinsMult.rpc[T][S][p];
+                        //Start by getting the x range on wich we should perform the fit
+                        //We will re-use the same definition than for the multiplicity
+                        //histogram range
+                        double Xmax = (double)nBinsMult.rpc[T][S][p];
 
-                    //Then fit : Gauss then Skew (gauss divided by sigmoid to introduce
-                    //an asymmetry)
-                    TF1* GaussFit = new TF1("gaussfit","[0]*exp(-0.5*((x-[1])/[2])**2)",0,Xmax);
-                    GaussFit->SetParameter(0,100);
-                    GaussFit->SetParameter(1,10);
-                    GaussFit->SetParameter(2,1);
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"LIQR","",0.5,Xmax);
+                        //Then fit : Gauss then Skew (gauss divided by sigmoid to introduce
+                        //an asymmetry)
+                        TF1* GaussFit = new TF1("gaussfit","[0]*exp(-0.5*((x-[1])/[2])**2)",0,Xmax);
+                        GaussFit->SetParameter(0,100);
+                        GaussFit->SetParameter(1,10);
+                        GaussFit->SetParameter(2,1);
+                        HitMultiplicity_H.rpc[T][S][p]->Fit(GaussFit,"LIQR","",0.5,Xmax);
 
-                    TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,Xmax);
-                    SkewFit->SetParameter(0,GaussFit->GetParameter(0));
-                    SkewFit->SetParameter(1,GaussFit->GetParameter(1));
-                    SkewFit->SetParameter(2,GaussFit->GetParameter(2));
-                    SkewFit->SetParameter(3,1);
-                    SkewFit->SetParameter(4,1);
-                    HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"LIQR","",0.5,Xmax);
+                        TF1* SkewFit = new TF1("skewfit","[0]*exp(-0.5*((x-[1])/[2])**2) / (1 + exp(-[3]*(x-[4])))",0,Xmax);
+                        SkewFit->SetParameter(0,GaussFit->GetParameter(0));
+                        SkewFit->SetParameter(1,GaussFit->GetParameter(1));
+                        SkewFit->SetParameter(2,GaussFit->GetParameter(2));
+                        SkewFit->SetParameter(3,1);
+                        SkewFit->SetParameter(4,1);
+                        HitMultiplicity_H.rpc[T][S][p]->Fit(SkewFit,"LIQR","",0.5,Xmax);
 
-                    //Evaluate the amount of empty events due to bad data transfer
-                    //Initialise the value to 0, and check that the fit worked:
-                    //  - make sure fit gives a value close enough to multiplicity = 1 bin
-                    //  - make sure there is enough statistics (most of the data not
-                    //contained but multiplicity =0 bin)
-                    //Then, if the fit is good but the value of the fit for
-                    //multiplicity = 0 is higher than the content of the data
-                    //bin, keep the number of empty events to 0 to make sure it does
-                    //not turn negative.
-                    int nEmptyEvent = 0;
-                    int nPhysics = 0;
+                        //Check that the fit worked:
+                        //  - make sure fit gives a value close enough to multiplicity = 1 bin
+                        //  - make sure there is enough statistics (most of the data not
+                        //contained but multiplicity =0 bin)
+                        //Then, if the fit is good but the value of the fit for
+                        //multiplicity = 0 is higher than the content of the data
+                        //bin, keep the number of empty events to 0 to make sure it does
+                        //not turn negative.
 
-                    double fitValue = SkewFit->Eval(1,0,0,0);
-                    double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
-                    double difference = TMath::Abs(dataValue - fitValue);
-                    double fitTOdataVSentries_ratio = difference / (double)nEntries;
-                    bool isFitGOOD = fitTOdataVSentries_ratio < 0.01;
+                        double fitValue = SkewFit->Eval(1,0,0,0);
+                        double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
+                        double difference = TMath::Abs(dataValue - fitValue);
+                        double fitTOdataVSentries_ratio = difference / (double)nEntries;
+                        bool isFitGOOD = fitTOdataVSentries_ratio < 0.01;
 
-                    double nSinglehit = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
-                    double lowMultRatio = nSinglehit / (double)nEntries;
-                    bool isMultLOW = lowMultRatio > 0.4;
+                        double nSinglehit = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                        double lowMultRatio = nSinglehit / (double)nEntries;
+                        bool isMultLOW = lowMultRatio > 0.4;
 
-                    if(isFitGOOD && !isMultLOW){
-                        nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
-                        nPhysics = (int)SkewFit->Eval(0,0,0,0);
-                        if(nPhysics < nEmptyEvent)
-                            nEmptyEvent = nEmptyEvent-nPhysics;
+                        if(isFitGOOD && !isMultLOW){
+                            nEmptyEvent = HitMultiplicity_H.rpc[T][S][p]->GetBinContent(1);
+                            nPhysics = (int)SkewFit->Eval(0,0,0,0);
+                            if(nPhysics < nEmptyEvent)
+                                nEmptyEvent = nEmptyEvent-nPhysics;
+                        }
                     }
 
                     //Print the percentage of corrupted data and the corresponding header
                     double corrupt_ratio = 100.*(double)nEmptyEvent / (double)nEntries;
                     outputCorrCSV << corrupt_ratio << '\t';
+
+                    //Get the mean noise on the strips and chips using the noise hit
+                    //profile. Normalise the number of hits in each bin by the integrated
+                    //time and the strip sruface (counts/s/cm2).
+                    float normalisation = 0.;
 
                     //Now we can proceed with getting the number of noise/gamma hits
                     //and convert it into a noise/gamma rate per unit area.
