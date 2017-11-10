@@ -47,6 +47,11 @@ typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintAr
 typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;
 typedef GIFfloatArray muonPeak;
 
+typedef enum _QualityFlag {
+    GOOD      = 1,
+    CORRUPTED = 2
+} QualityFlag;
+
 //****************************************************************************
 
 //Path to file where is saved the current data
@@ -69,7 +74,7 @@ const string __mapping = "/ChannelsMapping.csv";
 struct RAWData {
     int            iEvent;   //Event i
     int            TDCNHits; //Number of hits in event i
-    int            QFlag;    //Quality flag
+    int           *QFlag;    //Quality flag list (1 flag digit per TDC)
     vector<Uint>  *TDCCh;    //List of channels giving hits per event
     vector<float> *TDCTS;    //List of the corresponding time stamps
 };

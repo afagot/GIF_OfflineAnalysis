@@ -44,6 +44,7 @@ void    WritePath(string basename);
 void    SetTitleName(string rpcID, Uint partition, char* Name,
                      char* Title,string Namebase, string Titlebase);
 bool    IsEfficiencyRun(TString* runtype);
+bool    IsCorruptedEvent(int qflag);
 float   GetTH1Mean(TH1* H);
 float   GetTH1StdDev(TH1* H);
 float   GetChipBin(TH1* H, Uint chip);

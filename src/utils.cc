@@ -170,6 +170,26 @@ bool IsEfficiencyRun(TString* runtype){
 }
 
 // ****************************************************************************************************
+// *    bool IsCorruptedEvent(int* qflag)
+//
+//  Check each digit of the QFlag 1 by 1 and returns true if 1 of the flag's digit is 2 (= CORRUPTED).
+// ****************************************************************************************************
+
+bool IsCorruptedEvent(int qflag){
+    bool IsCorrupted = false;
+
+    Uint nTDCs = 1;
+    while(qflag/pow(1,nTDCs) > 10){
+        int tdcflag = (int)(qflag/pow(1,nTDCs)) % 10;
+        if(tdcflag == CORRUPTED)
+            IsCorrupted = true;
+        nTDCs++;
+    }
+
+    return IsCorrupted;
+}
+
+// ****************************************************************************************************
 // *    float GetTH1Mean(TH1* H)
 //
 //  Returns the mean along the Y axis of a TH1 (value not given by the ROOT statbox).
