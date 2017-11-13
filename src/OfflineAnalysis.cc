@@ -309,7 +309,7 @@ void OfflineAnalysis(string baseName){
             if(isNewFormat && IsCorruptedEvent(*data.QFlag)) continue;
 
             //Loop over the TDC hits
-            for(int h = 0; h < data.TDCNHits; h++){
+            for(int h = 0; h < data.TDCCh->size(); h++){
                 Uint tdcchannel = data.TDCCh->at(h);
                 Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
                 float timestamp = data.TDCTS->at(h);
