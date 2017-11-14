@@ -656,6 +656,8 @@ void OfflineAnalysis(string baseName){
                             StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             StripActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         } else if (RPCChMap->GetMask(RPCCh) == 0){
+                            StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,0.);
+                            StripActivity_H.rpc[T][S][p]->SetBinContent(st,0.);
                             MaskNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             MaskActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         }
