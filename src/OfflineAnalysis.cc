@@ -309,7 +309,7 @@ void OfflineAnalysis(string baseName){
             if(isNewFormat && IsCorruptedEvent(*data.QFlag)) continue;
 
             //Loop over the TDC hits
-            for(int h = 0; h < data.TDCNHits; h++){
+            for(int h = 0; h < data.TDCCh->size(); h++){
                 Uint tdcchannel = data.TDCCh->at(h);
                 Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
                 float timestamp = data.TDCTS->at(h);
@@ -656,6 +656,8 @@ void OfflineAnalysis(string baseName){
                             StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             StripActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         } else if (RPCChMap->GetMask(RPCCh) == 0){
+                            StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,0.);
+                            StripActivity_H.rpc[T][S][p]->SetBinContent(st,0.);
                             MaskNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             MaskActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
                         }
