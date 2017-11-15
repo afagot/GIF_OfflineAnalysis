@@ -306,7 +306,7 @@ void OfflineAnalysis(string baseName){
 
             //Get quality flag in case of new format file
             //and discard events with corrupted data.
-            if(isNewFormat && IsCorruptedEvent(*data.QFlag)) continue;
+            if(isNewFormat && IsCorruptedEvent(data.QFlag)) continue;
 
             //Loop over the TDC hits
             for(int h = 0; h < data.TDCCh->size(); h++){

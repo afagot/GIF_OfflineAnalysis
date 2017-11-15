@@ -170,7 +170,7 @@ bool IsEfficiencyRun(TString* runtype){
 }
 
 // ****************************************************************************************************
-// *    bool IsCorruptedEvent(int* qflag)
+// *    bool IsCorruptedEvent(int qflag)
 //
 //  Check each digit of the QFlag 1 by 1 and returns true if 1 of the flag's digit is 2 (= CORRUPTED).
 // ****************************************************************************************************
@@ -180,10 +180,11 @@ bool IsCorruptedEvent(int qflag){
     bool IsCorrupted = false;
 
     Uint nDigits = 0;
-    while(tmpflag/pow(10,nDigits) != 0) nDigits++;
+    while(tmpflag/(int)pow(10,nDigits) != 0) nDigits++;
 
-    while(!IsCorrupted){
+    while(!IsCorrupted && nDigits != 0){
         int tdcflag = tmpflag/(int)pow(10,nDigits-1);
+
         if(tdcflag == CORRUPTED || tdcflag == 0)
             IsCorrupted = true;
 

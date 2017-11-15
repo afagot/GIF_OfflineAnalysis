@@ -74,7 +74,7 @@ const string __mapping = "/ChannelsMapping.csv";
 struct RAWData {
     int            iEvent;   //Event i
     int            TDCNHits; //Number of hits in event i
-    int           *QFlag;    //Quality flag list (1 flag digit per TDC)
+    int            QFlag;    //Quality flag list (1 flag digit per TDC)
     vector<Uint>  *TDCCh;    //List of channels giving hits per event
     vector<float> *TDCTS;    //List of the corresponding time stamps
 };
