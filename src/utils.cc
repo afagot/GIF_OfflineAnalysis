@@ -176,14 +176,19 @@ bool IsEfficiencyRun(TString* runtype){
 // ****************************************************************************************************
 
 bool IsCorruptedEvent(int qflag){
+    int tmpflag = qflag;
     bool IsCorrupted = false;
 
-    Uint nTDCs = 1;
-    while(qflag/pow(1,nTDCs) > 10){
-        int tdcflag = (int)(qflag/pow(1,nTDCs)) % 10;
-        if(tdcflag == CORRUPTED)
+    Uint nDigits = 0;
+    while(tmpflag/pow(10,nDigits) != 0) nDigits++;
+
+    while(!IsCorrupted){
+        int tdcflag = tmpflag/(int)pow(10,nDigits-1);
+        if(tdcflag == CORRUPTED || tdcflag == 0)
             IsCorrupted = true;
-        nTDCs++;
+
+        tmpflag = tmpflag%(int)pow(10,nDigits-1);
+        nDigits--;
     }
 
     return IsCorrupted;
