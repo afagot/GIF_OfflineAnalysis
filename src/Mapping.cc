@@ -64,7 +64,7 @@ Mapping::~Mapping(){
 // ****************************************************************************************************
 
 bool Mapping::CheckIfNewLine(char next){
-    return ( next == '\n' );
+    return ( next == '\n' || next == '\r' );
 }
 
 // ****************************************************************************************************
@@ -116,9 +116,10 @@ int Mapping::Read(){
             //is then taken from the last char readout.
             char next;
             map.get(next);
-            if(CheckIfNewLine(next))
+
+            if(CheckIfNewLine(next)){
                 mask = 1;
-            else {
+            } else {
                 map.get(next);
                 mask = CharToInt(next);
             }
