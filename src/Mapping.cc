@@ -116,11 +116,12 @@ int Mapping::Read(){
             //is then taken from the last char readout.
             char next;
             map.get(next);
-            map.get(next);
             if(CheckIfNewLine(next))
                 mask = 1;
-            else
+            else {
+                map.get(next);
                 mask = CharToInt(next);
+            }
 
             if(CheckIfTDCCh(TDCCh)){
                 Link[TDCCh] = RPCCh;
