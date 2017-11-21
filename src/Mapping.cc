@@ -15,6 +15,7 @@
 // *    07/06/2017
 //***************************************************************
 
+#include <iostream>
 #include <map>
 #include <string>
 #include <fstream>
@@ -22,6 +23,7 @@
 #include "../include/Mapping.h"
 #include "../include/MsgSvc.h"
 #include "../include/types.h"
+#include "../include/utils.h"
 
 using namespace std;
 
@@ -106,12 +108,19 @@ int Mapping::Read(){
             //Check the TDC mapping file format:
             // 2 columns -> old format
             // 3 columns -> new format including mask
+            //In case of 2 columns, the enfline will have a format
+            //where the \n is separated from the TDCCh column by an
+            //empty character. Thus it is needed to read 2 char.
+            //In the case of 3 columns that means that we will be
+            //reding both the space or tab and the mask. The mask
+            //is then taken from the last char readout.
             char next;
+            map.get(next);
             map.get(next);
             if(CheckIfNewLine(next))
                 mask = 1;
             else
-                map >> mask;
+                mask = CharToInt(next);
 
             if(CheckIfTDCCh(TDCCh)){
                 Link[TDCCh] = RPCCh;
