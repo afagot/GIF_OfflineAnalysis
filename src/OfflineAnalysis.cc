@@ -358,22 +358,6 @@ void OfflineAnalysis(string baseName){
                 Multiplicity.rpc[T][S][P]++;
             }
 
-            //Get effiency and cluster size
-            for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
-                Uint T = GIFInfra->GetTrolleyID(tr);
-
-                for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
-                    Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
-
-                    for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-                        if(MuonHitList.rpc[T][S][p].size() > 0)
-                            Efficiency0_H.rpc[T][S][p]->Fill(1);
-                        else
-                            Efficiency0_H.rpc[T][S][p]->Fill(0);
-                    }
-                }
-            }
-
             //********** MULTIPLICITY ************************************
 
             for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
@@ -384,7 +368,6 @@ void OfflineAnalysis(string baseName){
                     string rpcID = GIFInfra->GetName(tr,sl);
 
                     for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-
                         //In case the value of the multiplicity is beyond the actual
                         //range, create a new histo with a wider range to store the data.
                         //Do this work for all 3 multiplicity histograms. To make sure to
@@ -440,6 +423,12 @@ void OfflineAnalysis(string baseName){
                         }
                         HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
                         Multiplicity.rpc[T][S][p] = 0;
+
+                        //Get effiency
+                        if(MuonHitList.rpc[T][S][p].size() > 0)
+                            Efficiency0_H.rpc[T][S][p]->Fill(1);
+                        else
+                            Efficiency0_H.rpc[T][S][p]->Fill(0);
 
                         //Clusterize noise/gamma data
                         sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
