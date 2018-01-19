@@ -52,8 +52,6 @@ typedef enum _QualityFlag {
     CORRUPTED = 2
 } QualityFlag;
 
-typedef pair<int,float> clusterInfo;
-
 //****************************************************************************
 
 //Path to file where is saved the current data

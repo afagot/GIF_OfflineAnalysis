@@ -345,7 +345,7 @@ void OfflineAnalysis(string baseName){
                             BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                             MuonHitList.rpc[T][S][P].push_back(hit);
                             inTimeHits.rpc[T][S][P]++;
-                        }  else {
+                        } else {
                             StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                             NoiseHitList.rpc[T][S][P].push_back(hit);
                             noiseHits.rpc[T][S][P]++;
@@ -426,28 +426,15 @@ void OfflineAnalysis(string baseName){
 
                             //Clusterize noise/gamma data
                             sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
-                            const clusterInfo noiseClusters = Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
+                            Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
 
                             if(IsEfficiencyRun(RunType)){
                                 //Clusterize muon data
                                 sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
-                                const clusterInfo muonClusters = Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p],noiseClusters);
+                                Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p]);
 
-                                //Then define the peak and noise time range and evaluate the number of noise/gamma
-                                //clusters that are likely to be in the peak window
-                                float lowlimit  = PeakMeanTime.rpc[T][S][p] - PeakSpread.rpc[T][S][p];
-                                float highlimit = PeakMeanTime.rpc[T][S][p] + PeakSpread.rpc[T][S][p];
-
-                                float peakWdw = highlimit-lowlimit;
-                                float noiseWdw = BMTDCWINDOW-TIMEREJECT-peakWdw;
-
-                                int nPeakNoiseClusters = lround(peakWdw*noiseClusters.first/noiseWdw);
-
-                                //Get effiency - the detector is efficient only if more
-                                //clusters were reconstructer than what expected from
-                                //noise/gamma only to avoid the noise/gamma background
-                                //to contribute to L0 efficiency
-                                if(muonClusters.first > nPeakNoiseClusters)
+                                //Get effiency
+                                if(MuonHitList.rpc[T][S][p].size() > 0)
                                     Efficiency0_H.rpc[T][S][p]->Fill(1);
                                 else
                                     Efficiency0_H.rpc[T][S][p]->Fill(0);
