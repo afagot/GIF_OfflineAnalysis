@@ -241,12 +241,17 @@ void BuildClusters(HitList &cluster, ClusterList &clusterList){
 }
 
 // ****************************************************************************************************
-// *   void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
+// *   clusterInfo Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult)
 //
 //  Used to loop over the hit list, create clusters and fill histograms. Calls BuildClusters.
+//  The cluster size and multiplicity can be corrected. This is useful for a good evaluation
+//  of the muon cluster size and multiplicity. The contribution of the noise/gamma in the peak
+//  region to the cluster size and multiplicity can be inserted from the result obtained
+//  outside of the peak region as a correction.
+//  Returns the cluster multiplicity and size.
 // ****************************************************************************************************
 
-void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
+clusterInfo Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult, clusterInfo clCorr){
     HitList cluster;
     cluster.clear();
 
@@ -278,9 +283,31 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
         cluster.clear();
     }
 
+    //Make the needed corrections using the information from clCorr
+
+    //First correct the multiplicity
+    int clMult = clusterList.size()-clCorr.first;
+
+    //Then get the global cluster size of the reconstructed cluster list
+    float clSize = 0.;
     for(Uint i = 0; i < clusterList.size(); i++)
         if(clusterList[i].GetSize() > 0)
-            hcSize->Fill(clusterList[i].GetSize());
+            clSize += clusterList[i].GetSize();
+    clSize = clSize/(float)clusterList.size();
 
-    hcMult->Fill(clusterList.size());
+    //Correct it taking into account that the global cluster size Clg is
+    // Clg = (Cl*M + Clc*Mc) / Mg <=> Cl = (Clg*Mg - Clc*Mc)/M
+    //where Cl and M are the cluster size and multiplicity to extract,
+    //Clc and Mc are the cluster size and multiplicity of the correcting
+    //component, and Mg is the global multiplicity.
+    clSize = (clSize*clusterList.size() - clCorr.first*clCorr.second)/(float)clMult;
+
+    //Finally fill the histograms
+    hcMult->Fill(clMult);
+    hcSize->Fill(clSize);
+
+    clusterInfo clinfo;
+    clinfo.first = clMult;
+    clinfo.second = clSize;
+    return clinfo;
 }

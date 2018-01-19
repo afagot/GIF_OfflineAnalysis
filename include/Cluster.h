@@ -62,6 +62,6 @@ typedef vector<RPCCluster> ClusterList;
 
 //Other functions to build cluster lists out of hit lists
 void BuildClusters(HitList &cluster, ClusterList &clusterList);
-void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult);
+clusterInfo Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult, const clusterInfo clCorr=make_pair(0,0.));
 
 #endif

@@ -325,37 +325,36 @@ void OfflineAnalysis(string baseName){
                 Uint S = hit.GetStation()-1;
                 Uint P = hit.GetPartition()-1;
 
-                if(IsEfficiencyRun(RunType)){
-                    //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
-                    float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
+                //Fill the profiles
+                TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
+                HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
 
-                    bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
+                //Reject the 100 first ns due to inhomogeneity of data
+                if(hit.GetTime() >= TIMEREJECT){
+                    Multiplicity.rpc[T][S][P]++;
 
-                    //Fill the hits inside of the defined noise range
-                    if(peakrange){
-                        BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        MuonHitList.rpc[T][S][P].push_back(hit);
-                        inTimeHits.rpc[T][S][P]++;
-                    }
-                    //Reject the 100 first ns due to inhomogeneity of data
-                    else if(hit.GetTime() >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        NoiseHitList.rpc[T][S][P].push_back(hit);
-                        noiseHits.rpc[T][S][P]++;
-                    }
-                } else {
-                    //Reject the 100 first ns due to inhomogeneity of data
-                    if(hit.GetTime() >= TIMEREJECT){
+                    if(IsEfficiencyRun(RunType)){
+                        //First define the accepted peak time range
+                        float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
+                        float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
+
+                        bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
+
+                        //Fill the hits inside of the defined noise range
+                        if(peakrange){
+                            BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                            MuonHitList.rpc[T][S][P].push_back(hit);
+                            inTimeHits.rpc[T][S][P]++;
+                        }  else {
+                            StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                            NoiseHitList.rpc[T][S][P].push_back(hit);
+                            noiseHits.rpc[T][S][P]++;
+                        }
+                    } else {
                         StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         NoiseHitList.rpc[T][S][P].push_back(hit);
                     }
                 }
-
-                //Fill the profiles
-                TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
-                HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                Multiplicity.rpc[T][S][P]++;
             }
 
             //********** MULTIPLICITY ************************************
@@ -368,75 +367,97 @@ void OfflineAnalysis(string baseName){
                     string rpcID = GIFInfra->GetName(tr,sl);
 
                     for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-                        //In case the value of the multiplicity is beyond the actual
-                        //range, create a new histo with a wider range to store the data.
-                        //Do this work for all 3 multiplicity histograms. To make sure to
-                        //avoid repeating this operation too often, the range is chosen to
-                        //be the value that exceeds the range + 10.
-                        if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
-                            nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 10;
+                        if(Multiplicity.rpc[T][S][p] > 0){
+                            //In case the value of the multiplicity is beyond the actual
+                            //range, create a new histo with a wider range to store the data.
+                            //Do this work for all 3 multiplicity histograms. To make sure to
+                            //avoid repeating this operation too often, the range is chosen to
+                            //be the value that exceeds the range + 10.
+                            if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
+                                nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 10;
 
-                            //Hit multiplicity
-                            TList *listHM = new TList;
-                            listHM->Add(HitMultiplicity_H.rpc[T][S][p]);
+                                //Hit multiplicity
+                                TList *listHM = new TList;
+                                listHM->Add(HitMultiplicity_H.rpc[T][S][p]);
 
-                            TH1* newHitMultiplicity_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newHitMultiplicity_H->Merge(listHM);
+                                TH1* newHitMultiplicity_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                newHitMultiplicity_H->Merge(listHM);
 
-                            delete HitMultiplicity_H.rpc[T][S][p];
-                            delete listHM;
-                            HitMultiplicity_H.rpc[T][S][p] = newHitMultiplicity_H;
+                                delete HitMultiplicity_H.rpc[T][S][p];
+                                delete listHM;
+                                HitMultiplicity_H.rpc[T][S][p] = newHitMultiplicity_H;
 
-                            SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit Multiplicity");
-                            HitMultiplicity_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
+                                SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit Multiplicity");
+                                HitMultiplicity_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
 
-                            //Noise/gamma cluster multiplicity
-                            TList *listNCM = new TList;
-                            listNCM->Add(NoiseCMult_H.rpc[T][S][p]);
+                                //Noise/gamma cluster multiplicity
+                                TList *listNCM = new TList;
+                                listNCM->Add(NoiseCMult_H.rpc[T][S][p]);
 
-                            TH1* newNoiseCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newNoiseCMult_H->Merge(listNCM);
+                                TH1* newNoiseCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                newNoiseCMult_H->Merge(listNCM);
 
-                            delete NoiseCMult_H.rpc[T][S][p];
-                            delete listNCM;
-                            NoiseCMult_H.rpc[T][S][p] = newNoiseCMult_H;
+                                delete NoiseCMult_H.rpc[T][S][p];
+                                delete listNCM;
+                                NoiseCMult_H.rpc[T][S][p] = newNoiseCMult_H;
 
-                            SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                            NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                                SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
+                                NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
-                            //Muon cluster multiplicity
-                            TList *listMCM = new TList;
-                            listMCM->Add(MuonCMult_H.rpc[T][S][p]);
+                                //Muon cluster multiplicity
+                                if(IsEfficiencyRun(RunType)){
+                                    TList *listMCM = new TList;
+                                    listMCM->Add(MuonCMult_H.rpc[T][S][p]);
 
-                            TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newMuonCMult_H->Merge(listMCM);
+                                    TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                    newMuonCMult_H->Merge(listMCM);
 
-                            delete MuonCMult_H.rpc[T][S][p];
-                            delete listMCM;
-                            MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
+                                    delete MuonCMult_H.rpc[T][S][p];
+                                    delete listMCM;
+                                    MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
 
-                            SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                            MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
-                        }
+                                    SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
+                                    MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                    SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                                }
+                            }
+
+                            //Clusterize noise/gamma data
+                            sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
+                            const clusterInfo noiseClusters = Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
+
+                            if(IsEfficiencyRun(RunType)){
+                                //Clusterize muon data
+                                sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
+                                const clusterInfo muonClusters = Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p],noiseClusters);
+
+                                //Then define the peak and noise time range and evaluate the number of noise/gamma
+                                //clusters that are likely to be in the peak window
+                                float lowlimit  = PeakMeanTime.rpc[T][S][p] - PeakSpread.rpc[T][S][p];
+                                float highlimit = PeakMeanTime.rpc[T][S][p] + PeakSpread.rpc[T][S][p];
+
+                                float peakWdw = highlimit-lowlimit;
+                                float noiseWdw = BMTDCWINDOW-TIMEREJECT-peakWdw;
+
+                                int nPeakNoiseClusters = lround(peakWdw*noiseClusters.first/noiseWdw);
+
+                                //Get effiency - the detector is efficient only if more
+                                //clusters were reconstructer than what expected from
+                                //noise/gamma only to avoid the noise/gamma background
+                                //to contribute to L0 efficiency
+                                if(muonClusters.first > nPeakNoiseClusters)
+                                    Efficiency0_H.rpc[T][S][p]->Fill(1);
+                                else
+                                    Efficiency0_H.rpc[T][S][p]->Fill(0);
+                            }
+
+                        } else if(IsEfficiencyRun(RunType)) Efficiency0_H.rpc[T][S][p]->Fill(0);
+
+                        //Save and reinitialise the hit multiplicity
                         HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
                         Multiplicity.rpc[T][S][p] = 0;
-
-                        //Get effiency
-                        if(MuonHitList.rpc[T][S][p].size() > 0)
-                            Efficiency0_H.rpc[T][S][p]->Fill(1);
-                        else
-                            Efficiency0_H.rpc[T][S][p]->Fill(0);
-
-                        //Clusterize noise/gamma data
-                        sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
-                        Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
-
-                        //Clusterize muon data
-                        sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
-                        Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p]);
                     }
                 }
             }
