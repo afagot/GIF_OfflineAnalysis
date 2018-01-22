@@ -282,7 +282,6 @@ void Clusterization(HitList &hits, TH1 *hcSize, TH1 *hcMult){
     hcMult->Fill(clusterList.size());
 
     //Then get the global cluster size of the reconstructed cluster list
-    float clSize = 0.;
     for(Uint i = 0; i < clusterList.size(); i++)
         if(clusterList[i].GetSize() > 0)
             hcSize->Fill(clusterList[i].GetSize());

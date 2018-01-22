@@ -262,18 +262,24 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
         for(Uint sl = 0; sl < NSLOTS; sl++){
             for(Uint p = 0; p < NPARTITIONS; p++){
                 //Fit with a gaussian the "Good TDC Time"
-                TF1 *slicefit = new TF1("slicefit","gaus(0)",lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+                TF1 *slicefit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
 
+                //Initialise with default parameters
                 //Amplitude
                 slicefit->SetParameter(0,50);
                 slicefit->SetParLimits(0,1,100000);
                 //Mean value
-                slicefit->SetParameter(1,center.rpc[tr][sl][p]);
-                slicefit->SetParLimits(1,lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+                slicefit->SetParameter(1,300);
+                slicefit->SetParLimits(1,200,400);
                 //RMS
-                slicefit->SetParameter(2,20);
+                slicefit->SetParameter(2,10);
                 slicefit->SetParLimits(2,1,40);
 
+                //Work only with the filled histograms.
+                //Find the highest bin. Assume than the beam peak is within
+                //a range of 80ns around the max bin. Evaluate the level of
+                //noise outside of this range and subtract it from each bin.
+                //Then finally fir and extract fit parameters.
                 if(tmpTimeProfile.rpc[tr][sl][p]->GetEntries() > 0.){
                     center.rpc[tr][sl][p] = (float)tmpTimeProfile.rpc[tr][sl][p]->GetMaximumBin()*TIMEBIN;
                     lowlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] - 40.;
@@ -295,9 +301,17 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                         tmpTimeProfile.rpc[tr][sl][p]->SetBinContent(b,correctedContent);
                     }
 
+                    //Reset the fit function range with position of max bin
+                    slicefit->SetRange(lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+
+                    //Reset amplitude with amplitude of highest bin
+                    slicefit->SetParameter(0,(float)tmpTimeProfile.rpc[tr][sl][p]->GetMaximum());
+
+                    //Fit the peak time
                     tmpTimeProfile.rpc[tr][sl][p]->Fit(slicefit,"QR");
                 }
 
+                //Extract the fit parameters
                 PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
                 PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
             }
