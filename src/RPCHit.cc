@@ -252,11 +252,20 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     }
 
     //Compute the average number of noise hits per 10ns bin and subtract it to the time
-    //distribution
-
+    //distribution in order to have a better fit on the muon peak (noise removal). Also,
+    //as this information is not available directly, try to evaluate which one of the
+    //RPC partitions was illuminated by the beam to use the same settings for all
+    //partitions. For this measure a "significance" based on comparing:
+    // - height of the fit and height of the highest bin
+    // - center of the fit and time position of the highest bin
+    // - integral of the fit and of the bins in the fit range
+    //Keep track of all the value thanks to a float array. The partition in which the
+    //muon peak is present in the time profile is the most likely to have a value of the
+    //significance close to 1.
     muonPeak center;
     muonPeak lowlimit;
     muonPeak highlimit;
+    GIFfloatArray PeakSignificance;
 
     for(Uint tr = 0; tr < NTROLLEYS; tr++){
         for(Uint sl = 0; sl < NSLOTS; sl++){
@@ -274,6 +283,9 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                 //RMS
                 slicefit->SetParameter(2,10);
                 slicefit->SetParLimits(2,1,40);
+
+                //Initialise the significance variable to 0
+                PeakSignificance.rpc[tr][sl][p] = 0;
 
                 //Work only with the filled histograms.
                 //Find the highest bin. Assume than the beam peak is within
@@ -309,11 +321,47 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
 
                     //Fit the peak time
                     tmpTimeProfile.rpc[tr][sl][p]->Fit(slicefit,"QR");
+
+                    //Calculate the significance
+                    float maxFit = slicefit->GetParameter(0);
+                    float maxHisto = tmpTimeProfile.rpc[tr][sl][p]->GetMaximum();
+                    float maxRatio = maxFit/maxHisto;
+
+                    float centerFit = slicefit->GetParameter(1);
+                    float centerHisto = tmpTimeProfile.rpc[tr][sl][p]->GetMaximumBin()*TIMEBIN;
+                    float centerRatio = centerFit/centerHisto;
+
+                    float integralFit = slicefit->Integral(lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
+                    float integralHisto = tmpTimeProfile.rpc[tr][sl][p]->Integral(floor(lowlimit.rpc[tr][sl][p]/TIMEBIN),ceil(highlimit.rpc[tr][sl][p]/TIMEBIN))*TIMEBIN;
+                    float integralRatio = integralFit/integralHisto;
+
+                    PeakSignificance.rpc[tr][sl][p] = maxRatio * centerRatio * integralRatio;
                 }
 
                 //Extract the fit parameters
                 PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
                 PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
+
+                //Check whether this partition is more likely to be the illuminated one.
+                //If it is, apply to the other partition-s previously checked the same
+                //peak settings. Otherwise get the same settings for this partition than
+                //for the previous one.
+                if(p > 0){
+                    float Likelyhood = abs(1-PeakSignificance.rpc[tr][sl][p]);
+                    float Likelyhood_prec = abs(1-PeakSignificance.rpc[tr][sl][p-1]);
+
+                    if(Likelyhood < Likelyhood_prec){
+                        for(Uint part = 0; part <= p; part++){
+                            PeakTime.rpc[tr][sl][part] = slicefit->GetParameter(1);
+                            PeakWidth.rpc[tr][sl][part] = 3.*slicefit->GetParameter(2);
+                            PeakSignificance.rpc[tr][sl][part] = PeakSignificance.rpc[tr][sl][p];
+                        }
+                    } else {
+                        PeakTime.rpc[tr][sl][p] = PeakTime.rpc[tr][sl][p-1];
+                        PeakWidth.rpc[tr][sl][p] = PeakWidth.rpc[tr][sl][p-1];
+                        PeakSignificance.rpc[tr][sl][p] = PeakSignificance.rpc[tr][sl][p-1];
+                    }
+                }
             }
         }
     }
