@@ -286,13 +286,6 @@ void OfflineAnalysis(string baseName){
         //compute the noise rate
         GIFintArray Multiplicity = {{{0}}};
 
-        //Table to keep track of the number of in time hits.
-        //Will be used later to estimated the proportion of
-        //noise hits within the peak time range and correct
-        //the efficiency accordingly.
-        GIFintArray inTimeHits = {{{0}}};
-        GIFintArray noiseHits = {{{0}}};
-
         Uint nEntries = dataTree->GetEntries();
 
         for(Uint i = 0; i < nEntries; i++){
@@ -347,11 +340,9 @@ void OfflineAnalysis(string baseName){
                         if(peakrange){
                             BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                             MuonHitList.rpc[T][S][P].push_back(hit);
-                            inTimeHits.rpc[T][S][P]++;
                         } else {
                             StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                             NoiseHitList.rpc[T][S][P].push_back(hit);
-                            noiseHits.rpc[T][S][P]++;
                         }
                     } else {
                         StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());

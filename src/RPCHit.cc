@@ -261,7 +261,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     muonPeak center;
     muonPeak lowlimit;
     muonPeak highlimit;
-    GIFfloatArray PeakHeight;
+    GIFfloatArray PeakHeight = {{{0.}}};
 
     for(Uint tr = 0; tr < NTROLLEYS; tr++){
         for(Uint sl = 0; sl < NSLOTS; sl++){
@@ -279,9 +279,6 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                 //RMS
                 slicefit->SetParameter(2,10);
                 slicefit->SetParLimits(2,1,40);
-
-                //Initialise the height to 0
-                PeakHeight.rpc[tr][sl][p] = 0;
 
                 //Work only with the filled histograms.
                 //Find the highest bin. Assume than the beam peak is within
@@ -319,7 +316,7 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
                     //Fit the peak time
                     tmpTimeProfile.rpc[tr][sl][p]->Fit(slicefit,"QR");
 
-                    //Save the max vule of the histogram
+                    //Save the max value of the histogram
                     PeakHeight.rpc[tr][sl][p] = tmpTimeProfile.rpc[tr][sl][p]->GetMaximum();
                 }
 
