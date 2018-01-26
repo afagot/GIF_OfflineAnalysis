@@ -96,11 +96,11 @@ void OfflineAnalysis(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
-        muonPeak PeakMeanTime = {{{0.}}};
-        muonPeak PeakSpread = {{{0.}}};
+        muonPeak PeakTime = {{{0.}}};
+        muonPeak PeakWidth = {{{0.}}};
 
         if(IsEfficiencyRun(RunType))
-            SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
 
         //****************** LINK RAW DATA *******************************
 
@@ -338,8 +338,8 @@ void OfflineAnalysis(string baseName){
 
                     if(IsEfficiencyRun(RunType)){
                         //First define the accepted peak time range
-                        float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
-                        float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
+                        float lowlimit = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
+                        float highlimit = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
 
                         bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
 
@@ -505,13 +505,12 @@ void OfflineAnalysis(string baseName){
 
                 //Get the total chamber rate
                 //we need to now the total chamber surface (sum active areas)
-                Uint   nStripsPart   = GIFInfra->GetNStrips(tr,sl);
-                string rpcID         = GIFInfra->GetName(tr,sl);
-                Uint   nStripsRPC    = 0;
-                float  RPCarea       = 0.;
-                float  MeanNoiseRate = 0.;
-                float  ClusterRate   = 0.;
-                float  ClusterSDev   = 0.;
+                Uint  nStripsPart   = GIFInfra->GetNStrips(tr,sl);
+                Uint  nStripsRPC    = 0;
+                float RPCarea       = 0.;
+                float MeanNoiseRate = 0.;
+                float ClusterRate   = 0.;
+                float ClusterSDev   = 0.;
 
                 for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
                     string partID = "ABCD";
@@ -619,7 +618,7 @@ void OfflineAnalysis(string baseName){
                     float stripArea = GIFInfra->GetStripGeo(tr,sl,p);
 
                     if(IsEfficiencyRun(RunType)){
-                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
+                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
                         rate_norm = (nEntries-nEmptyEvent)*noiseWindow*1e-9*stripArea;
                     } else
                         rate_norm = (nEntries-nEmptyEvent)*RDMNOISEWDW*1e-9*stripArea;
@@ -636,8 +635,8 @@ void OfflineAnalysis(string baseName){
                         //window and the time width of the peak
                         if(IsEfficiencyRun(RunType)){
                             int nNoiseHits = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st);
-                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
-                            float peakWindow = 2*PeakSpread.rpc[T][S][p];
+                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
+                            float peakWindow = 2*PeakWidth.rpc[T][S][p];
                             float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
 
                             int nPeakHits = BeamProfile_H.rpc[T][S][p]->GetBinContent(st);
@@ -749,8 +748,8 @@ void OfflineAnalysis(string baseName){
 
                     //Get the ratio between the noise calculation window (ns)
                     //and the peak window used for muon clustering (ns)
-                    float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
-                    float peakWindow = 2*PeakSpread.rpc[T][S][p];
+                    float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
+                    float peakWindow = 2*PeakWidth.rpc[T][S][p];
                     float windowRatio = peakWindow/noiseWindow;
 
                     //Define the average noise cluster multiplicity in the peak window,
@@ -762,20 +761,31 @@ void OfflineAnalysis(string baseName){
                     float PeakCS = MuonCSize_H.rpc[T][S][p]->GetMean();
                     float NoiseCM = NoiseCMult_H.rpc[T][S][p]->GetMean()*windowRatio;
                     float NoiseCS = NoiseCSize_H.rpc[T][S][p]->GetMean();
-                    float MuonCM = (PeakCM<NoiseCM) ? 0. : PeakCM-NoiseCM;
-                    float MuonCS = (MuonCM==0) ? 0. : (PeakCM*PeakCS-NoiseCM*NoiseCS)/MuonCM;
-                    if(MuonCS < 0) MuonCS = 0.;
-//FIX THE NEGATIVE NUMBERS
-                    float PeakCM_err = 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
-                    float PeakCS_err = 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
-                    float NoiseCM_err = windowRatio*2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
-                    float NoiseCS_err = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
-                    float MuonCM_err = (MuonCM==0) ? 0. : PeakCM_err+PeakCS_err;
-                    float MuonCS_err = (MuonCS==0) ? 0. : ( PeakCS*PeakCM_err
-                                                            + PeakCM*PeakCS_err
-                                                            + NoiseCS*NoiseCM_err
-                                                            + NoiseCM*NoiseCS_err
-                                                            + MuonCS*MuonCM_err ) / MuonCM;
+                    float MuonCM = (PeakCM<NoiseCM)
+                            ? 0.
+                            : PeakCM-NoiseCM;
+                    float MuonCS = (MuonCM==0 || PeakCM*PeakCS<NoiseCM*NoiseCS)
+                            ? 0.
+                            : (PeakCM*PeakCS-NoiseCM*NoiseCS)/MuonCM;
+
+                    float PeakCM_err = (MuonCMult_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
+                    float PeakCS_err = (MuonCSize_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
+                    float NoiseCM_err = (NoiseCMult_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : windowRatio*2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
+                    float NoiseCS_err = (NoiseCSize_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
+                    float MuonCM_err = (MuonCM==0)
+                            ? 0.
+                            : PeakCM_err+PeakCS_err;
+                    float MuonCS_err = (MuonCS==0 || MuonCM==0)
+                            ? 0.
+                            : (PeakCS*PeakCM_err+PeakCM*PeakCS_err+NoiseCS*NoiseCM_err+NoiseCM*NoiseCS_err+MuonCS*MuonCM_err)/MuonCM;
 
                     //Evaluate the data/(data+noise) ratio by comparing the multiplicities
                     float DataRatio = MuonCM/PeakCM;
