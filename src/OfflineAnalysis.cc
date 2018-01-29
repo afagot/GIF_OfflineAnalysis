@@ -665,11 +665,19 @@ void OfflineAnalysis(string baseName){
                     //partition
                     float MeanPartRate = GetTH1Mean(StripNoiseProfile_H.rpc[T][S][p]);
                     float cSizePart = NoiseCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizePartErr = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
+                    float cSizePartErr = (NoiseCSize_H.rpc[T][S][p]->GetEntries() == 0)
+                            ? 0.
+                            : 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
                     float cMultPart = NoiseCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultPartErr = 2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
-                    float ClustPartRate = MeanPartRate/cSizePart;
-                    float ClustPartRateErr = ClustPartRate * cSizePartErr/cSizePart;
+                    float cMultPartErr = (NoiseCMult_H.rpc[T][S][p]->GetEntries() == 0)
+                            ? 0.
+                            : 2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
+                    float ClustPartRate = (cSizePart==0)
+                            ? 0.
+                            : MeanPartRate/cSizePart;
+                    float ClustPartRateErr = (cSizePart==0)
+                            ? 0.
+                            : ClustPartRate * cSizePartErr/cSizePart;
 
                     outputRateCSV << MeanPartRate << '\t'
                                   << cSizePart << '\t' << cSizePartErr << '\t'
@@ -681,7 +689,9 @@ void OfflineAnalysis(string baseName){
                     //the homogeneity is to 0 the less homogeneous.
                     //This gives idea about noisy strips and dead strips.
                     float MeanPartSDev = GetTH1StdDev(StripNoiseProfile_H.rpc[T][S][p]);
-                    float strip_homog = exp(-MeanPartSDev/MeanPartRate);
+                    float strip_homog = (MeanPartRate==0)
+                            ? 0.
+                            : exp(-MeanPartSDev/MeanPartRate);
                     StripHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Strip Rate}}{#mu_{Strip Rate}}#right)",strip_homog);
                     StripHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
@@ -697,7 +707,9 @@ void OfflineAnalysis(string baseName){
                     RPCarea       += stripArea * nStripsPart;
                     MeanNoiseRate += MeanPartRate * stripArea * nStripsPart;
                     ClusterRate   += ClustPartRate * stripArea * nStripsPart;
-                    ClusterSDev   += ClusterRate*cSizePartErr/cSizePart;
+                    ClusterSDev   += (cSizePart==0)
+                            ? 0.
+                            : ClusterRate*cSizePartErr/cSizePart;
 
                     //Draw and write the histograms into the output ROOT file
                     //******************************* General histograms
