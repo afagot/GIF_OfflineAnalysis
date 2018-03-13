@@ -497,7 +497,6 @@ void OfflineAnalysis(string baseName){
                 //Get the total chamber rate
                 //we need to now the total chamber surface (sum active areas)
                 Uint  nStripsPart   = GIFInfra->GetNStrips(tr,sl);
-                Uint  nStripsRPC    = 0;
                 float RPCarea       = 0.;
                 float MeanNoiseRate = 0.;
                 float ClusterRate   = 0.;
@@ -539,7 +538,7 @@ void OfflineAnalysis(string baseName){
                         //BUT! the fit will hardly work in the case the mean of the distribution
                         //is low and close to 0. To check that the fit worked, we will compare
                         //the value given by the fit for multiplicity 1 (x=1) and ask for a
-                        //variation of less than 5% with respect to the data.
+                        //variation of less than 1% with respect to the data.
 
                         //Start by getting the x range on wich we should perform the fit
                         //We will re-use the same definition than for the multiplicity
@@ -564,12 +563,12 @@ void OfflineAnalysis(string baseName){
 
                         //Check that the fit worked:
                         //  - make sure fit gives a value close enough to multiplicity = 1 bin
-                        //  - make sure there is enough statistics (most of the data not
-                        //contained but multiplicity =0 bin)
-                        //Then, if the fit is good but the value of the fit for
-                        //multiplicity = 0 is higher than the content of the data
-                        //bin, keep the number of empty events to 0 to make sure it does
-                        //not turn negative.
+                        //(variation of less than 1% with respect to the data)
+                        //  - make sure there is enough statistics (most of the data is not
+                        //contained in multiplicity 0 bin)
+                        //Then, if the fit is good but the value of the fit for multiplicity
+                        //0 is higher than the content of the data bin, keep the number of empty
+                        //events to 0 to make sure it does not turn negative.
 
                         double fitValue = SkewFit->Eval(1,0,0,0);
                         double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
@@ -698,12 +697,13 @@ void OfflineAnalysis(string baseName){
                     //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
                     float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H.rpc[T][S][p]);
 
-                    float chip_homog = exp(-ChipStDevMean/MeanPartRate);
+                    float chip_homog = (MeanPartRate==0)
+                            ? 0.
+                            : exp(-ChipStDevMean/MeanPartRate);
                     ChipHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Chip Rate}}{#mu_{Chip Rate}}#right)",chip_homog);
                     ChipHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Push the partition results into the chamber level
-                    nStripsRPC    += nStripsPart;
                     RPCarea       += stripArea * nStripsPart;
                     MeanNoiseRate += MeanPartRate * stripArea * nStripsPart;
                     ClusterRate   += ClustPartRate * stripArea * nStripsPart;
@@ -785,7 +785,7 @@ void OfflineAnalysis(string baseName){
                             : 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
                     float MuonCM_err = (MuonCM==0)
                             ? 0.
-                            : PeakCM_err+PeakCS_err;
+                            : PeakCM_err+NoiseCM_err;
                     float MuonCS_err = (MuonCS==0 || MuonCM==0)
                             ? 0.
                             : (PeakCS*PeakCM_err+PeakCM*PeakCS_err+NoiseCS*NoiseCM_err+NoiseCM*NoiseCS_err+MuonCS*MuonCM_err)/MuonCM;
