@@ -52,6 +52,16 @@ typedef enum _QualityFlag {
     CORRUPTED = 2
 } QualityFlag;
 
+typedef enum _Efficiency {
+    DETECTED = 1,
+    MISSED = 0
+} Efficiency;
+
+typedef enum _Mask {
+    ACTIVE = 1,
+    MASKED = 0
+} Mask;
+
 //****************************************************************************
 
 //Path to file where is saved the current data

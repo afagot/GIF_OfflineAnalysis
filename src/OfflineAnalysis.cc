@@ -96,11 +96,11 @@ void OfflineAnalysis(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
-        muonPeak PeakMeanTime = {{{0.}}};
-        muonPeak PeakSpread = {{{0.}}};
+        muonPeak PeakTime = {{{0.}}};
+        muonPeak PeakWidth = {{{0.}}};
 
         if(IsEfficiencyRun(RunType))
-            SetBeamWindow(PeakMeanTime,PeakSpread,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
 
         //****************** LINK RAW DATA *******************************
 
@@ -286,16 +286,12 @@ void OfflineAnalysis(string baseName){
         //compute the noise rate
         GIFintArray Multiplicity = {{{0}}};
 
-        //Table to keep track of the number of in time hits.
-        //Will be used later to estimated the proportion of
-        //noise hits within the peak time range and correct
-        //the efficiency accordingly.
-        GIFintArray inTimeHits = {{{0}}};
-        GIFintArray noiseHits = {{{0}}};
-
         Uint nEntries = dataTree->GetEntries();
 
         for(Uint i = 0; i < nEntries; i++){
+
+            //********** LOOP THROUGH HIT LIST ***************************
+
             dataTree->GetEntry(i);
 
             //Vectors to store the hits and reconstruct clusters:
@@ -325,56 +321,37 @@ void OfflineAnalysis(string baseName){
                 Uint S = hit.GetStation()-1;
                 Uint P = hit.GetPartition()-1;
 
-                if(IsEfficiencyRun(RunType)){
-                    //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
-                    float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
-
-                    bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
-
-                    //Fill the hits inside of the defined noise range
-                    if(peakrange){
-                        BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        MuonHitList.rpc[T][S][P].push_back(hit);
-                        inTimeHits.rpc[T][S][P]++;
-                    }
-                    //Reject the 100 first ns due to inhomogeneity of data
-                    else if(hit.GetTime() >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        NoiseHitList.rpc[T][S][P].push_back(hit);
-                        noiseHits.rpc[T][S][P]++;
-                    }
-                } else {
-                    //Reject the 100 first ns due to inhomogeneity of data
-                    if(hit.GetTime() >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        NoiseHitList.rpc[T][S][P].push_back(hit);
-                    }
-                }
-
                 //Fill the profiles
                 TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
                 HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                Multiplicity.rpc[T][S][P]++;
 
-                //Get effiency and cluster size
-                for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
-                    Uint T = GIFInfra->GetTrolleyID(tr);
+                //Reject the 100 first ns due to inhomogeneity of data
+                if(hit.GetTime() >= TIMEREJECT){
+                    Multiplicity.rpc[T][S][P]++;
 
-                    for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
-                        Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
+                    if(IsEfficiencyRun(RunType)){
+                        //First define the accepted peak time range
+                        float lowlimit = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
+                        float highlimit = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
 
-                        for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-                            if(MuonHitList.rpc[T][S][p].size() > 0)
-                                Efficiency0_H.rpc[T][S][p]->Fill(1);
-                            else
-                                Efficiency0_H.rpc[T][S][p]->Fill(0);
+                        bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
+
+                        //Fill the hits inside of the defined noise range
+                        if(peakrange){
+                            BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                            MuonHitList.rpc[T][S][P].push_back(hit);
+                        } else {
+                            StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                            NoiseHitList.rpc[T][S][P].push_back(hit);
                         }
+                    } else {
+                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                        NoiseHitList.rpc[T][S][P].push_back(hit);
                     }
                 }
             }
 
-            //********** MULTIPLICITY ************************************
+            //********** MULTIPLICITY AND CLUSTERS ***********************
 
             for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
                 Uint T = GIFInfra->GetTrolleyID(tr);
@@ -384,7 +361,6 @@ void OfflineAnalysis(string baseName){
                     string rpcID = GIFInfra->GetName(tr,sl);
 
                     for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-
                         //In case the value of the multiplicity is beyond the actual
                         //range, create a new histo with a wider range to store the data.
                         //Do this work for all 3 multiplicity histograms. To make sure to
@@ -423,31 +399,42 @@ void OfflineAnalysis(string baseName){
                             NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
                             SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
 
-                            //Muon cluster multiplicity
-                            TList *listMCM = new TList;
-                            listMCM->Add(MuonCMult_H.rpc[T][S][p]);
+                            //Muon cluster multiplicity if effiency run
+                            if(IsEfficiencyRun(RunType)){
+                                TList *listMCM = new TList;
+                                listMCM->Add(MuonCMult_H.rpc[T][S][p]);
 
-                            TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newMuonCMult_H->Merge(listMCM);
+                                TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                newMuonCMult_H->Merge(listMCM);
 
-                            delete MuonCMult_H.rpc[T][S][p];
-                            delete listMCM;
-                            MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
+                                delete MuonCMult_H.rpc[T][S][p];
+                                delete listMCM;
+                                MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
 
-                            SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                            MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                                SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
+                                MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                            }
                         }
-                        HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
-                        Multiplicity.rpc[T][S][p] = 0;
 
                         //Clusterize noise/gamma data
                         sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
                         Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
 
-                        //Clusterize muon data
-                        sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
-                        Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p]);
+                        //Clusterize muon data and fill efficiency if efficiency run
+                        if(IsEfficiencyRun(RunType)){
+                            sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
+                            Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p]);
+
+                            if(MuonHitList.rpc[T][S][p].size() > 0)
+                                Efficiency0_H.rpc[T][S][p]->Fill(DETECTED);
+                            else
+                                Efficiency0_H.rpc[T][S][p]->Fill(MISSED);
+                        }
+
+                        //Save and reinitialise the hit multiplicity
+                        HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
+                        Multiplicity.rpc[T][S][p] = 0;
                     }
                 }
             }
@@ -459,7 +446,7 @@ void OfflineAnalysis(string baseName){
         string fNameROOT = baseName + "_Offline.root";
         TFile outputfile(fNameROOT.c_str(), "recreate");
 
-        //*********************************************** Rate
+        //********************************* Rate
         //output csv file to save the list of parameters saved into the
         //Offline-Rate.csv file - it represents the header of that file
         string headNameRate = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Rate-Header.csv";
@@ -472,7 +459,7 @@ void OfflineAnalysis(string baseName){
         //Print the HV step as first column
         outputRateCSV << HVstep << '\t';
 
-        //*********************************************** Corrupted data
+        //********************************* Corrupted data
         //output csv file to save the percentage of corrupted data
         //Offline-Corrupted-Header.csv
         string headNameCorr = baseName.substr(0,baseName.find_last_of("/")) + "/Offline-Corrupted-Header.csv";
@@ -498,6 +485,8 @@ void OfflineAnalysis(string baseName){
         //Print the HV step as first column
         outputEffCSV << HVstep << '\t';
 
+        //************** DATA ANALYSIS **********************************
+
         //Loop over trolleys
         for (Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
             Uint T = GIFInfra->GetTrolleyID(tr);
@@ -507,7 +496,7 @@ void OfflineAnalysis(string baseName){
 
                 //Get the total chamber rate
                 //we need to now the total chamber surface (sum active areas)
-                Uint  nStripsRPC    = 0;
+                Uint  nStripsPart   = GIFInfra->GetNStrips(tr,sl);
                 float RPCarea       = 0.;
                 float MeanNoiseRate = 0.;
                 float ClusterRate   = 0.;
@@ -517,7 +506,7 @@ void OfflineAnalysis(string baseName){
                     string partID = "ABCD";
                     string partName = GIFInfra->GetName(tr,sl) + "-" + partID[p];
 
-                    //************************* CORRUPTED DATA ESTIMATION *************************
+                    //**************** CORRUPTED DATA ESTIMATION **********************************
 
                     //In case of old format files (no quality flag), it is need to estimate
                     //the amount of corrupted data via a fit as the corrupted data will
@@ -549,7 +538,7 @@ void OfflineAnalysis(string baseName){
                         //BUT! the fit will hardly work in the case the mean of the distribution
                         //is low and close to 0. To check that the fit worked, we will compare
                         //the value given by the fit for multiplicity 1 (x=1) and ask for a
-                        //variation of less than 5% with respect to the data.
+                        //variation of less than 1% with respect to the data.
 
                         //Start by getting the x range on wich we should perform the fit
                         //We will re-use the same definition than for the multiplicity
@@ -574,12 +563,12 @@ void OfflineAnalysis(string baseName){
 
                         //Check that the fit worked:
                         //  - make sure fit gives a value close enough to multiplicity = 1 bin
-                        //  - make sure there is enough statistics (most of the data not
-                        //contained but multiplicity =0 bin)
-                        //Then, if the fit is good but the value of the fit for
-                        //multiplicity = 0 is higher than the content of the data
-                        //bin, keep the number of empty events to 0 to make sure it does
-                        //not turn negative.
+                        //(variation of less than 1% with respect to the data)
+                        //  - make sure there is enough statistics (most of the data is not
+                        //contained in multiplicity 0 bin)
+                        //Then, if the fit is good but the value of the fit for multiplicity
+                        //0 is higher than the content of the data bin, keep the number of empty
+                        //events to 0 to make sure it does not turn negative.
 
                         double fitValue = SkewFit->Eval(1,0,0,0);
                         double dataValue = (double)HitMultiplicity_H.rpc[T][S][p]->GetBinContent(2);
@@ -603,10 +592,12 @@ void OfflineAnalysis(string baseName){
                     double corrupt_ratio = 100.*(double)nEmptyEvent / (double)nEntries;
                     outputCorrCSV << corrupt_ratio << '\t';
 
+                    //**************** RATE CALCULATION / NOISE HISTO RESCALING *******************
+
                     //Get the mean noise on the strips and chips using the noise hit
                     //profile. Normalise the number of hits in each bin by the integrated
                     //time and the strip sruface (counts/s/cm2).
-                    float normalisation = 0.;
+                    float rate_norm = 0.;
 
                     //Now we can proceed with getting the number of noise/gamma hits
                     //and convert it into a noise/gamma rate per unit area.
@@ -617,14 +608,13 @@ void OfflineAnalysis(string baseName){
                     float stripArea = GIFInfra->GetStripGeo(tr,sl,p);
 
                     if(IsEfficiencyRun(RunType)){
-                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
-                        normalisation = (nEntries-nEmptyEvent)*noiseWindow*1e-9*stripArea;
+                        float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
+                        rate_norm = (nEntries-nEmptyEvent)*noiseWindow*1e-9*stripArea;
                     } else
-                        normalisation = (nEntries-nEmptyEvent)*RDMNOISEWDW*1e-9*stripArea;
+                        rate_norm = (nEntries-nEmptyEvent)*RDMNOISEWDW*1e-9*stripArea;
 
                     //Get the average number of hits per strip to normalise the activity
                     //histogram (this number is the same for both Strip and Chip histos).
-                    Uint nStripsPart = GIFInfra->GetNStrips(tr,sl);
                     float averageNhit = (nNoise>0) ? (float)(nNoise/nStripsPart) : 1.;
 
                     for(Uint st = 1; st <= nStripsPart; st++){
@@ -635,8 +625,8 @@ void OfflineAnalysis(string baseName){
                         //window and the time width of the peak
                         if(IsEfficiencyRun(RunType)){
                             int nNoiseHits = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st);
-                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakSpread.rpc[T][S][p];
-                            float peakWindow = 2*PeakSpread.rpc[T][S][p];
+                            float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
+                            float peakWindow = 2*PeakWidth.rpc[T][S][p];
                             float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
 
                             int nPeakHits = BeamProfile_H.rpc[T][S][p]->GetBinContent(st);
@@ -648,14 +638,14 @@ void OfflineAnalysis(string baseName){
                         //Get full RPCCh info usinf format TSCCC
                         Uint RPCCh = T*1e4 + (S+1)*1e3 + st + p*nStripsPart;
 
-                        //Fill noise rates and activities
-                        float stripRate = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/normalisation;
+                        //Fill noise rates and activities, and apply mask
+                        float stripRate = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/rate_norm;
                         float stripAct = StripNoiseProfile_H.rpc[T][S][p]->GetBinContent(st)/averageNhit;
 
-                        if(RPCChMap->GetMask(RPCCh) == 1){
+                        if(RPCChMap->GetMask(RPCCh) == ACTIVE){
                             StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
                             StripActivity_H.rpc[T][S][p]->SetBinContent(st,stripAct);
-                        } else if (RPCChMap->GetMask(RPCCh) == 0){
+                        } else if (RPCChMap->GetMask(RPCCh) == MASKED){
                             StripNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,0.);
                             StripActivity_H.rpc[T][S][p]->SetBinContent(st,0.);
                             MaskNoiseProfile_H.rpc[T][S][p]->SetBinContent(st,stripRate);
@@ -674,11 +664,19 @@ void OfflineAnalysis(string baseName){
                     //partition
                     float MeanPartRate = GetTH1Mean(StripNoiseProfile_H.rpc[T][S][p]);
                     float cSizePart = NoiseCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizePartErr = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
+                    float cSizePartErr = (NoiseCSize_H.rpc[T][S][p]->GetEntries() == 0)
+                            ? 0.
+                            : 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
                     float cMultPart = NoiseCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultPartErr = 2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
-                    float ClustPartRate = MeanPartRate/cSizePart;
-                    float ClustPartRateErr = ClustPartRate * cSizePartErr/cSizePart;
+                    float cMultPartErr = (NoiseCMult_H.rpc[T][S][p]->GetEntries() == 0)
+                            ? 0.
+                            : 2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
+                    float ClustPartRate = (cSizePart==0)
+                            ? 0.
+                            : MeanPartRate/cSizePart;
+                    float ClustPartRateErr = (cSizePart==0)
+                            ? 0.
+                            : ClustPartRate * cSizePartErr/cSizePart;
 
                     outputRateCSV << MeanPartRate << '\t'
                                   << cSizePart << '\t' << cSizePartErr << '\t'
@@ -690,23 +688,28 @@ void OfflineAnalysis(string baseName){
                     //the homogeneity is to 0 the less homogeneous.
                     //This gives idea about noisy strips and dead strips.
                     float MeanPartSDev = GetTH1StdDev(StripNoiseProfile_H.rpc[T][S][p]);
-                    float strip_homog = exp(-MeanPartSDev/MeanPartRate);
+                    float strip_homog = (MeanPartRate==0)
+                            ? 0.
+                            : exp(-MeanPartSDev/MeanPartRate);
                     StripHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Strip Rate}}{#mu_{Strip Rate}}#right)",strip_homog);
                     StripHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Same thing for the chip level - need to get the RMS at the chip level, the mean stays the same
                     float ChipStDevMean = GetTH1StdDev(ChipMeanNoiseProf_H.rpc[T][S][p]);
 
-                    float chip_homog = exp(-ChipStDevMean/MeanPartRate);
+                    float chip_homog = (MeanPartRate==0)
+                            ? 0.
+                            : exp(-ChipStDevMean/MeanPartRate);
                     ChipHomogeneity_H.rpc[T][S][p]->Fill("exp -#left(#frac{#sigma_{Chip Rate}}{#mu_{Chip Rate}}#right)",chip_homog);
                     ChipHomogeneity_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Push the partition results into the chamber level
-                    nStripsRPC    += nStripsPart;
                     RPCarea       += stripArea * nStripsPart;
                     MeanNoiseRate += MeanPartRate * stripArea * nStripsPart;
                     ClusterRate   += ClustPartRate * stripArea * nStripsPart;
-                    ClusterSDev   += ClusterRate*cSizePartErr/cSizePart;
+                    ClusterSDev   += (cSizePart==0)
+                            ? 0.
+                            : ClusterRate*cSizePartErr/cSizePart;
 
                     //Draw and write the histograms into the output ROOT file
                     //******************************* General histograms
@@ -743,30 +746,63 @@ void OfflineAnalysis(string baseName){
 
                     //For each cases, evaluate the proportion of noise
                     //with respect to the actual muon data. The efficiency
-                    //will then be corrected using this factor to "substract"
-                    //the fake efficiency caused by the noise
-                    float meanNoiseHitPerns = (float)noiseHits.rpc[T][S][p]/
-                            (BMTDCWINDOW-TIMEREJECT-2*PeakSpread.rpc[T][S][p]);
-                    float integralNoise = 2*PeakSpread.rpc[T][S][p]*meanNoiseHitPerns;
-                    float integralPeak = (float)inTimeHits.rpc[T][S][p];
+                    //will then be corrected using this factor to "subtract"
+                    //the fake efficiency caused by the noise.
 
-                    float DataNoiseRatio = 1.;
-                    if(integralNoise != 0.) DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
-                    if(DataNoiseRatio < 0.) DataNoiseRatio = 0.;
+                    //Get the ratio between the noise calculation window (ns)
+                    //and the peak window used for muon clustering (ns)
+                    float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[T][S][p];
+                    float peakWindow = 2*PeakWidth.rpc[T][S][p];
+                    float windowRatio = peakWindow/noiseWindow;
 
-                    //Get efficiency, cluster size and multiplicity
-                    //and evaluate the streamer probability (cls > 5)
-                    float eff = Efficiency0_H.rpc[T][S][p]->GetMean()*DataNoiseRatio;
-                    float effErr = sqrt(eff*(1.-eff)/nEntries);
-                    float cSize = MuonCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizeErr = 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
-                    float cMult = MuonCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultErr = 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
+                    //Define the average noise cluster multiplicity in the peak window,
+                    //the noise mean cluster size, the mean (noise+muon) multiplicity
+                    //in the peak and the (noise+muon) cluster size and calculate the
+                    //mean multiplicity of muons alone and the associated cluster size.
+                    //Get the errors as well.
+                    float PeakCM = MuonCMult_H.rpc[T][S][p]->GetMean();
+                    float PeakCS = MuonCSize_H.rpc[T][S][p]->GetMean();
+                    float NoiseCM = NoiseCMult_H.rpc[T][S][p]->GetMean()*windowRatio;
+                    float NoiseCS = NoiseCSize_H.rpc[T][S][p]->GetMean();
+                    float MuonCM = (PeakCM<NoiseCM)
+                            ? 0.
+                            : PeakCM-NoiseCM;
+                    float MuonCS = (MuonCM==0 || PeakCM*PeakCS<NoiseCM*NoiseCS)
+                            ? 0.
+                            : (PeakCM*PeakCS-NoiseCM*NoiseCS)/MuonCM;
+
+                    float PeakCM_err = (MuonCMult_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
+                    float PeakCS_err = (MuonCSize_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
+                    float NoiseCM_err = (NoiseCMult_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : windowRatio*2*NoiseCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCMult_H.rpc[T][S][p]->GetEntries());
+                    float NoiseCS_err = (NoiseCSize_H.rpc[T][S][p]->GetEntries()==0.)
+                            ? 0.
+                            : 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
+                    float MuonCM_err = (MuonCM==0)
+                            ? 0.
+                            : PeakCM_err+NoiseCM_err;
+                    float MuonCS_err = (MuonCS==0 || MuonCM==0)
+                            ? 0.
+                            : (PeakCS*PeakCM_err+PeakCM*PeakCS_err+NoiseCS*NoiseCM_err+NoiseCM*NoiseCS_err+MuonCS*MuonCM_err)/MuonCM;
+
+                    //Evaluate the data/(data+noise) ratio by comparing the multiplicities
+                    float DataRatio = MuonCM/PeakCM;
+                    float DataRatio_err = (MuonCM==0) ? 0. : DataRatio*(MuonCM_err/MuonCM + PeakCM_err/PeakCM);
+
+                    //Get corrected efficiency
+                    float eff = DataRatio*Efficiency0_H.rpc[T][S][p]->GetMean();
+                    float eff_err = DataRatio*2*Efficiency0_H.rpc[T][S][p]->GetStdDev()/sqrt(Efficiency0_H.rpc[T][S][p]->GetEntries())
+                            + Efficiency0_H.rpc[T][S][p]->GetMean()*DataRatio_err;
 
                     //Write in the output CSV file
-                    outputEffCSV << eff << '\t' << effErr << '\t'
-                                 << cSize << '\t' << cSizeErr << '\t'
-                                 << cMult << '\t' << cMultErr << '\t';
+                    outputEffCSV << eff << '\t' << eff_err << '\t'
+                                 << MuonCS << '\t' << MuonCS_err << '\t'
+                                 << MuonCM << '\t' << MuonCM_err << '\t';
 
                     //******************************* muon histograms
 

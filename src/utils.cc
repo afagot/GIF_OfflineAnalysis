@@ -185,7 +185,7 @@ bool IsCorruptedEvent(int qflag){
     while(!IsCorrupted && nDigits != 0){
         int tdcflag = tmpflag/(int)pow(10,nDigits-1);
 
-        if(tdcflag == CORRUPTED || tdcflag == 0)
+        if(tdcflag == CORRUPTED)
             IsCorrupted = true;
 
         tmpflag = tmpflag%(int)pow(10,nDigits-1);
