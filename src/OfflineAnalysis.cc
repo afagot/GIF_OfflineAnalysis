@@ -796,8 +796,7 @@ void OfflineAnalysis(string baseName){
 
                     //Get corrected efficiency
                     float eff = DataRatio*Efficiency0_H.rpc[T][S][p]->GetMean();
-                    float eff_err = DataRatio*2*Efficiency0_H.rpc[T][S][p]->GetStdDev()/sqrt(Efficiency0_H.rpc[T][S][p]->GetEntries())
-                            + Efficiency0_H.rpc[T][S][p]->GetMean()*DataRatio_err;
+                    float eff_err = sqrt(eff*(1-eff)/Efficiency0_H.rpc[T][S][p]->GetEntries());
 
                     //Write in the output CSV file
                     outputEffCSV << eff << '\t' << eff_err << '\t'
