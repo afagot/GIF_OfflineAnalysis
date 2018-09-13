@@ -38,7 +38,6 @@ using namespace std;
 class RPCHit {
     private:
         Uint  Channel;
-        Uint  Trolley;
         Uint  Station;
         Uint  Strip;
         Uint  Partition;
@@ -52,7 +51,6 @@ class RPCHit {
         RPCHit& operator=(const RPCHit& other);
 
         Uint  GetChannel();
-        Uint  GetTrolley();
         Uint  GetStation();
         Uint  GetStrip();
         Uint  GetPartition();
@@ -60,7 +58,7 @@ class RPCHit {
 };
 
 typedef vector<RPCHit> HitList;
-typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHitList;
+typedef struct GIFHitList { HitList rpc[NSLOTS][NPARTITIONS]; } GIFHitList;
 
 bool SortHitbyStrip(RPCHit h1, RPCHit h2);
 bool SortHitbyTime(RPCHit h1, RPCHit h2);

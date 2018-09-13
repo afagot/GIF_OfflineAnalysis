@@ -51,19 +51,15 @@ RPCHit::RPCHit(){
 // ****************************************************************************************************
 
 RPCHit::RPCHit(Uint channel, float time, Infrastructure* Infra){
-    Channel     = channel;              //RPC channel according to mapping (5 digits)
-    Trolley     = channel/10000;        //0, 1 or 3 (1st digit of the RPC channel)
-    Station     = (channel%10000)/1000; //From 1 to 4 (2nd digit)
-    Strip       = channel%1000;         //From 1 to 128 (3 last digits)
+    Channel     = channel;      //RPC channel according to mapping (4 digits)
+    Station     = channel/1000; //From 1 to whatever (1st digits)
+    Strip       = channel%1000; //From 1 to 128 (3 last digits)
 
     int nStripsPart = 0;
-    for(Uint tr = 0; tr < Infra->GetNTrolleys(); tr++){
-        if(Infra->GetTrolleyID(tr) == Trolley){
-            for(Uint sl = 0; sl < Infra->GetNSlots(tr); sl++){
-                if(Infra->GetSlotID(tr,sl) == Station)
-                    nStripsPart = Infra->GetNStrips(tr,sl);
-            }
-        }
+
+    for(Uint sl = 0; sl < Infra->GetNSlots(); sl++){
+        if(Infra->GetSlotID(sl) == Station)
+            nStripsPart = Infra->GetNStrips(sl);
     }
 
     Partition   = (Strip-1)/nStripsPart+1; //From 1 to 4
@@ -78,7 +74,6 @@ RPCHit::RPCHit(Uint channel, float time, Infrastructure* Infra){
 
 RPCHit::RPCHit(const RPCHit &other){
     Channel = other.Channel;
-    Trolley = other.Trolley;
     Station = other.Station;
     Strip = other.Strip;
     Partition = other.Partition;
@@ -104,7 +99,6 @@ RPCHit::~RPCHit(){
 RPCHit& RPCHit::operator =(const RPCHit& other){
     if(this != &other){
         Channel = other.Channel;
-        Trolley = other.Trolley;
         Station = other.Station;
         Strip = other.Strip;
         Partition = other.Partition;
@@ -122,16 +116,6 @@ RPCHit& RPCHit::operator =(const RPCHit& other){
 
 Uint RPCHit::GetChannel(){
     return Channel;
-}
-
-// ****************************************************************************************************
-// *    Uint GetTrolley()
-//
-//  Get the private member Trolley
-// ****************************************************************************************************
-
-Uint RPCHit::GetTrolley(){
-    return Trolley;
 }
 
 // ****************************************************************************************************
@@ -201,7 +185,7 @@ bool SortHitbyTime(RPCHit h1, RPCHit h2){
 //
 //  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
 //  of the muon peak and its spread. Then saves the result in 2 3D tables (#D bescause it follows the
-//  dimensions of the GIF++ infrastructure : Trolley, RPC slots and Partitions).
+//  dimensions of the 904 infrastructure : RPC slots and Partitions).
 // ****************************************************************************************************
 
 void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
@@ -219,15 +203,15 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
 
     GIFH1Array tmpTimeProfile;
-    GIFfloatArray noiseHits = {{{0.}}};
+    GIFfloatArray noiseHits = {{0.}};
     int binWidth = TIMEBIN;
 
-    for(Uint tr = 0; tr < NTROLLEYS; tr++)
-        for(Uint sl = 0; sl < NSLOTS; sl++)
-            for(Uint p = 0; p < NPARTITIONS; p++){
-                string name = "tmpTProf" + intToString(tr) + intToString(sl) +  intToString(p);
-                tmpTimeProfile.rpc[tr][sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/TIMEBIN,0.,BMTDCWINDOW);
-            }
+    for(Uint sl = 0; sl < NSLOTS; sl++){
+        for(Uint p = 0; p < NPARTITIONS; p++){
+            string name = "tmpTProf" + intToString(sl) +  intToString(p);
+            tmpTimeProfile.rpc[sl][p] = new TH1F(name.c_str(),name.c_str(),BMTDCWINDOW/TIMEBIN,0.,BMTDCWINDOW);
+        }
+    }
 
     //Loop over the entries to get the hits and fill the time distribution + count the
     //noise hits in the window around the peak
@@ -240,14 +224,13 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
             float timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
-            if(channel > 5127) continue;
+            if(channel > MAXTDCCHANNEL) continue;
             if(RPCChMap->GetLink(channel) == 0) continue;
             RPCHit tmpHit(RPCChMap->GetLink(channel), timing, Infra);
-            Uint T = tmpHit.GetTrolley();
             Uint S = tmpHit.GetStation()-1;
             Uint P = tmpHit.GetPartition()-1;
 
-            tmpTimeProfile.rpc[T][S][P]->Fill(tmpHit.GetTime());
+            tmpTimeProfile.rpc[S][P]->Fill(tmpHit.GetTime());
         }
     }
 
@@ -261,104 +244,102 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     muonPeak center;
     muonPeak lowlimit;
     muonPeak highlimit;
-    GIFfloatArray PeakHeight = {{{0.}}};
+    GIFfloatArray PeakHeight = {{0.}};
 
-    for(Uint tr = 0; tr < NTROLLEYS; tr++){
-        for(Uint sl = 0; sl < NSLOTS; sl++){
-            for(Uint p = 0; p < NPARTITIONS; p++){
-                //Fit with a gaussian the "Good TDC Time"
-                TF1 *slicefit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
+    for(Uint sl = 0; sl < NSLOTS; sl++){
+        for(Uint p = 0; p < NPARTITIONS; p++){
+            //Fit with a gaussian the "Good TDC Time"
+            TF1 *slicefit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
 
-                //Initialise with default parameters
-                //Amplitude
-                slicefit->SetParameter(0,50);
-                slicefit->SetParLimits(0,1,100000);
-                //Mean value
-                slicefit->SetParameter(1,300);
-                slicefit->SetParLimits(1,200,400);
-                //RMS
-                slicefit->SetParameter(2,10);
-                slicefit->SetParLimits(2,1,40);
+            //Initialise with default parameters
+            //Amplitude
+            slicefit->SetParameter(0,50);
+            slicefit->SetParLimits(0,1,100000);
+            //Mean value
+            slicefit->SetParameter(1,300);
+            slicefit->SetParLimits(1,200,400);
+            //RMS
+            slicefit->SetParameter(2,10);
+            slicefit->SetParLimits(2,1,40);
 
-                //Work only with the filled histograms.
-                //Find the highest bin. Assume than the beam peak is within
-                //a range of 80ns around the max bin. Evaluate the level of
-                //noise outside of this range and subtract it from each bin.
-                //Then finally fir and extract fit parameters.
-                if(tmpTimeProfile.rpc[tr][sl][p]->GetEntries() > 0.){
-                    center.rpc[tr][sl][p] = (float)tmpTimeProfile.rpc[tr][sl][p]->GetMaximumBin()*TIMEBIN;
-                    lowlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] - 40.;
-                    highlimit.rpc[tr][sl][p] = center.rpc[tr][sl][p] + 40.;
+            //Work only with the filled histograms.
+            //Find the highest bin. Assume than the beam peak is within
+            //a range of 80ns around the max bin. Evaluate the level of
+            //noise outside of this range and subtract it from each bin.
+            //Then finally fir and extract fit parameters.
+            if(tmpTimeProfile.rpc[sl][p]->GetEntries() > 0.){
+                center.rpc[sl][p] = (float)tmpTimeProfile.rpc[sl][p]->GetMaximumBin()*TIMEBIN;
+                lowlimit.rpc[sl][p] = center.rpc[sl][p] - 40.;
+                highlimit.rpc[sl][p] = center.rpc[sl][p] + 40.;
 
-                    float timeWdw = BMTDCWINDOW-TIMEREJECT-(highlimit.rpc[tr][sl][p]-lowlimit.rpc[tr][sl][p]);
+                float timeWdw = BMTDCWINDOW-TIMEREJECT-(highlimit.rpc[sl][p]-lowlimit.rpc[sl][p]);
 
-                    int nNoiseHitsLow =
-                            tmpTimeProfile.rpc[tr][sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit.rpc[tr][sl][p]/TIMEBIN);
-                    int nNoiseHitsHigh =
-                            tmpTimeProfile.rpc[tr][sl][p]->Integral(highlimit.rpc[tr][sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
+                int nNoiseHitsLow =
+                        tmpTimeProfile.rpc[sl][p]->Integral(TIMEREJECT/TIMEBIN,lowlimit.rpc[sl][p]/TIMEBIN);
+                int nNoiseHitsHigh =
+                        tmpTimeProfile.rpc[sl][p]->Integral(highlimit.rpc[sl][p]/TIMEBIN,BMTDCWINDOW/TIMEBIN);
 
-                    noiseHits.rpc[tr][sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
+                noiseHits.rpc[sl][p] = (float)binWidth*(nNoiseHitsLow+nNoiseHitsHigh)/timeWdw;
 
-                    for(Uint b = 1; b <= BMTDCWINDOW/binWidth; b++){
-                        float binContent = (float)tmpTimeProfile.rpc[tr][sl][p]->GetBinContent(b);
-                        float correctedContent = (binContent < noiseHits.rpc[tr][sl][p])
-                                ? 0.
-                                : binContent-noiseHits.rpc[tr][sl][p];
-                        tmpTimeProfile.rpc[tr][sl][p]->SetBinContent(b,correctedContent);
-                    }
-
-                    //Reset the fit function range with position of max bin
-                    slicefit->SetRange(lowlimit.rpc[tr][sl][p],highlimit.rpc[tr][sl][p]);
-
-                    //Reset amplitude with amplitude of highest bin
-                    slicefit->SetParameter(0,(float)tmpTimeProfile.rpc[tr][sl][p]->GetMaximum());
-
-                    //Fit the peak time
-                    tmpTimeProfile.rpc[tr][sl][p]->Fit(slicefit,"QR");
-
-                    //Save the max value of the histogram
-                    PeakHeight.rpc[tr][sl][p] = tmpTimeProfile.rpc[tr][sl][p]->GetMaximum();
+                for(Uint b = 1; b <= BMTDCWINDOW/binWidth; b++){
+                    float binContent = (float)tmpTimeProfile.rpc[sl][p]->GetBinContent(b);
+                    float correctedContent = (binContent < noiseHits.rpc[sl][p])
+                            ? 0.
+                            : binContent-noiseHits.rpc[sl][p];
+                    tmpTimeProfile.rpc[sl][p]->SetBinContent(b,correctedContent);
                 }
 
-                //Check whether this partition is more likely to be the illuminated one.
-                //If it is, apply to the other partition-s previously checked the same
-                //peak settings. Otherwise get the same settings for this partition than
-                //for the previous one.
-                //As a second check, make sure the peak is small enough. It should not
-                //exceed 60ns. It it is higher, there is a strong chance the fit didn't
-                //work, because of too low statistics. Then use the settings of the previous
-                //partition if it not the first partition. If it is the first partition
-                //checked, then use default parameters (peak = 300ns and width = 60ns)
-                //and set the peak height to 0.
-                //Finally, the peak should be in between 200 and 450ns of within the time
-                //distribution (there are no detectors outside of this window so far).
-                //Control this as well and use default values if the peak is outside.
-                bool IsNarrow = 3.*slicefit->GetParameter(2) <= 60;
-                bool IsInTime = slicefit->GetParameter(1) >= 200 && slicefit->GetParameter(1) <= 450;
+                //Reset the fit function range with position of max bin
+                slicefit->SetRange(lowlimit.rpc[sl][p],highlimit.rpc[sl][p]);
 
-                if(p > 0){
-                    bool IsHighestPeak= PeakHeight.rpc[tr][sl][p] > PeakHeight.rpc[tr][sl][p-1];
+                //Reset amplitude with amplitude of highest bin
+                slicefit->SetParameter(0,(float)tmpTimeProfile.rpc[sl][p]->GetMaximum());
 
-                    if(IsHighestPeak && IsNarrow && IsInTime){
-                        for(Uint part = 0; part <= p; part++){
-                            PeakTime.rpc[tr][sl][part] = slicefit->GetParameter(1);
-                            PeakWidth.rpc[tr][sl][part] = 3.*slicefit->GetParameter(2);
-                            PeakHeight.rpc[tr][sl][part] = PeakHeight.rpc[tr][sl][p];
-                        }
-                    } else {
-                        PeakTime.rpc[tr][sl][p] = PeakTime.rpc[tr][sl][p-1];
-                        PeakWidth.rpc[tr][sl][p] = PeakWidth.rpc[tr][sl][p-1];
-                        PeakHeight.rpc[tr][sl][p] = PeakHeight.rpc[tr][sl][p-1];
+                //Fit the peak time
+                tmpTimeProfile.rpc[sl][p]->Fit(slicefit,"QR");
+
+                //Save the max value of the histogram
+                PeakHeight.rpc[sl][p] = tmpTimeProfile.rpc[sl][p]->GetMaximum();
+            }
+
+            //Check whether this partition is more likely to be the illuminated one.
+            //If it is, apply to the other partition-s previously checked the same
+            //peak settings. Otherwise get the same settings for this partition than
+            //for the previous one.
+            //As a second check, make sure the peak is small enough. It should not
+            //exceed 60ns. It it is higher, there is a strong chance the fit didn't
+            //work, because of too low statistics. Then use the settings of the previous
+            //partition if it not the first partition. If it is the first partition
+            //checked, then use default parameters (peak = 300ns and width = 60ns)
+            //and set the peak height to 0.
+            //Finally, the peak should be in between 200 and 450ns of within the time
+            //distribution (there are no detectors outside of this window so far).
+            //Control this as well and use default values if the peak is outside.
+            bool IsNarrow = 3.*slicefit->GetParameter(2) <= 60;
+            bool IsInTime = slicefit->GetParameter(1) >= 200 && slicefit->GetParameter(1) <= 450;
+
+            if(p > 0){
+                bool IsHighestPeak= PeakHeight.rpc[sl][p] > PeakHeight.rpc[sl][p-1];
+
+                if(IsHighestPeak && IsNarrow && IsInTime){
+                    for(Uint part = 0; part <= p; part++){
+                        PeakTime.rpc[sl][part] = slicefit->GetParameter(1);
+                        PeakWidth.rpc[sl][part] = 3.*slicefit->GetParameter(2);
+                        PeakHeight.rpc[sl][part] = PeakHeight.rpc[sl][p];
                     }
                 } else {
-                    if(IsNarrow && IsInTime){
-                            PeakTime.rpc[tr][sl][p] = slicefit->GetParameter(1);
-                            PeakWidth.rpc[tr][sl][p] = 3.*slicefit->GetParameter(2);
-                    } else {
-                        PeakTime.rpc[tr][sl][p] = 300;
-                        PeakWidth.rpc[tr][sl][p] = 60;
-                        PeakHeight.rpc[tr][sl][p] = 0.;
-                    }
+                    PeakTime.rpc[sl][p] = PeakTime.rpc[sl][p-1];
+                    PeakWidth.rpc[sl][p] = PeakWidth.rpc[sl][p-1];
+                    PeakHeight.rpc[sl][p] = PeakHeight.rpc[sl][p-1];
+                }
+            } else {
+                if(IsNarrow && IsInTime){
+                        PeakTime.rpc[sl][p] = slicefit->GetParameter(1);
+                        PeakWidth.rpc[sl][p] = 3.*slicefit->GetParameter(2);
+                } else {
+                    PeakTime.rpc[sl][p] = 300;
+                    PeakWidth.rpc[sl][p] = 60;
+                    PeakHeight.rpc[sl][p] = 0.;
                 }
             }
         }

@@ -21,47 +21,41 @@
 #include <vector>
 
 #include "types.h"
-#include "GIFTrolley.h"
+#include "RPCDetector.h"
 
 using namespace std;
 
 class Infrastructure {
     private:
-        Uint             nTrolleys;  //Number of active Trolleys in the run
-        string           TrolleysID; //Active trolley IDs written into a string
-        vector<Trolley*> Trolleys;   //List of active Trolleys (struct)
+        Uint         nSlots;  //Number of active RPCs in the considered trolley
+        string       SlotsID; //Active RPC IDs written into a string
+        vector<RPC*> RPCs;    //List of active RPCs
 
     public:
-        //Constructors and destructor
+        //Constructors, destructor and operator =
         Infrastructure();
         Infrastructure(IniFile* geofile);
         Infrastructure(const Infrastructure& other);
         ~Infrastructure();
         Infrastructure& operator=(const Infrastructure& other);
 
-        //Get Infrastructure members
-        Uint   GetNTrolleys();
-        string GetTrolleysID();
-        Uint   GetTrolleyID(Uint t);
+        //Get Infrastructure members members
+        Uint   GetNSlots();
+        string GetSlotsID();
+        Uint   GetSlotID(Uint s);
 
-        //Manage Trolleys
-        Trolley* GetTrolley(Uint t);
-        void     DeleteTrolley(Uint t);
-
-        //Methods to get members of GIFTrolley objects stored in Trolleys
-        Uint   GetNSlots(Uint t);
-        string GetSlotsID(Uint t);
-        Uint   GetSlotID(Uint t, Uint s);
-        RPC*   GetRPC(Uint t, Uint r);
+        //Manage RPC list
+        RPC*   GetRPC(Uint r);
+        void   DeleteRPC(Uint r);
 
         //Methods to get members of RPC objects stored in RPCs
-        string GetName(Uint t, Uint r);
-        Uint   GetNGaps(Uint t, Uint r);
-        Uint   GetNPartitions(Uint t, Uint r);
-        Uint   GetNStrips(Uint t, Uint r);
-        string GetGap(Uint t, Uint r, Uint g);
-        float  GetGapGeo(Uint t, Uint r, Uint g);
-        float  GetStripGeo(Uint t, Uint r, Uint p);
+        string GetName(Uint r);
+        Uint   GetNGaps(Uint r);
+        Uint   GetNPartitions(Uint r);
+        Uint   GetNStrips(Uint r);
+        string GetGap(Uint r, Uint g);
+        float  GetGapGeo(Uint r, Uint g);
+        float  GetStripGeo(Uint r, Uint p);
 };
 
 #endif

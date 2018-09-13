@@ -19,7 +19,7 @@
 
 #include "../include/types.h"
 #include "../include/utils.h"
-#include "../include/GIFTrolley.h"
+#include "../include/RPCDetector.h"
 #include "../include/Infrastructure.h"
 
 using namespace std;
@@ -41,16 +41,16 @@ Infrastructure::Infrastructure(){
 // ****************************************************************************************************
 
 Infrastructure::Infrastructure(IniFile *geofile){
-    nTrolleys = geofile->intType("General","nTrolleys",NTROLLEYS);
-    TrolleysID = geofile->stringType("General","TrolleysID","");
+    nSlots = geofile->intType("General","nSlots",NSLOTS);
+    SlotsID = geofile->stringType("General","SlotsID","");
 
-    Trolleys.clear();
+    RPCs.clear();
 
-    for(Uint t = 0; t < GetNTrolleys(); t++){
-        string trolleyID = "T" + intToString(GetTrolleyID(t));
+    for(Uint s = 0; s < GetNSlots(); s++){
+        string rpcID = "S" + intToString(GetSlotID(s));
 
-        Trolley* tempTrolley = new Trolley(trolleyID, geofile);
-        Trolleys.push_back(tempTrolley);
+        RPC* temprpc = new RPC(rpcID, geofile);
+        RPCs.push_back(temprpc);
     }
 }
 
@@ -61,11 +61,11 @@ Infrastructure::Infrastructure(IniFile *geofile){
 // ****************************************************************************************************
 
 Infrastructure::Infrastructure(const Infrastructure &other){
-    nTrolleys = other.nTrolleys;
-    TrolleysID = other.TrolleysID;
+    nSlots = other.nSlots;
+    SlotsID = other.SlotsID;
 
-    Trolleys.clear();
-    Trolleys = other.Trolleys;
+    RPCs.clear();
+    RPCs = other.RPCs;
 }
 
 // ****************************************************************************************************
@@ -75,9 +75,9 @@ Infrastructure::Infrastructure(const Infrastructure &other){
 // ****************************************************************************************************
 
 Infrastructure::~Infrastructure(){
-    vector<Trolley*>::iterator it = Trolleys.begin();
+    vector<RPC*>::iterator it = RPCs.begin();
 
-    while(it != Trolleys.end())
+    while(it != RPCs.end())
         delete *(it++);
 }
 
@@ -89,184 +89,144 @@ Infrastructure::~Infrastructure(){
 
 Infrastructure& Infrastructure::operator=(const Infrastructure& other){
     if(this != &other){
-        nTrolleys = other.nTrolleys;
-        TrolleysID = other.TrolleysID;
+        nSlots = other.nSlots;
+        SlotsID = other.SlotsID;
 
-        vector<Trolley*>::iterator it = Trolleys.begin();
-        while(it != Trolleys.end())
+        vector<RPC*>::iterator it = RPCs.begin();
+        while(it != RPCs.end())
             delete *(it++);
 
-        Trolleys.clear();
-        Trolleys = other.Trolleys;
+        RPCs.clear();
+        RPCs = other.RPCs;
     }
 
     return *this;
 }
 
 // ****************************************************************************************************
-// *    Uint GetNTrolleys()
+// *    Uint GetNSlots()
 //
-//  Get the private member nTrolleys
+//  Get the private member nSlots
 // ****************************************************************************************************
 
-Uint Infrastructure::GetNTrolleys(){
-    return nTrolleys;
+Uint Infrastructure::GetNSlots(){
+    return nSlots;
 }
 
 // ****************************************************************************************************
-// *    string InfrastructureGetTrolleysID()
+// *    string GetSlotsID()
 //
-//  Get the private member TrolleysID
+//  Get the private member SlotsID
 // ****************************************************************************************************
 
-string Infrastructure::GetTrolleysID(){
-    return TrolleysID;
+string Infrastructure::GetSlotsID(){
+    return SlotsID;
 }
 
 // ****************************************************************************************************
-// *    Uint GetTrolleyID(Uint t)
+// *    Uint GetSlotID(Uint s)
 //
-//  Get the private member TrolleysID and extract the ID of Trolley t
+//  Get the private member SlotsID and extract the ID of slot s
 // ****************************************************************************************************
 
-Uint Infrastructure::GetTrolleyID(Uint t){
-    return CharToInt(TrolleysID[t]);
+Uint Infrastructure::GetSlotID(Uint s){
+    return CharToInt(SlotsID[s]);
 }
 
 // ****************************************************************************************************
-// *    Trolley* GetTrolley(Uint t)
+// *    RPC* GetRPC(Uint r)
 //
-//  Get the private member Trolleys and get the Trolley t
+//  Get the private member RPCs and get the RPC r
 // ****************************************************************************************************
 
-Trolley* Infrastructure::GetTrolley(Uint t){
-    if(t < Trolleys.size())
-        return Trolleys[t];
+RPC* Infrastructure::GetRPC(Uint r){
+    if(r < RPCs.size())
+        return RPCs[r];
     else
         return NULL;
 }
 
 // ****************************************************************************************************
-// *    void DeleteTrolley(Uint t)
+// *    void DeleteRPC(Uint r)
 //
-//  Get the private member Trolleys and delete Trolley t
+//  Get the private member RPCs and delete RPC r
 // ****************************************************************************************************
 
-void Infrastructure::DeleteTrolley(Uint t){
-    if(t < Trolleys.size()){
-        delete Trolleys[t];
-        Trolleys.erase(Trolleys.begin()+t);
-        nTrolleys--;
-        TrolleysID.erase(TrolleysID.begin()+t);
+void Infrastructure::DeleteRPC(Uint r){
+    if(r < RPCs.size()){
+        delete RPCs[r];
+        RPCs.erase(RPCs.begin()+r);
+        nSlots--;
+        SlotsID.erase(SlotsID.begin()+r);
     }
 }
 
 // ****************************************************************************************************
-// *    Uint GetNSlots(Uint t)
+// *    string GetName(Uint r)
 //
-//  Get the private member Trolleys and get the number of slots of Trolley t
+//  Get the private member RPCs and get the name of RPC r
 // ****************************************************************************************************
 
-Uint Infrastructure::GetNSlots(Uint t){
-    return GetTrolley(t)->GetNSlots();
+string Infrastructure::GetName(Uint r){
+    return GetRPC(r)->GetName();
 }
 
 // ****************************************************************************************************
-// *    string GetSlotsID(Uint t)
+// *    Uint GetNGaps(Uint r)
 //
-//  Get the private member Trolleys and get the slots IDs of Trolley t
+//  Get the private member RPCs and get the number of gaps of RPC r
 // ****************************************************************************************************
 
-string Infrastructure::GetSlotsID(Uint t){
-    return GetTrolley(t)->GetSlotsID();
+Uint Infrastructure::GetNGaps(Uint r){
+    return GetRPC(r)->GetNGaps();
 }
 
 // ****************************************************************************************************
-// *    Uint GetSlotID(Uint t, Uint s)
+// *    Uint GetNPartitions(Uint r)
 //
-//  Get the private member Trolleys and get the ID of slot s of Trolley t
+//  Get the private member RPCs and get the number of partitions of RPC r
 // ****************************************************************************************************
 
-Uint Infrastructure::GetSlotID(Uint t, Uint s){
-    return GetTrolley(t)->GetSlotID(s);
+Uint Infrastructure::GetNPartitions(Uint r){
+    return GetRPC(r)->GetNPartitions();
 }
 
 // ****************************************************************************************************
-// *    RPC* GetRPC(Uint t, Uint r)
+// *    Uint GetNStrips(Uint r)
 //
-//  Get the private member Trolleys and get RPC r of Trolley t
+//  Get the private member RPCs and get the number of strips per partition of RPC r
 // ****************************************************************************************************
 
-RPC* Infrastructure::GetRPC(Uint t, Uint r){
-    return GetTrolley(t)->GetRPC(r);
+Uint Infrastructure::GetNStrips(Uint r){
+    return GetRPC(r)->GetNStrips();
 }
 
 // ****************************************************************************************************
-// *    string GetName(Uint t, Uint r)
+// *    string GetGap(Uint r, Uint g)
 //
-//  Get the private member Trolleys and get the name of RPC r of Trolley t
+//  Get the private member RPCs and get the name of gap g of RPC r
 // ****************************************************************************************************
 
-string Infrastructure::GetName(Uint t, Uint r){
-    return GetTrolley(t)->GetName(r);
+string Infrastructure::GetGap(Uint r, Uint g){
+    return GetRPC(r)->GetGap(g);
 }
 
 // ****************************************************************************************************
-// *    Uint GetNGaps(Uint t, Uint r)
+// *    float GetGapGeo(Uint r, Uint g)
 //
-//  Get the private member Trolleys and get the number of gaps of RPC r of Trolley t
+//  Get the private member RPCs and get the active area of gap g of RPC r
 // ****************************************************************************************************
 
-Uint Infrastructure::GetNGaps(Uint t, Uint r){
-    return GetTrolley(t)->GetNGaps(r);
+float Infrastructure::GetGapGeo(Uint r, Uint g){
+    return GetRPC(r)->GetGapGeo(g);
 }
 
 // ****************************************************************************************************
-// *    Uint GetNPartitions(Uint t, Uint r)
+// *    float GetStripGeo(Uint r, Uint p)
 //
-//  Get the private member Trolleys and get the number of partitions of RPC r of Trolley t
+//  Get the private member RPCs and get the active area of strips in partition p of RPC r
 // ****************************************************************************************************
 
-Uint Infrastructure::GetNPartitions(Uint t, Uint r){
-    return GetTrolley(t)->GetNPartitions(r);
-}
-
-// ****************************************************************************************************
-// *    Uint GetNStrips(Uint t, Uint r)
-//
-//  Get the private member Trolleys and get the number of strips/part. of RPC r of Trolley t
-// ****************************************************************************************************
-
-Uint Infrastructure::GetNStrips(Uint t, Uint r){
-    return GetTrolley(t)->GetNStrips(r);
-}
-
-// ****************************************************************************************************
-// *    string GetGap(Uint t, Uint r, Uint g)
-//
-//  Get the private member Trolleys and get the name of gap g of RPC r of Trolley t
-// ****************************************************************************************************
-
-string Infrastructure::GetGap(Uint t, Uint r, Uint g){
-    return GetTrolley(t)->GetGap(r,g);
-}
-
-// ****************************************************************************************************
-// *    float GetGapGeo(Uint t, Uint r, Uint g)
-//
-//  Get the private member Trolleys and get the active area of gap g of RPC r of Trolley t
-// ****************************************************************************************************
-
-float Infrastructure::GetGapGeo(Uint t, Uint r, Uint g){
-    return GetTrolley(t)->GetGapGeo(r,g);
-}
-
-// ****************************************************************************************************
-// *    float GetStripGeo(Uint t, Uint r, Uint p)
-//
-//  Get the private member Trolleys and get active area of part p strips of RPC r of Trolley t
-// ****************************************************************************************************
-
-float Infrastructure::GetStripGeo(Uint t, Uint r, Uint p){
-    return GetTrolley(t)->GetStripGeo(r,p);
+float Infrastructure::GetStripGeo(Uint r, Uint p){
+    return GetRPC(r)->GetStripGeo(p);
 }

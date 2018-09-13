@@ -21,6 +21,8 @@ using namespace std;
 
 //****************************************************************************
 
+const float NANOSEC = 1e-9;
+
 //List of global variables used as default values
 //in case of problems to read Dimensions.ini
 const float TIMEREJECT   = 100.;
@@ -30,7 +32,6 @@ const float RDMTDCWINDOW = 400.*25.;
 const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
 
 typedef unsigned int Uint;
-const Uint NTROLLEYS   = 5;
 const Uint NSLOTS      = 9;
 const Uint NPARTITIONS = 4;
 
@@ -39,12 +40,16 @@ const Uint NSTRIPSPART = 48;
 const Uint NSTRIPSCONN = 16;
 const Uint NSTRIPSCHIP = 8;
 
+const Uint NTDC = 1;
+const Uint NCHANNELTDC = 128;
+const Uint MAXTDCCHANNEL = NTDC*1000 + NCHANNELTDC;
+
 //****************************************************************************
 
-typedef struct GIFnBinsMult { Uint rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFnBinsMult;
-typedef struct GIFH1Array { TH1* rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFH1Array;
-typedef struct GIFintArray { int rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFintArray;
-typedef struct GIFfloatArray { float rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFfloatArray;
+typedef struct GIFnBinsMult { Uint rpc[NSLOTS][NPARTITIONS]; } GIFnBinsMult;
+typedef struct GIFH1Array { TH1* rpc[NSLOTS][NPARTITIONS]; } GIFH1Array;
+typedef struct GIFintArray { int rpc[NSLOTS][NPARTITIONS]; } GIFintArray;
+typedef struct GIFfloatArray { float rpc[NSLOTS][NPARTITIONS]; } GIFfloatArray;
 typedef GIFfloatArray muonPeak;
 
 typedef enum _QualityFlag {
@@ -61,6 +66,10 @@ typedef enum _Mask {
     ACTIVE = 1,
     MASKED = 0
 } Mask;
+
+typedef enum _ChannelStatus {
+    NORPCCHANNEL = 0
+} ChannelStatus;
 
 //****************************************************************************
 
