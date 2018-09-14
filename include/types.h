@@ -64,7 +64,7 @@ typedef enum _Mask {
 } Mask;
 
 typedef enum _ChannelStatus {
-    NORPCCHANNEL = 0
+    NOCHANNELLINK = 0
 } ChannelStatus;
 
 //****************************************************************************
