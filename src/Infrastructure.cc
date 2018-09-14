@@ -53,7 +53,7 @@ Infrastructure::Infrastructure(IniFile *geofile){
         RPC* temprpc = new RPC(rpcID, geofile);
         RPCs.push_back(temprpc);
 
-        MSG_INFO("[Infrastructure] Found RPC " + GetName(s) + " in slot " + rpcID)
+        MSG_INFO("[Infrastructure] Found RPC " + GetName(s) + " in slot " + rpcID);
     }
 }
 
