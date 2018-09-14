@@ -74,7 +74,7 @@ bool Mapping::CheckIfNewLine(char next){
 // ****************************************************************************************************
 
 bool Mapping::CheckIfTDCCh(Uint channel){
-    return ( channel > 0 || channel <= 5127);
+    return (channel >= 0);
 }
 
 // ****************************************************************************************************
@@ -132,7 +132,6 @@ int Mapping::Read(){
         }
 
         map.close();
-
         return Error;
     } else {
         Error = MAP_ERROR_CANNOT_OPEN_READ_FILE;

@@ -40,10 +40,6 @@ const Uint NSTRIPSPART = 48;
 const Uint NSTRIPSCONN = 16;
 const Uint NSTRIPSCHIP = 8;
 
-const Uint NTDC = 1;
-const Uint NCHANNELTDC = 128;
-const Uint MAXTDCCHANNEL = NTDC*1000 + NCHANNELTDC;
-
 //****************************************************************************
 
 typedef struct GIFnBinsMult { Uint rpc[NSLOTS][NPARTITIONS]; } GIFnBinsMult;

@@ -224,7 +224,6 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
             float timing = mydata.TDCTS->at(h);
 
             //Get rid of the noise hits outside of the connected channels
-            if(channel > MAXTDCCHANNEL) continue;
             if(RPCChMap->GetLink(channel) == 0) continue;
             RPCHit tmpHit(RPCChMap->GetLink(channel), timing, Infra);
             Uint S = tmpHit.GetStation()-1;

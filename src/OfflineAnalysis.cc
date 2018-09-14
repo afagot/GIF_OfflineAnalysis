@@ -313,9 +313,6 @@ void OfflineAnalysis(string baseName){
                 Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
                 float timestamp = data.TDCTS->at(h);
 
-                //Get rid of the noise hits outside of the connected channels
-                if(tdcchannel > MAXTDCCHANNEL) continue;
-
                 //Get rid of the hits in channels not considered in the mapping
                 if(rpcchannel == NORPCCHANNEL) continue;
 
@@ -619,12 +616,12 @@ void OfflineAnalysis(string baseName){
                     //calculated strip by strip is obtained using a proportionnality
                     //rule on the number of hits measured during the noise
                     //window and the time width of the peak
+                    int nNoiseHits = StripNoiseProfile_H.rpc[S][p]->GetBinContent(st);
+
                     if(IsEfficiencyRun(RunType)){
-                        int nNoiseHits = StripNoiseProfile_H.rpc[S][p]->GetBinContent(st);
                         float noiseWindow = BMTDCWINDOW - TIMEREJECT - 2*PeakWidth.rpc[S][p];
                         float peakWindow = 2*PeakWidth.rpc[S][p];
                         float nNoisePeak = nNoiseHits*peakWindow/noiseWindow;
-
                         int nPeakHits = BeamProfile_H.rpc[S][p]->GetBinContent(st);
 
                         float correctedContent = (nPeakHits<nNoisePeak) ? 0. : (float)nPeakHits-nNoisePeak;
@@ -635,8 +632,8 @@ void OfflineAnalysis(string baseName){
                     Uint RPCCh = (S+1)*1e3 + st + p*nStripsPart;
 
                     //Fill noise rates and activities, and apply mask
-                    float stripRate = StripNoiseProfile_H.rpc[S][p]->GetBinContent(st)/rate_norm;
-                    float stripAct = StripNoiseProfile_H.rpc[S][p]->GetBinContent(st)/averageNhit;
+                    float stripRate = nNoiseHits/rate_norm;
+                    float stripAct = nNoiseHits/averageNhit;
 
                     if(RPCChMap->GetMask(RPCCh) == ACTIVE){
                         StripNoiseProfile_H.rpc[S][p]->SetBinContent(st,stripRate);
