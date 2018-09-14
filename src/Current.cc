@@ -163,8 +163,9 @@ void GetCurrent(string baseName){
         outputCSV.close();
 
         caenFile.Close();
+        MSG_INFO("[Current] CAEN mainframe information extracted with success!");
     } else {
-        MSG_INFO("[Offline-Current] File " + caenName + " could not be opened");
-        MSG_INFO("[Offline-Current] Skipping current analysis");
+        MSG_INFO("[Current] File " + caenName + " could not be opened");
+        MSG_INFO("[Current] Skipping current analysis");
     }
 }

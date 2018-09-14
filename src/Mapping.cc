@@ -136,7 +136,7 @@ int Mapping::Read(){
         return Error;
     } else {
         Error = MAP_ERROR_CANNOT_OPEN_READ_FILE;
-        MSG_ERROR("[Offline-Mapping] Read error " + to_string(Error));
+        MSG_ERROR("[Mapping-ERROR] Read error " + to_string(Error));
 
         return Error;
     }

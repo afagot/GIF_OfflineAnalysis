@@ -99,8 +99,12 @@ void OfflineAnalysis(string baseName){
         muonPeak PeakTime = {{0.}};
         muonPeak PeakWidth = {{0.}};
 
-        if(IsEfficiencyRun(RunType))
+        if(IsEfficiencyRun(RunType)){
+            MSG_INFO("[Analysis] Run is efficiency type - steting beam window");
             SetBeamWindow(PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
+        } else {
+            MSG_INFO("[Analysis] Run is test, rate or noise type - using full window for rate calculation");
+        }
 
         //****************** LINK RAW DATA *******************************
 
@@ -116,8 +120,10 @@ void OfflineAnalysis(string baseName){
         dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
         dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
 
-        if(isNewFormat)
+        if(isNewFormat){
+            MSG_INFO("[Analysis] Run uses Quality flag");
             dataTree->SetBranchAddress("Quality_flag", &data.QFlag);
+        }
 
         //****************** HISTOGRAMS & CANVAS *************************
 
@@ -284,6 +290,7 @@ void OfflineAnalysis(string baseName){
 
         Uint nEntries = dataTree->GetEntries();
 
+        MSG_INFO("[Analysis] Starting loop over entries...");
         for(Uint i = 0; i < nEntries; i++){
 
             //********** LOOP THROUGH HIT LIST ***************************
@@ -478,6 +485,7 @@ void OfflineAnalysis(string baseName){
 
         //************** DATA ANALYSIS **********************************
 
+        MSG_INFO("[Analysis] Loop over entries done - entering analysis loop");
         //Loop over slots
         for (Uint sl = 0; sl < GIFInfra->GetNSlots(); sl++){
             Uint S = GIFInfra->GetSlotID(sl) - 1;
@@ -833,8 +841,9 @@ void OfflineAnalysis(string baseName){
 
         outputfile.Close();
         dataFile.Close();
+        MSG_INFO("[Analysis] Offline analysis performed with success!");
     } else {
-        MSG_INFO("[Offline] File " + daqName + " could not be opened");
-        MSG_INFO("[Offline] Skipping offline analysis");
+        MSG_INFO("[Analysis] File " + daqName + " could not be opened");
+        MSG_INFO("[Analysis] Skipping offline analysis");
     }
 }

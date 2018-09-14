@@ -45,12 +45,20 @@ int main(int argc ,char *argv[]){
 
         //Start the needed analysis tools - check if the ROOT files exist
         string daqName = baseName + "_DAQ.root";
-        if(existFile(daqName)) OfflineAnalysis(baseName);
-        else MSG_ERROR("[Offline] No DAQ file for run " + baseName);
+        if(existFile(daqName)){
+            MSG_INFO("[Analysis] Opening file " + daqName + " for analysis");
+            OfflineAnalysis(baseName);
+        } else {
+            MSG_ERROR("[Offline] No DAQ file for run " + baseName);
+        }
 
         string caenName = baseName + "_CAEN.root";
-        if(existFile(caenName)) GetCurrent(baseName);
-        else  MSG_ERROR("[Offline] No CAEN file for run " + baseName);
+        if(existFile(caenName)){
+            GetCurrent(baseName);
+            MSG_INFO("[Current] Opening file " + caenName + " for CAEN information extraction");
+        } else {
+            MSG_ERROR("[Offline] No CAEN file for run " + baseName);
+        }
 
         return 0;
     }

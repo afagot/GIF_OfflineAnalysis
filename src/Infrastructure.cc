@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "../include/MsgSvc.h"
 #include "../include/types.h"
 #include "../include/utils.h"
 #include "../include/RPCDetector.h"
@@ -51,6 +52,8 @@ Infrastructure::Infrastructure(IniFile *geofile){
 
         RPC* temprpc = new RPC(rpcID, geofile);
         RPCs.push_back(temprpc);
+
+        MSG_INFO("[Infrastructure] Found RPC " + GetName(s) + " in slot " + rpcID)
     }
 }
 

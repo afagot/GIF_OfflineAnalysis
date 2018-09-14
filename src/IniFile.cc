@@ -78,7 +78,7 @@ bool IniFile::CheckIfGroup(string line,string& group){
             group = line.substr(1,line.length()-2);
         } else {
             Error = INI_ERROR_WRONG_GROUP_FORMAT;
-            MSG_ERROR("[Offline-Inifile] Group error " + to_string(Error));
+            MSG_ERROR("[Inifile-ERROR] Group error " + to_string(Error));
         }
         return true;
     }
@@ -105,12 +105,12 @@ bool IniFile::CheckIfToken(string line,string& key,string& value){
             value = line.substr(p0,(line.size()-p0));
         } else {
             Error = INI_ERROR_MISSING_VALUE;
-            MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
+            MSG_ERROR("[Inifile-ERROR] Token error " + to_string(Error));
         }
         return true;
     } else {
         Error = INI_ERROR_WRONG_FORMAT;
-        MSG_ERROR("[Offline-Inifile] Token error " + to_string(Error));
+        MSG_ERROR("[Inifile-ERROR] Token error " + to_string(Error));
         return false;
     }
 }
@@ -145,7 +145,7 @@ int IniFile::Read(){
         ini.close();
     } else {
         Error = INI_ERROR_CANNOT_OPEN_READ_FILE;
-        MSG_ERROR("[Offline-Inifile] Read error " + to_string(Error));
+        MSG_ERROR("[Inifile-ERROR] Read error " + to_string(Error));
         return Error;
     }
 
@@ -206,7 +206,7 @@ long IniFile::intType(string groupname, string keyname, long defaultvalue ){
     }
     else {
         string defVal = longTostring(defaultvalue);
-        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
+        MSG_WARNING("[IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
     }
 
     return intValue;
@@ -232,7 +232,7 @@ string IniFile::stringType( string groupname, string keyname, string defaultvalu
     if(Iter != FileData.end())
         stringChain = Iter->second;
     else
-        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defaultvalue+")");
+        MSG_WARNING("[IniFile-WARING] "+key+" could not be found : default key used instead ("+defaultvalue+")");
 
     return stringChain;
 }
@@ -258,7 +258,7 @@ float IniFile::floatType( string groupname, string keyname, float defaultvalue )
         floatValue = strtof(Iter->second.c_str(),NULL);
     else {
         string defVal = floatTostring(defaultvalue);
-        MSG_WARNING("[Offline-IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
+        MSG_WARNING("[IniFile-WARING] "+key+" could not be found : default key used instead ("+defVal+")");
     }
 
     return floatValue;
