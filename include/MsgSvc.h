@@ -33,6 +33,7 @@ const int INFO    = 0;
 const int DEBUG   = 1;
 const int VERBOSE = 2;
 const int ALWAYS  = 3;
+const int INIT    = 4;
 
 //Generic messaging function
 int MSG(string message, int level);
@@ -46,6 +47,8 @@ void MSG_INFO(string message);
 void MSG_DEBUG(string message);
 void MSG_VERBOSE(string message);
 void MSG_ALWAYS(string message);
+
+int MSG_INIT();
 
 #endif
 

@@ -103,3 +103,35 @@ void MSG_INFO(string message)   {MSG(message,INFO);}
 void MSG_DEBUG(string message)  {MSG(message,DEBUG);}
 void MSG_VERBOSE(string message){MSG(message,VERBOSE);}
 void MSG_ALWAYS(string message) {MSG(message,ALWAYS);}
+
+// ****************************************************************************************************
+// *    int MSG_INIT(string message)
+//
+//  Use generic messaging function to initialize log file.
+// ****************************************************************************************************
+
+int MSG_INIT(){
+    //First we need to get the log file path into the log life
+    //in the RUN directory, then we will know where to write the
+    //logs.
+    string logpath;
+
+    ifstream logpathfile(__logpath.c_str(), ios::in);
+    if(logpathfile){
+        logpathfile >> logpath;
+        logpathfile.close();
+
+        ofstream logfile(logpath.c_str(), ios::trunc);
+        if(logfile){
+            logfile << GetLogTimeStamp() << "[Offline] Offline analysis starting" << endl;
+            logfile.close();
+            return INIT;
+        } else {
+            cout << "File not found " << logpath << endl;
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        cout << "File not found " << __logpath << endl;
+        exit(EXIT_FAILURE);
+    }
+}

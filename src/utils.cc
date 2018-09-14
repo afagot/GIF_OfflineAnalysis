@@ -137,7 +137,9 @@ bool existFile(string ROOTName){
 
 void WritePath(string baseName){
     //First let's write the path to the log file
-    string logpath = baseName.substr(0, baseName.find_last_of("/")+1) + "log.txt";
+    string logpath = baseName.substr(0, baseName.find_last_of("/")+1)
+                    + baseName.substr(baseName.find_last_of("_")+1)
+                    + "/log-offline.txt";
 
     ofstream logpathfile(__logpath.c_str(), ios::out);
     logpathfile << logpath;

@@ -38,8 +38,10 @@ int main(int argc ,char *argv[]){
         converter.clear();
 
         //Write in the files of the RUN directory the path to the files
-        //in the HVSCAN directory to know where to write the logs
+        //in the HVSCAN directory to know where to write the logs and
+        //initialize offline log file
         WritePath(baseName);
+        MSG_INIT();
 
         //Start the needed analysis tools - check if the ROOT files exist
         string daqName = baseName + "_DAQ.root";
