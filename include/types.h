@@ -80,7 +80,7 @@ typedef enum _ChannelStatus {
 const string __rundir = "/var/operation/RUN/";
 const string __logpath = __rundir + "log-offline";
 const string __dimension = "/Dimensions.ini";
-const string __mapping = "/ChannelsMapping.csv";
+const string __mapping = "/Mapping.csv";
 
 //****************************************************************************
 
