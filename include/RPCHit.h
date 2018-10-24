@@ -42,10 +42,11 @@ class RPCHit {
         Uint  Strip;
         Uint  Partition;
         float TimeStamp;
+        float TOvThresh;
 
     public:
         RPCHit();
-        RPCHit(Uint channel, float time, Infrastructure* Infra);
+        RPCHit(Uint channel, float leadstamp, float trailstamp, Infrastructure* Infra);
         RPCHit(const RPCHit& other);
         ~RPCHit();
         RPCHit& operator=(const RPCHit& other);
@@ -55,6 +56,7 @@ class RPCHit {
         Uint  GetStrip();
         Uint  GetPartition();
         float GetTime();
+        float GetTOvThresh();
 };
 
 typedef vector<RPCHit> HitList;

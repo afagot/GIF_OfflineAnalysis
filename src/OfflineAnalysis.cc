@@ -106,19 +106,23 @@ void OfflineAnalysis(string baseName){
         RAWData data;
 
         data.TDCCh = new vector<Uint>;
-        data.TDCTS = new vector<float>;
+        data.TDClTS = new vector<float>;
+        data.TDCtTS = new vector<float>;
         data.TDCCh->clear();
-        data.TDCTS->clear();
+        data.TDClTS->clear();
+        data.TDCtTS->clear();
 
         dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
         dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
         dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
-        dataTree->SetBranchAddress("TDC_TimeStamp",  &data.TDCTS);
-        dataTree->SetBranchAddress("Quality_flag", &data.QFlag);
+        dataTree->SetBranchAddress("TDC_leadingTS",  &data.TDClTS);
+        dataTree->SetBranchAddress("TDC_trailingTS", &data.TDCtTS);
+        dataTree->SetBranchAddress("Quality_flag",   &data.QFlag);
 
         //****************** HISTOGRAMS & CANVAS *************************
 
         GIFH1Array TimeProfile_H;
+        GIFH1Array TOvThrProfile_H;
         GIFH1Array HitProfile_H;
         GIFH1Array HitMultiplicity_H;
 
@@ -178,10 +182,15 @@ void OfflineAnalysis(string baseName){
 
                 //****************************************** General histograms
 
-                //Time profile
-                SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Time profile");
+                //Leading time profile
+                SetTitleName(rpcID,p,hisname,histitle,"Time_Profile","Leading time profile");
                 TimeProfile_H.rpc[S][p] = new TH1F(hisname, histitle, (int)timeWidth/TIMEBIN, 0., timeWidth);
                 SetTH1(TimeProfile_H.rpc[S][p],"Time (ns)","Number of hits");
+
+                //Time over threshold profile
+                SetTitleName(rpcID,p,hisname,histitle,"TOvThr_Profile","Time over threshold profile");
+                TOvThrProfile_H.rpc[S][p] = new TH1F(hisname, histitle, (int)TOVTHRWDW/TIMEBIN, 0., TOVTHRWDW);
+                SetTH1(TOvThrProfile_H.rpc[S][p],"Time over threshold (ns)","Number of hits");
 
                 //Hit profile
                 SetTitleName(rpcID,p,hisname,histitle,"Hit_Profile","Hit profile");
@@ -300,16 +309,18 @@ void OfflineAnalysis(string baseName){
                 for(int h = 0; h < data.TDCCh->size(); h++){
                     Uint tdcchannel = data.TDCCh->at(h);
                     Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
-                    float timestamp = data.TDCTS->at(h);
+                    float leadstamp = data.TDClTS->at(h);
+                    float trailstamp = data.TDCtTS->at(h);
 
                     //Get rid of the hits in channels not considered in the mapping
                     if(rpcchannel != NOCHANNELLINK){
-                        RPCHit hit(rpcchannel, timestamp, GIFInfra);
+                        RPCHit hit(rpcchannel, leadstamp, trailstamp, GIFInfra);
                         Uint S = hit.GetStation()-1;
                         Uint P = hit.GetPartition()-1;
 
                         //Fill the profiles
                         TimeProfile_H.rpc[S][P]->Fill(hit.GetTime());
+                        TOvThrProfile_H.rpc[S][P]->Fill(hit.GetTOvThresh());
                         HitProfile_H.rpc[S][P]->Fill(hit.GetStrip());
 
                         //Reject the 100 first ns due to inhomogeneity of data
@@ -608,6 +619,7 @@ void OfflineAnalysis(string baseName){
                 //******************************* General histograms
 
                 TimeProfile_H.rpc[S][p]->Write();
+                TOvThrProfile_H.rpc[S][p]->Write();
                 HitProfile_H.rpc[S][p]->Write();
                 HitMultiplicity_H.rpc[S][p]->Write();
 

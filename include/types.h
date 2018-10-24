@@ -30,6 +30,7 @@ const float TIMEBIN      = 10.;
 const float BMTDCWINDOW  = 24.*25.;
 const float RDMTDCWINDOW = 400.*25.;
 const float RDMNOISEWDW  = RDMTDCWINDOW - TIMEREJECT;
+const float TOVTHRWDW    = 500.;
 
 typedef unsigned int Uint;
 const Uint NSLOTS      = 9;
@@ -91,7 +92,8 @@ struct RAWData {
     int            TDCNHits; //Number of hits in event i
     int            QFlag;    //Quality flag list (1 flag digit per TDC)
     vector<Uint>  *TDCCh;    //List of channels giving hits per event
-    vector<float> *TDCTS;    //List of the corresponding time stamps
+    vector<float> *TDClTS;   //List of the corresponding leading time stamps
+    vector<float> *TDCtTS;   //List of the corresponding trailing time stamps
 };
 
 #endif

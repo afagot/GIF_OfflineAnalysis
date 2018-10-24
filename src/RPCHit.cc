@@ -50,7 +50,7 @@ RPCHit::RPCHit(){
 //  Constructor
 // ****************************************************************************************************
 
-RPCHit::RPCHit(Uint channel, float time, Infrastructure* Infra){
+RPCHit::RPCHit(Uint channel, float leadstamp, float trailstamp, Infrastructure* Infra){
     Channel     = channel;      //RPC channel according to mapping (4 digits)
     Station     = channel/1000; //From 1 to whatever (1st digits)
     Strip       = channel%1000; //From 1 to 128 (3 last digits)
@@ -63,7 +63,8 @@ RPCHit::RPCHit(Uint channel, float time, Infrastructure* Infra){
     }
 
     Partition   = (Strip-1)/nStripsPart+1; //From 1 to 4
-    TimeStamp   = time;
+    TimeStamp   = leadstamp;
+    TOvThresh   = trailstamp - leadstamp;
 }
 
 // ****************************************************************************************************
@@ -78,6 +79,7 @@ RPCHit::RPCHit(const RPCHit &other){
     Strip = other.Strip;
     Partition = other.Partition;
     TimeStamp = other.TimeStamp;
+    TOvThresh = other.TOvThresh;
 }
 
 // ****************************************************************************************************
@@ -103,6 +105,7 @@ RPCHit& RPCHit::operator =(const RPCHit& other){
         Strip = other.Strip;
         Partition = other.Partition;
         TimeStamp = other.TimeStamp;
+        TOvThresh = other.TOvThresh;
     }
 
     return *this;
@@ -149,13 +152,23 @@ Uint RPCHit::GetPartition(){
 }
 
 // ****************************************************************************************************
-// *    Uint GetTime()
+// *    float GetTime()
 //
 //  Get the private member TimeStamp
 // ****************************************************************************************************
 
 float RPCHit::GetTime(){
     return TimeStamp;
+}
+
+// ****************************************************************************************************
+// *    float GetTOvThr()
+//
+//  Get the private member TOvThresh
+// ****************************************************************************************************
+
+float RPCHit::GetTOvThresh(){
+    return TOvThresh;
 }
 
 // ****************************************************************************************************
@@ -193,14 +206,18 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     RAWData mydata;
 
     mydata.TDCCh = new vector<Uint>;
-    mydata.TDCTS = new vector<float>;
+    mydata.TDClTS = new vector<float>;
+    mydata.TDCtTS = new vector<float>;
     mydata.TDCCh->clear();
-    mydata.TDCTS->clear();
+    mydata.TDClTS->clear();
+    mydata.TDCtTS->clear();
 
     mytree->SetBranchAddress("EventNumber",    &mydata.iEvent);
     mytree->SetBranchAddress("number_of_hits", &mydata.TDCNHits);
     mytree->SetBranchAddress("TDC_channel",    &mydata.TDCCh);
-    mytree->SetBranchAddress("TDC_TimeStamp",  &mydata.TDCTS);
+    mytree->SetBranchAddress("TDC_leadingTS",  &mydata.TDClTS);
+    mytree->SetBranchAddress("TDC_leadingTS",  &mydata.TDCtTS);
+    mytree->SetBranchAddress("Quality_flag",   &mydata.QFlag);
 
     GIFH1Array tmpTimeProfile;
     GIFfloatArray noiseHits = {{0.}};
@@ -219,17 +236,20 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     for(Uint i = 0; i < mytree->GetEntries(); i++){
         mytree->GetEntry(i);
 
-        for(int h = 0; h < mydata.TDCNHits; h++){
-            Uint channel = mydata.TDCCh->at(h);
-            float timing = mydata.TDCTS->at(h);
+        if(!IsCorruptedEvent(mydata.QFlag)){
+            for(int h = 0; h < mydata.TDCNHits; h++){
+                Uint channel = mydata.TDCCh->at(h);
+                float leadstamp = mydata.TDClTS->at(h);
+                float trailstamp = mydata.TDCtTS->at(h);
 
-            //Get rid of the noise hits outside of the connected channels
-            if(RPCChMap->GetLink(channel) == 0) continue;
-            RPCHit tmpHit(RPCChMap->GetLink(channel), timing, Infra);
-            Uint S = tmpHit.GetStation()-1;
-            Uint P = tmpHit.GetPartition()-1;
+                //Get rid of the noise hits outside of the connected channels
+                if(RPCChMap->GetLink(channel) == 0) continue;
+                RPCHit tmpHit(RPCChMap->GetLink(channel), leadstamp, trailstamp, Infra);
+                Uint S = tmpHit.GetStation()-1;
+                Uint P = tmpHit.GetPartition()-1;
 
-            tmpTimeProfile.rpc[S][P]->Fill(tmpHit.GetTime());
+                tmpTimeProfile.rpc[S][P]->Fill(tmpHit.GetTime());
+            }
         }
     }
 
