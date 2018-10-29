@@ -617,19 +617,21 @@ void OfflineAnalysis(string baseName){
                         : ClusterRate*cSizePartErr/cSizePart;
 
                 //******************************* Print the peak gaussian fit
-                TF1 *peakfit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
+                if(IsEfficiencyRun(RunType)){
+                    TF1 *peakfit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
 
-                //Prefit to get the curve on the histogram
-                peakfit->SetRange(PeakTime.rpc[S][p]-PeakWidth.rpc[S][p],PeakTime.rpc[S][p]+PeakWidth.rpc[S][p]);
-                TimeProfile_H.rpc[S][p]->Fit(peakfit,"QR");
+                    //Prefit to get the curve on the histogram
+                    peakfit->SetRange(PeakTime.rpc[S][p]-PeakWidth.rpc[S][p],PeakTime.rpc[S][p]+PeakWidth.rpc[S][p]);
+                    TimeProfile_H.rpc[S][p]->Fit(peakfit,"QR");
 
-                //Reset with parameters extracted from earlier call of SetBeamWindow(...)
-                //Amplitude
-                peakfit->SetParameter(0,PeakHeight.rpc[S][p]);
-                //Mean value
-                peakfit->SetParameter(1,PeakTime.rpc[S][p]);
-                //RMS
-                peakfit->SetParameter(2,PeakWidth.rpc[S][p]);
+                    //Reset with parameters extracted from earlier call of SetBeamWindow(...)
+                    //Amplitude
+                    peakfit->SetParameter(0,PeakHeight.rpc[S][p]);
+                    //Mean value
+                    peakfit->SetParameter(1,PeakTime.rpc[S][p]);
+                    //RMS
+                    peakfit->SetParameter(2,PeakWidth.rpc[S][p]);
+                }
 
                 //Draw and write the histograms into the output ROOT file
                 //******************************* General histograms
