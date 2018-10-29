@@ -96,11 +96,12 @@ void OfflineAnalysis(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
+        muonPeak PeakHeight = {{{0.}}};
         muonPeak PeakTime = {{{0.}}};
         muonPeak PeakWidth = {{{0.}}};
 
         if(IsEfficiencyRun(RunType))
-            SetBeamWindow(PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakHeight,PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
 
         //****************** LINK RAW DATA *******************************
 
@@ -710,6 +711,21 @@ void OfflineAnalysis(string baseName){
                     ClusterSDev   += (cSizePart==0)
                             ? 0.
                             : ClusterRate*cSizePartErr/cSizePart;
+
+                    //******************************* Print the peak gaussian fit
+                    TF1 *peakfit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
+
+                    //Prefit to get the curve on the histogram
+                    peakfit->SetRange(PeakTime.rpc[T][S][p]-PeakWidth.rpc[T][S][p],PeakTime.rpc[T][S][p]+PeakWidth.rpc[T][S][p]);
+                    TimeProfile_H.rpc[T][S][p]->Fit(peakfit,"QR");
+
+                    //Reset with parameters extracted from earlier call of SetBeamWindow(...)
+                    //Amplitude
+                    peakfit->SetParameter(0,PeakHeight.rpc[T][S][p]);
+                    //Mean value
+                    peakfit->SetParameter(1,PeakTime.rpc[T][S][p]);
+                    //RMS
+                    peakfit->SetParameter(2,PeakWidth.rpc[T][S][p]);
 
                     //Draw and write the histograms into the output ROOT file
                     //******************************* General histograms
