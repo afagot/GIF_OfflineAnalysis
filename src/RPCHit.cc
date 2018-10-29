@@ -193,7 +193,7 @@ bool SortHitbyTime(RPCHit h1, RPCHit h2){
 }
 
 // ****************************************************************************************************
-// *    void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+// *    void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
 // *                        TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra)
 //
 //  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
@@ -201,7 +201,7 @@ bool SortHitbyTime(RPCHit h1, RPCHit h2){
 //  dimensions of the 904 infrastructure : RPC slots and Partitions).
 // ****************************************************************************************************
 
-void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
                     TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra){
     RAWData mydata;
 
@@ -263,7 +263,6 @@ void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
     muonPeak center;
     muonPeak lowlimit;
     muonPeak highlimit;
-    GIFfloatArray PeakHeight = {{0.}};
 
     for(Uint sl = 0; sl < NSLOTS; sl++){
         for(Uint p = 0; p < NPARTITIONS; p++){
