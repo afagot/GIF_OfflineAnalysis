@@ -193,30 +193,27 @@ bool SortHitbyTime(RPCHit h1, RPCHit h2){
 }
 
 // ****************************************************************************************************
-// *    void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
-// *                        TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra)
+// *    void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime,
+// *                        muonPeak &PeakWidth, TTree* mytree, Mapping* RPCChMap)
 //
 //  Loops over all the data contained inside of the ROOT file and determines for each RPC the center
 //  of the muon peak and its spread. Then saves the result in 2 3D tables (#D bescause it follows the
 //  dimensions of the 904 infrastructure : RPC slots and Partitions).
 // ****************************************************************************************************
 
-void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
-                    TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra){
+void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime,
+                    muonPeak &PeakWidth, TTree* mytree, Mapping* RPCChMap){
     RAWData mydata;
 
-    mydata.TDCCh = new vector<Uint>;
+    mydata.TDClCh = new vector<Uint>;
     mydata.TDClTS = new vector<float>;
-    mydata.TDCtTS = new vector<float>;
-    mydata.TDCCh->clear();
+    mydata.TDClCh->clear();
     mydata.TDClTS->clear();
-    mydata.TDCtTS->clear();
 
     mytree->SetBranchAddress("EventNumber",    &mydata.iEvent);
     mytree->SetBranchAddress("number_of_hits", &mydata.TDCNHits);
-    mytree->SetBranchAddress("TDC_channel",    &mydata.TDCCh);
+    mytree->SetBranchAddress("TDC_leadingCh",  &mydata.TDClCh);
     mytree->SetBranchAddress("TDC_leadingTS",  &mydata.TDClTS);
-    mytree->SetBranchAddress("TDC_leadingTS",  &mydata.TDCtTS);
     mytree->SetBranchAddress("Quality_flag",   &mydata.QFlag);
 
     GIFH1Array tmpTimeProfile;
@@ -238,17 +235,13 @@ void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidt
 
         if(!IsCorruptedEvent(mydata.QFlag)){
             for(int h = 0; h < mydata.TDCNHits; h++){
-                Uint channel = mydata.TDCCh->at(h);
+                Uint leadchannel = mydata.TDClCh->at(h);
                 float leadstamp = mydata.TDClTS->at(h);
-                float trailstamp = mydata.TDCtTS->at(h);
 
                 //Get rid of the noise hits outside of the connected channels
-                if(RPCChMap->GetLink(channel) == 0) continue;
-                RPCHit tmpHit(RPCChMap->GetLink(channel), leadstamp, trailstamp, Infra);
-                Uint S = tmpHit.GetStation()-1;
-                Uint P = tmpHit.GetPartition()-1;
+                if(RPCChMap->GetLink(leadchannel) == 0) continue;
 
-                tmpTimeProfile.rpc[S][P]->Fill(tmpHit.GetTime());
+                tmpTimeProfile.rpc[S][P]->Fill(leadstamp);
             }
         }
     }

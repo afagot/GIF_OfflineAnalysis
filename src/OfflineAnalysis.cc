@@ -106,16 +106,19 @@ void OfflineAnalysis(string baseName){
 
         RAWData data;
 
-        data.TDCCh = new vector<Uint>;
+        data.TDClCh = new vector<Uint>;
+        data.TDCtCh = new vector<Uint>;
         data.TDClTS = new vector<float>;
         data.TDCtTS = new vector<float>;
-        data.TDCCh->clear();
+        data.TDClCh->clear();
+        data.TDCtCh->clear();
         data.TDClTS->clear();
         data.TDCtTS->clear();
 
         dataTree->SetBranchAddress("EventNumber",    &data.iEvent);
         dataTree->SetBranchAddress("number_of_hits", &data.TDCNHits);
-        dataTree->SetBranchAddress("TDC_channel",    &data.TDCCh);
+        dataTree->SetBranchAddress("TDC_leadingCh",  &data.TDClCh);
+        dataTree->SetBranchAddress("TDC_trailingCh", &data.TDCtCh);
         dataTree->SetBranchAddress("TDC_leadingTS",  &data.TDClTS);
         dataTree->SetBranchAddress("TDC_trailingTS", &data.TDCtTS);
         dataTree->SetBranchAddress("Quality_flag",   &data.QFlag);
@@ -307,8 +310,8 @@ void OfflineAnalysis(string baseName){
             //Get quality flag and discard events with corrupted data.
             if(!IsCorruptedEvent(data.QFlag)){
                 //Loop over the TDC hits
-                for(int h = 0; h < data.TDCCh->size(); h++){
-                    Uint tdcchannel = data.TDCCh->at(h);
+                for(int h = 0; h < data.TDClCh->size(); h++){
+                    Uint tdcchannel = data.TDClCh->at(h);
                     Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
                     float leadstamp = data.TDClTS->at(h);
                     float trailstamp = data.TDCtTS->at(h);

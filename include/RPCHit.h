@@ -66,6 +66,6 @@ bool SortHitbyStrip(RPCHit h1, RPCHit h2);
 bool SortHitbyTime(RPCHit h1, RPCHit h2);
 
 void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
-                       TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
+                       TTree* mytree, Mapping* RPCChMap);
 
 #endif

@@ -91,7 +91,8 @@ struct RAWData {
     int            iEvent;   //Event i
     int            TDCNHits; //Number of hits in event i
     int            QFlag;    //Quality flag list (1 flag digit per TDC)
-    vector<Uint>  *TDCCh;    //List of channels giving hits per event
+    vector<Uint>  *TDClCh;    //List of channels giving hits with leading time stamps
+    vector<Uint>  *TDCtCh;    //List of channels giving hits with trailing time stamps
     vector<float> *TDClTS;   //List of the corresponding leading time stamps
     vector<float> *TDCtTS;   //List of the corresponding trailing time stamps
 };
