@@ -91,12 +91,13 @@ void OfflineAnalysis(string baseName){
         RunParameters->SetBranchAddress("RunType",&RunType);
         RunParameters->GetEntry(0);
 
+        muonPeak PeakHeight = {{0.}};
         muonPeak PeakTime = {{0.}};
         muonPeak PeakWidth = {{0.}};
 
         if(IsEfficiencyRun(RunType)){
             MSG_INFO("[Analysis] Run is efficiency type - steting beam window");
-            SetBeamWindow(PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
+            SetBeamWindow(PeakHeight,PeakTime,PeakWidth,dataTree,RPCChMap,GIFInfra);
         } else {
             MSG_INFO("[Analysis] Run is test, rate or noise type - using full window for rate calculation");
         }
@@ -603,6 +604,21 @@ void OfflineAnalysis(string baseName){
                 ClusterSDev   += (cSizePart==0)
                         ? 0.
                         : ClusterRate*cSizePartErr/cSizePart;
+
+                //******************************* Print the peak gaussian fit
+                TF1 *peakfit = new TF1("slicefit","gaus(0)",TIMEREJECT,BMTDCWINDOW);
+
+                //Prefit to get the curve on the histogram
+                peakfit->SetRange(PeakTime.rpc[S][p]-PeakWidth.rpc[S][p],PeakTime.rpc[S][p]+PeakWidth.rpc[S][p]);
+                TimeProfile_H.rpc[S][p]->Fit(peakfit,"QR");
+
+                //Reset with parameters extracted from earlier call of SetBeamWindow(...)
+                //Amplitude
+                peakfit->SetParameter(0,PeakHeight.rpc[S][p]);
+                //Mean value
+                peakfit->SetParameter(1,PeakTime.rpc[S][p]);
+                //RMS
+                peakfit->SetParameter(2,PeakWidth.rpc[S][p]);
 
                 //Draw and write the histograms into the output ROOT file
                 //******************************* General histograms
