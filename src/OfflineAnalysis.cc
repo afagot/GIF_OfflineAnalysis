@@ -138,9 +138,12 @@ void OfflineAnalysis(string baseName){
         GIFH1Array ChipHomogeneity_H;
 
         GIFH1Array BeamProfile_H;
+        GIFH1Array EfficiencyPeak_H;
+        GIFH1Array EfficiencyFake_H;
         GIFH1Array Efficiency0_H;
+        GIFH1Array PeakCSize_H;
         GIFH1Array MuonCSize_H;
-        GIFH1Array MuonCMult_H;
+        GIFH1Array PeakCMult_H;
 
         char hisname[50];  //ID name of the histogram
         char histitle[50]; //Title of the histogram
@@ -262,20 +265,36 @@ void OfflineAnalysis(string baseName){
                     BeamProfile_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips, low_s, high_s);
                     SetTH1(BeamProfile_H.rpc[T][S][p],"Strip","Number of hits");
 
-                    //Efficiency
+                    //Efficiency due to noise/background
+                    SetTitleName(rpcID,p,hisname,histitle,"Efficiency_Fake","Fake efficiency");
+                    EfficiencyFake_H.rpc[T][S][p] = new TH1I(hisname, histitle, 2, -0.5, 1.5);
+                    SetTH1(EfficiencyFake_H.rpc[T][S][p],"Is efficient?","Number of events");
+
+                    //Efficiency due to in time hits
+                    SetTitleName(rpcID,p,hisname,histitle,"Efficiency_Peak","Peak efficiency");
+                    EfficiencyPeak_H.rpc[T][S][p] = new TH1I(hisname, histitle, 2, -0.5, 1.5);
+                    SetTH1(EfficiencyPeak_H.rpc[T][S][p],"Is efficient?","Number of events");
+
+                    //Corrected efficiency
                     SetTitleName(rpcID,p,hisname,histitle,"L0_Efficiency","L0 efficiency");
-                    Efficiency0_H.rpc[T][S][p] = new TH1I(hisname, histitle, 2, -0.5, 1.5);
-                    SetTH1(Efficiency0_H.rpc[T][S][p],"Is efficient?","Number of events");
+                    Efficiency0_H.rpc[T][S][p] = new TH1I(hisname, histitle, 2, 0, 2);
+                    Efficiency0_H.rpc[T][S][p]->SetOption("TEXT");
+                    SetTH1(Efficiency0_H.rpc[T][S][p],"","");
 
-                    //Muon cluster Size
+                    //Peak cluster Size
+                    SetTitleName(rpcID,p,hisname,histitle,"PeakCSize_H","Peak cluster size");
+                    PeakCSize_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips, 0.5, nStrips+0.5);
+                    SetTH1(PeakCSize_H.rpc[T][S][p],"Cluster size","Number of events");
+
                     SetTitleName(rpcID,p,hisname,histitle,"MuonCSize_H","Muon cluster size");
-                    MuonCSize_H.rpc[T][S][p] = new TH1I(hisname, histitle, nStrips, 0.5, nStrips+0.5);
-                    SetTH1(MuonCSize_H.rpc[T][S][p],"Cluster size","Number of events");
+                    MuonCSize_H.rpc[T][S][p] = new TH1I(hisname, histitle, 2, 0, 2);
+                    MuonCSize_H.rpc[T][S][p]->SetOption("TEXT");
+                    SetTH1(MuonCSize_H.rpc[T][S][p],"","");
 
-                    //Muon cluster multiplicity
-                    SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                    MuonCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[T][S][p], lowBin, highBin);
-                    SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                    //Peak cluster multiplicity
+                    SetTitleName(rpcID,p,hisname,histitle,"PeakCMult_H","Peak cluster multiplicity");
+                    PeakCMult_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[T][S][p], lowBin, highBin);
+                    SetTH1(PeakCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
                 }
             }
         }
@@ -300,9 +319,13 @@ void OfflineAnalysis(string baseName){
 
             //Vectors to store the hits and reconstruct clusters:
             //for muons
-            GIFHitList MuonHitList;
+            GIFHitList PeakHitList;
             //and for noise/gammas
             GIFHitList NoiseHitList;
+            //Add an extra vector to count number of fake events
+            //in the peak region by counting the number of events
+            //in a window as wide but uncorrelated
+            GIFHitList FakeHitList;
 
             //Get quality flag in case of new format file
             //and discard events with corrupted data.
@@ -326,16 +349,26 @@ void OfflineAnalysis(string baseName){
                 Uint P = hit.GetPartition()-1;
 
                 if(IsEfficiencyRun(RunType)){
-                    //First define the accepted peak time range
-                    float lowlimit = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
-                    float highlimit = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
+                    //First define the accepted peak time range for efficiency calculation
+                    float lowlimit_eff = PeakMeanTime.rpc[T][S][P] - PeakSpread.rpc[T][S][P];
+                    float highlimit_eff = PeakMeanTime.rpc[T][S][P] + PeakSpread.rpc[T][S][P];
 
-                    bool peakrange = (hit.GetTime() >= lowlimit && hit.GetTime() < highlimit);
+                    bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
 
-                    //Fill the hits inside of the defined noise range
+                    //Then define the accepted time range for fake efficiency calculation
+                    //that should be probed in a window as wide as the peak window but
+                    //uncorrelated with the trigger to measure the coincidence of noise
+                    //with the muon hits. The window stops at the end of the total time
+                    //window.
+                    float highlimit_fake = BMTDCWINDOW;
+                    float lowlimit_fake = highlimit_fake - (highlimit_eff-lowlimit_eff);
+
+                    bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
+
+                    //Fill the hits inside of the defined peak and noise range
                     if(peakrange){
                         BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        MuonHitList.rpc[T][S][P].push_back(hit);
+                        PeakHitList.rpc[T][S][P].push_back(hit);
                         inTimeHits.rpc[T][S][P]++;
                     }
                     //Reject the 100 first ns due to inhomogeneity of data
@@ -344,8 +377,13 @@ void OfflineAnalysis(string baseName){
                         NoiseHitList.rpc[T][S][P].push_back(hit);
                         noiseHits.rpc[T][S][P]++;
                     }
+                    //Fill the hits inside of the fake window
+                    if(fakerange){
+                        FakeHitList.rpc[T][S][P].push_back(hit);
+                    }
                 } else {
-                    //Reject the 100 first ns due to inhomogeneity of data
+                    //Fill the hits inside of the defined noise range and
+                    //reject the 100 first ns due to inhomogeneity of data
                     if(hit.GetTime() >= TIMEREJECT){
                         StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                         NoiseHitList.rpc[T][S][P].push_back(hit);
@@ -357,7 +395,8 @@ void OfflineAnalysis(string baseName){
                 HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                 Multiplicity.rpc[T][S][P]++;
 
-                //Get effiency and cluster size
+                //Fill peak and fake effiency histograms based on the content
+                //of peak and fake hit vectors
                 for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
                     Uint T = GIFInfra->GetTrolleyID(tr);
 
@@ -365,10 +404,16 @@ void OfflineAnalysis(string baseName){
                         Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
 
                         for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-                            if(MuonHitList.rpc[T][S][p].size() > 0)
-                                Efficiency0_H.rpc[T][S][p]->Fill(1);
+                            //Peak efficiency
+                            if(PeakHitList.rpc[T][S][p].size() > 0)
+                                EfficiencyPeak_H.rpc[T][S][p]->Fill(1);
                             else
-                                Efficiency0_H.rpc[T][S][p]->Fill(0);
+                                EfficiencyPeak_H.rpc[T][S][p]->Fill(0);
+                            //Fake efficiency
+                            if(FakeHitList.rpc[T][S][p].size() > 0)
+                                EfficiencyFake_H.rpc[T][S][p]->Fill(1);
+                            else
+                                EfficiencyFake_H.rpc[T][S][p]->Fill(0);
                         }
                     }
                 }
@@ -425,18 +470,18 @@ void OfflineAnalysis(string baseName){
 
                             //Muon cluster multiplicity
                             TList *listMCM = new TList;
-                            listMCM->Add(MuonCMult_H.rpc[T][S][p]);
+                            listMCM->Add(PeakCMult_H.rpc[T][S][p]);
 
                             TH1* newMuonCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
                             newMuonCMult_H->Merge(listMCM);
 
-                            delete MuonCMult_H.rpc[T][S][p];
+                            delete PeakCMult_H.rpc[T][S][p];
                             delete listMCM;
-                            MuonCMult_H.rpc[T][S][p] = newMuonCMult_H;
+                            PeakCMult_H.rpc[T][S][p] = newMuonCMult_H;
 
                             SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                            MuonCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(MuonCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                            PeakCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                            SetTH1(PeakCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
                         }
                         HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
                         Multiplicity.rpc[T][S][p] = 0;
@@ -446,8 +491,8 @@ void OfflineAnalysis(string baseName){
                         Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
 
                         //Clusterize muon data
-                        sort(MuonHitList.rpc[T][S][p].begin(),MuonHitList.rpc[T][S][p].end(),SortHitbyTime);
-                        Clusterization(MuonHitList.rpc[T][S][p],MuonCSize_H.rpc[T][S][p],MuonCMult_H.rpc[T][S][p]);
+                        sort(PeakHitList.rpc[T][S][p].begin(),PeakHitList.rpc[T][S][p].end(),SortHitbyTime);
+                        Clusterization(PeakHitList.rpc[T][S][p],PeakCSize_H.rpc[T][S][p],PeakCMult_H.rpc[T][S][p]);
                     }
                 }
             }
@@ -531,11 +576,11 @@ void OfflineAnalysis(string baseName){
                     //Write the rate header file as well as the corrupted header file
                     //This file will still be writen even after the new file format
                     //has been used.
-                    headRateCSV << "Rate-" << partName << "\t"
-                                << "ClS-" << partName << "\t"
-                                << "ClS-" << partName << "_Err\t"
-                                << "ClM-" << partName << "\t"
-                                << "ClM-" << partName << "_Err\t"
+                    headRateCSV <<   "Rate-" << partName << "\t"
+                                <<    "ClS-" << partName << "\t"
+                                <<    "ClS-" << partName << "_Err\t"
+                                <<    "ClM-" << partName << "\t"
+                                <<    "ClM-" << partName << "_Err\t"
                                 << "ClRate-" << partName << "\t"
                                 << "ClRate-" << partName << "_Err\t";
 
@@ -741,39 +786,97 @@ void OfflineAnalysis(string baseName){
                                << "ClM-" << partName << '\t'
                                << "ClM-" << partName << "_Err\t";
 
-                    //For each cases, evaluate the proportion of noise
-                    //with respect to the actual muon data. The efficiency
-                    //will then be corrected using this factor to "substract"
-                    //the fake efficiency caused by the noise
-                    float meanNoiseHitPerns = (float)noiseHits.rpc[T][S][p]/
-                            (BMTDCWINDOW-TIMEREJECT-2*PeakSpread.rpc[T][S][p]);
-                    float integralNoise = 2*PeakSpread.rpc[T][S][p]*meanNoiseHitPerns;
-                    float integralPeak = (float)inTimeHits.rpc[T][S][p];
+                    //For each cases, evaluate the proportion of noise that
+                    //contributes to the efficiency thanks to the peak and
+                    //fake efficiency evaluation. Then, the peak efficiency
+                    //is the probability to have at least 1 muon hit OR 1
+                    //fake hit P(mu OR fake). The probability to have fake
+                    //hits contributing to the efficiency is simply P(fake)
+                    //measured by the fake efficiency histogram. Finally,
+                    //using probabilities, we can say that:
+                    //P(mu OR fake) = P(peak) = P(mu)+P(fake)-P(mu)*P(fake)
+                    //using that the probability of the union is the sum of
+                    //the individual probabilities minus the probability of
+                    //the intersection. In the end, we have:
+                    //P(mu) = (P(peak)-P(fake))/(1-P(fake))
+                    //Each P as a binomial error:
+                    //dP = SQRT(P*(1-P)/N)
+                    float P_peak = EfficiencyPeak_H.rpc[T][S][p]->GetMean();
+                    float P_fake = EfficiencyFake_H.rpc[T][S][p]->GetMean();
+                    float P_muon = (P_peak-P_fake)/(1-P_fake);
+                    float P_both = P_muon*P_fake;
+                    float dP_peak = sqrt(P_peak*(1.-P_peak)/nEntries);
+                    float dP_fake = sqrt(P_fake*(1.-P_fake)/nEntries);
+                    float dP_muon = sqrt(P_muon*(1.-P_muon)/nEntries);
+                    float dP_both = sqrt(P_both*(1.-P_both)/nEntries);
 
-                    float DataNoiseRatio = 1.;
-                    if(integralNoise != 0.) DataNoiseRatio = (integralPeak-integralNoise)/integralPeak;
-                    if(DataNoiseRatio < 0.) DataNoiseRatio = 0.;
+                    //In the same way, probing the probabilities to have
+                    //events with muon alone, fake alone or both, it is
+                    //possible to get the real muon cluster size.
+                    //P(peak) = P(mu)+P(fake)-P(mu&&fake)
+                    //1 = F(mu) + F(fake) - F(mu&&fake) where F are the
+                    //fractions of each cases, 1 being all the cases. The
+                    //fractions F, expressed with the corresponding P are
+                    //F = P/P(peak) = P/P(mu||fake).
+                    //Which give the following error for the fractions F:
+                    //dF = F*(dP/P+dP(peak)/P(peak))
+                    //The cluster size measured is then:
+                    //Cpeak = Cmu*F(mu)+Cfake*F(fake)-(Cmu+Cfake)*F(mu&&fake)
+                    //Leading to:
+                    //Cmu = (Cpeak-Cfake*(F(fake)-F(mu&&fake)))/(F(mu)-F(fake))
+                    //The errors on Cpeak and Cfake corresponds to their
+                    //respective histograms statistical error:
+                    //dC = 2*STDV(C)/SQRT(N)
+                    //All this will help getting the error propagation to Cmu
+
+                    float F_muon = P_muon/P_peak;
+                    float F_fake = P_fake/P_peak;
+                    float F_both = P_both/P_peak;
+                    float dF_muon = F_muon*(dP_muon/P_muon+dP_peak/P_peak);
+                    float dF_fake = F_fake*(dP_fake/P_fake+dP_peak/P_peak);
+                    float dF_both = F_both*(dP_both/P_both+dP_peak/P_peak);
+
+                    float CS_peak = PeakCSize_H.rpc[T][S][p]->GetMean();
+                    float CS_fake = NoiseCSize_H.rpc[T][S][p]->GetMean();
+                    float dCS_peak = 2*PeakCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(PeakCSize_H.rpc[T][S][p]->GetEntries());
+                    float dCS_fake = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
+
+                    float CS_muon = (CS_peak-CS_fake*(F_fake-F_both))/(F_muon-F_both);
+                    float dCS_muon = (dCS_peak+(F_fake-F_both)*dCS_fake+CS_muon*dF_muon+CS_fake*(dF_fake+dF_both))
+                                     /(F_muon-F_both);
 
                     //Get efficiency, cluster size and multiplicity
-                    //and evaluate the streamer probability (cls > 5)
-                    float eff = Efficiency0_H.rpc[T][S][p]->GetMean()*DataNoiseRatio;
-                    float effErr = sqrt(eff*(1.-eff)/nEntries);
-                    float cSize = MuonCSize_H.rpc[T][S][p]->GetMean();
-                    float cSizeErr = 2*MuonCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCSize_H.rpc[T][S][p]->GetEntries());
-                    float cMult = MuonCMult_H.rpc[T][S][p]->GetMean();
-                    float cMultErr = 2*MuonCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(MuonCMult_H.rpc[T][S][p]->GetEntries());
+                    float eff = P_muon;
+                    float effErr = dP_muon;
+                    float cSize = CS_muon;
+                    float cSizeErr = dCS_muon;
+                    float cMult = PeakCMult_H.rpc[T][S][p]->GetMean();
+                    float cMultErr = 2*PeakCMult_H.rpc[T][S][p]->GetStdDev()/sqrt(PeakCMult_H.rpc[T][S][p]->GetEntries());
 
                     //Write in the output CSV file
                     outputEffCSV << eff << '\t' << effErr << '\t'
                                  << cSize << '\t' << cSizeErr << '\t'
                                  << cMult << '\t' << cMultErr << '\t';
 
+                    //Fill L0 efficiency histogram
+                    Efficiency0_H.rpc[T][S][p]->Fill("#mu efficiency",eff);
+                    Efficiency0_H.rpc[T][S][p]->Fill("#mu efficiency error",effErr);
+                    Efficiency0_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
+
+                    //Fill L0 muon cluster size histogram
+                    Efficiency0_H.rpc[T][S][p]->Fill("#mu cluster size",cSize);
+                    Efficiency0_H.rpc[T][S][p]->Fill("#mu cluster size error",cSizeErr);
+                    Efficiency0_H.rpc[T][S][p]->GetYaxis()->SetRangeUser(0.,1.);
+
                     //******************************* muon histograms
 
                     BeamProfile_H.rpc[T][S][p]->Write();
+                    EfficiencyPeak_H.rpc[T][S][p]->Write();
+                    EfficiencyFake_H.rpc[T][S][p]->Write();
                     Efficiency0_H.rpc[T][S][p]->Write();
+                    PeakCSize_H.rpc[T][S][p]->Write();
                     MuonCSize_H.rpc[T][S][p]->Write();
-                    MuonCMult_H.rpc[T][S][p]->Write();
+                    PeakCMult_H.rpc[T][S][p]->Write();
                 }
 
                 //Finalise the calculation of the chamber rate
