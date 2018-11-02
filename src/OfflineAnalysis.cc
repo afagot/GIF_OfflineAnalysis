@@ -354,43 +354,48 @@ void OfflineAnalysis(string baseName){
                         TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
                         HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
 
-                        if(IsEfficiencyRun(RunType)){
-                            //First define the accepted peak time range for efficiency calculation
-                            float lowlimit_eff = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
-                            float highlimit_eff = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
+                        //Reject the 100 first ns due to inhomogeneity of data
+                        if(hit.GetTime() >= TIMEREJECT){
+                            Multiplicity.rpc[S][P]++;
 
-                            bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
+                            if(IsEfficiencyRun(RunType)){
+                                //First define the accepted peak time range for efficiency calculation
+                                float lowlimit_eff = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
+                                float highlimit_eff = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
 
-                            //Then define the accepted time range for fake efficiency calculation
-                            //that should be probed in a window as wide as the peak window but
-                            //uncorrelated with the trigger to measure the coincidence of noise
-                            //with the muon hits. The window stops at the end of the total time
-                            //window.
-                            float highlimit_fake = BMTDCWINDOW;
-                            float lowlimit_fake = highlimit_fake - (highlimit_eff-lowlimit_eff);
+                                bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
 
-                            bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
+                                //Then define the accepted time range for fake efficiency calculation
+                                //that should be probed in a window as wide as the peak window but
+                                //uncorrelated with the trigger to measure the coincidence of noise
+                                //with the muon hits. The window stops at the end of the total time
+                                //window.
+                                float highlimit_fake = BMTDCWINDOW;
+                                float lowlimit_fake = highlimit_fake - (highlimit_eff-lowlimit_eff);
 
-                            //Fill the hits inside of the defined peak and noise range
-                            if(peakrange){
-                                BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                PeakHitList.rpc[T][S][P].push_back(hit);
-                            }
-                            //Reject the 100 first ns due to inhomogeneity of data
-                            else if(hit.GetTime() >= TIMEREJECT){
-                                StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                NoiseHitList.rpc[T][S][P].push_back(hit);
-                            }
-                            //Fill the hits inside of the fake window
-                            if(fakerange){
-                                FakeHitList.rpc[T][S][P].push_back(hit);
-                            }
-                        } else {
-                            //Fill the hits inside of the defined noise range and
-                            //reject the 100 first ns due to inhomogeneity of data
-                            if(hit.GetTime() >= TIMEREJECT){
-                                StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                NoiseHitList.rpc[T][S][P].push_back(hit);
+                                bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
+
+                                //Fill the hits inside of the defined peak and noise range
+                                if(peakrange){
+                                    BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                    PeakHitList.rpc[T][S][P].push_back(hit);
+                                }
+                                //Reject the 100 first ns due to inhomogeneity of data
+                                else if(hit.GetTime() >= TIMEREJECT){
+                                    StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                    NoiseHitList.rpc[T][S][P].push_back(hit);
+                                }
+                                //Fill the hits inside of the fake window
+                                if(fakerange){
+                                    FakeHitList.rpc[T][S][P].push_back(hit);
+                                }
+                            } else {
+                                //Fill the hits inside of the defined noise range and
+                                //reject the 100 first ns due to inhomogeneity of data
+                                if(hit.GetTime() >= TIMEREJECT){
+                                    StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                    NoiseHitList.rpc[T][S][P].push_back(hit);
+                                }
                             }
                         }
                     }
@@ -919,12 +924,13 @@ void OfflineAnalysis(string baseName){
                         //******************************* muon histograms
 
                         BeamProfile_H.rpc[T][S][p]->Write();
-                        EfficiencyPeak_H.rpc[T][S][p]->Write();
                         EfficiencyFake_H.rpc[T][S][p]->Write();
-                        Efficiency0_H.rpc[T][S][p]->Write();
+                        EfficiencyPeak_H.rpc[T][S][p]->Write();
                         PeakCSize_H.rpc[T][S][p]->Write();
-                        MuonCSize_H.rpc[T][S][p]->Write();
                         PeakCMult_H.rpc[T][S][p]->Write();
+                        Efficiency0_H.rpc[T][S][p]->Write();
+                        MuonCSize_H.rpc[T][S][p]->Write();
+                        MuonCMult_H.rpc[T][S][p]->Write();
                     }
                 }
 
