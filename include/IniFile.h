@@ -2,7 +2,7 @@
 #define __INIFILE_H_
 
 //***************************************************************
-// *    GIF OFFLINE TOOL v6
+// *    GIF OFFLINE TOOL v7
 // *
 // *    Program developped to extract from the raw data files
 // *    the rates, currents and DIP parameters.
