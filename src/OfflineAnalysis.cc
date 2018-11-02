@@ -847,39 +847,40 @@ void OfflineAnalysis(string baseName){
                         //events with muon alone, fake alone or both, it is
                         //possible to get the real muon cluster size.
                         //P(peak) = P(mu)+P(fake)-P(mu&&fake)
-                        //1 = F(mu) + F(fake) - F(mu&&fake) where F are the
+                        //1 = F(mu) + F(fake) + F(mu&&fake) where F are the
                         //fractions of each cases, 1 being all the cases. The
                         //fractions F, expressed with the corresponding P are
                         //F = P/P(peak) = P/P(mu||fake).
                         //Which give the following error for the fractions F:
                         //dF = F*(dP/P+dP(peak)/P(peak))
                         //The cluster size measured is then:
-                        //Cpeak = Cmu*F(mu)+Cfake*F(fake)-(Cmu+Cfake)*F(mu&&fake)
-                        //Leading to:
-                        //Cmu = (Cpeak-Cfake*(F(fake)-F(mu&&fake)))/(F(mu)-F(fake))
+                        //Cpeak = Cmu*F(mu)+Cfake*F(fake)+(Cmu+Cfake)*F(mu&&fake)/2
+                        //assuming the cluster size in case where both muon and
+                        //fake are seen is the average of both. Leading to:
+                        //Cmu = (Cpeak-Cfake*(F(fake)+F(mu&&fake)/2))/(F(mu)+F(fake)/2)
                         //The errors on Cpeak and Cfake corresponds to their
                         //respective histograms statistical error:
                         //dC = 2*STDV(C)/SQRT(N)
                         //All this will help getting the error propagation to Cmu
 
-                        float F_muon = P_muon/P_peak;
-                        float F_fake = P_fake/P_peak;
                         float F_both = P_both/P_peak;
-                        float F_muon_err = F_muon*(P_muon_err/P_muon+P_peak_err/P_peak);
-                        float F_fake_err = F_fake*(P_fake_err/P_fake+P_peak_err/P_peak);
+                        float F_muon = (P_muon-P_both)/P_peak;
+                        float F_fake = (P_fake-P_both)/P_peak;
                         float F_both_err = F_both*(P_both_err/P_both+P_peak_err/P_peak);
+                        float F_muon_err = (P_muon_err+F_both_err+F_muon*P_peak_err)/P_peak;
+                        float F_fake_err = (P_fake_err+F_both_err+F_fake*P_peak_err)/P_peak;
 
                         float CS_peak = PeakCSize_H.rpc[T][S][p]->GetMean();
                         float CS_fake = NoiseCSize_H.rpc[T][S][p]->GetMean();
                         float CS_peak_err = 2*PeakCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(PeakCSize_H.rpc[T][S][p]->GetEntries());
                         float CS_fake_err = 2*NoiseCSize_H.rpc[T][S][p]->GetStdDev()/sqrt(NoiseCSize_H.rpc[T][S][p]->GetEntries());
 
-                        float CS_muon = (CS_peak-CS_fake*(F_fake-F_both))/(F_muon-F_both);
+                        float CS_muon = (CS_peak-CS_fake*(F_fake+F_both/2.))/(F_muon+F_both/2.);
                         float CS_muon_err = (CS_peak_err
-                                             +(F_fake-F_both)*CS_fake_err
+                                             +(F_fake+F_both/2.)*CS_fake_err
                                              +CS_muon*F_muon_err
-                                             +CS_fake*(F_fake_err+F_both_err))
-                                            /(F_muon-F_both);
+                                             +CS_fake*(F_fake_err+F_both_err/2.))
+                                            /(F_muon+F_both/2.);
 
                         //Finally get the muon cluster multiplicity based on the
                         //asumption that the average peak multiplicity is the sum
