@@ -283,19 +283,19 @@ void OfflineAnalysis(string baseName){
 
                 //Corrected muon efficiency
                 SetTitleName(rpcID,p,hisname,histitle,"L0_Efficiency","L0 efficiency");
-                Efficiency0_H.rpc[S][p] = new TH1I(hisname, histitle, 2, 0, 2);
+                Efficiency0_H.rpc[S][p] = new TH1F(hisname, histitle, 2, 0, 2);
                 Efficiency0_H.rpc[S][p]->SetOption("TEXT");
                 SetTH1(Efficiency0_H.rpc[S][p],"","");
 
                 //Corrected muon cluster size
                 SetTitleName(rpcID,p,hisname,histitle,"MuonCSize_H","Muon cluster size");
-                MuonCSize_H.rpc[S][p] = new TH1I(hisname, histitle, 2, 0, 2);
+                MuonCSize_H.rpc[S][p] = new TH1F(hisname, histitle, 2, 0, 2);
                 MuonCSize_H.rpc[S][p]->SetOption("TEXT");
                 SetTH1(MuonCSize_H.rpc[S][p],"","");
 
                 //Corrected muon multiplicity
                 SetTitleName(rpcID,p,hisname,histitle,"MuonCMult_H","Muon cluster multiplicity");
-                MuonCMult_H.rpc[S][p] = new TH1I(hisname, histitle, 2, 0, 2);
+                MuonCMult_H.rpc[S][p] = new TH1F(hisname, histitle, 2, 0, 2);
                 MuonCMult_H.rpc[S][p]->SetOption("TEXT");
                 SetTH1(MuonCMult_H.rpc[S][p],"","");
             }
@@ -804,17 +804,17 @@ void OfflineAnalysis(string baseName){
                                  << CM_peak << '\t' << CM_peak_err << '\t';
 
                     //Fill L0 efficiency histogram
-                    Efficiency0_H.rpc[S][p]->Fill("#mu efficiency",P_muon);
-                    Efficiency0_H.rpc[S][p]->Fill("#mu efficiency error",P_muon_err);
+                    Efficiency0_H.rpc[S][p]->Fill("muon efficiency",P_muon);
+                    Efficiency0_H.rpc[S][p]->Fill("muon efficiency error",P_muon_err);
                     Efficiency0_H.rpc[S][p]->GetYaxis()->SetRangeUser(0.,1.);
 
                     //Fill L0 muon cluster size histogram
-                    MuonCSize_H.rpc[S][p]->Fill("#mu cluster size",CS_muon);
-                    MuonCSize_H.rpc[S][p]->Fill("#mu cluster size error",CS_muon_err);
+                    MuonCSize_H.rpc[S][p]->Fill("muon cluster size",CS_muon);
+                    MuonCSize_H.rpc[S][p]->Fill("muon cluster size error",CS_muon_err);
 
                     //Fill L0 muon cluster multiplicity histogram
-                    MuonCMult_H.rpc[S][p]->Fill("#mu cluster size",CM_muon);
-                    MuonCMult_H.rpc[S][p]->Fill("#mu cluster size error",CM_muon_err);
+                    MuonCMult_H.rpc[S][p]->Fill("muon cluster multiplicity",CM_muon);
+                    MuonCMult_H.rpc[S][p]->Fill("muon cluster multiplicity error",CM_muon_err);
 
                     //******************************* muon histograms
 
