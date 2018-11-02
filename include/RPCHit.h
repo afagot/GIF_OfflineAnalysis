@@ -65,7 +65,7 @@ typedef struct GIFHitList { HitList rpc[NTROLLEYS][NSLOTS][NPARTITIONS]; } GIFHi
 bool SortHitbyStrip(RPCHit h1, RPCHit h2);
 bool SortHitbyTime(RPCHit h1, RPCHit h2);
 
-void SetBeamWindow (muonPeak &PeakTime, muonPeak &PeakWidth,
+void SetBeamWindow (muonPeak &PeakHeight, muonPeak &PeakTime, muonPeak &PeakWidth,
                        TTree* mytree, Mapping* RPCChMap, Infrastructure* Infra);
 
 #endif
