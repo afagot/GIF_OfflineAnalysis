@@ -52,21 +52,27 @@ For each partition of each chamber, you will find :
 * `Chip_Activity_Tt_Sc_p` shows the same information than Strip_Activity_Tt_Scp using a different binning,
 * `Chip_Homogeneity_Tt_Sc_p` shows the homogeneity of a given partition using chip binning,
 * `Beam_Profile_Tt_Sc_p` shows the estimated beam profile when taking efficiency scan (constructed with the hits contained in the muon peak where the noise/gamma background has been subtracted),
-* `L0_Efficiency_Tt_Sc_p` shows the level 0 efficiency that was estimated WITHOUT muon tracking,
-* `MuonCSize_H_Tt_Sc_p` shows the level 0 muon cluster size that was estimated WITHOUT muon tracking, and
-* `MuonCMult_H_Tt_Sc_p`shows the level 0 muon cluster multiplicity that was estimated WITHOUT muon tracking.
+* `Efficiency_Fake_Tt_Ss_p` shows the efficiency given by fake hits by probing outside the peak in an uncorrelated window as wide as the peak window,
+* `Efficiency_Peak_Tt_Ss_p` shows the efficiency given by hits contained in the peak window,
+* `PeakCSize_H_Tt_Sc_p` shows the cluster size that was estimated using the hits in the peak window,
+* `PeakCMult_H_Tt_Sc_p`shows the cluster multiplicity that was estimated using the hits in the peak window,
+* `L0_Efficiency_Tt_Sc_p` shows the level 0 muon efficiency that was estimated WITHOUT muon tracking after correction,
+* `MuonCSize_H_Tt_Sc_p` shows the level 0 muon cluster size that was estimated WITHOUT muon tracking after correction, and
+* `MuonCMult_H_Tt_Sc_p`shows the level 0 muon cluster multiplicity that was estimated WITHOUT muon tracking after correction.
 
 **Note :** in the histogram labels, **t** stands for the trolley number (1 or 3), **c** for the chamber slot label in trolley **t** and **p** for the partition label (A, B, C or D depending on the chamber layout).
 
-Moreover, up to 3 CSV files can created depending on which ones of the 3 input files were in the data folder :
+Moreover, up to 4 CSV files can created depending on which ones of the 3 input files were in the data folder :
 
 * `Offline-Rate.csv` : contains the summary of the noise/gamma rates and clusters
+* `Offline-Corrupted.csv` : contains, for old data format files, the summary of the amount of corrupted data contained in the RAW data file after performing a fit on the multiplicity profile to discard the artificial content of bin 0
 * `Offline-Current.csv` : contains the summary of the currents and voltages applied on the RPCs
 * `Offline-L0-EffCl.csv` : contains the summary of the level 0 efficiency and muon cluster information without tracking
 
-Note that these 3 CSV files are created along there "headers" (file containing the names of the data columns) and are automatically merged together when the offline analysis is used via the *RunDQM* button of the WebDCS.
+Note that these 4 CSV files are created along there "headers" (file containing the names of the data columns) and are automatically merged together when the offline analysis is used via the *RunDQM* button of the WebDCS.
 Thus, the resulting files are :
 
 * `Rates.csv`
+* `Corrupted.csv`
 * `Currents.csv`
 * `L0-EffCl.csv`
