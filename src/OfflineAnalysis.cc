@@ -316,6 +316,7 @@ void OfflineAnalysis(string baseName){
 
         Uint nEntries = dataTree->GetEntries();
 
+        MSG_INFO("[Analysis] Starting loop over entries...");
         for(Uint i = 0; i < nEntries; i++){
 
             //********** LOOP THROUGH HIT LIST ***************************
@@ -334,161 +335,159 @@ void OfflineAnalysis(string baseName){
 
             //Get quality flag in case of new format file
             //and discard events with corrupted data.
-            if(isNewFormat && IsCorruptedEvent(data.QFlag)) continue;
+            if(!IsCorruptedEvent(data.QFlag)){
 
-            //Loop over the TDC hits
-            for(int h = 0; h < data.TDCCh->size(); h++){
-                Uint tdcchannel = data.TDCCh->at(h);
-                Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
-                float timestamp = data.TDCTS->at(h);
+                //Loop over the TDC hits
+                for(int h = 0; h < data.TDCCh->size(); h++){
+                    Uint tdcchannel = data.TDCCh->at(h);
+                    Uint rpcchannel = RPCChMap->GetLink(tdcchannel);
+                    float timestamp = data.TDCTS->at(h);
 
-                //Get rid of the noise hits outside of the connected channels
-                if(tdcchannel > 5127) continue;
+                    //Get rid of the hits in channels not considered in the mapping
+                    if(rpcchannel != NOCHANNELLINK){
+                        RPCHit hit(rpcchannel, timestamp, GIFInfra);
+                        Uint T = hit.GetTrolley();
+                        Uint S = hit.GetStation()-1;
+                        Uint P = hit.GetPartition()-1;
 
-                //Get rid of the hits in channels not considered in the mapping
-                if(rpcchannel == 0) continue;
+                        //Fill the time and hit profiles
+                        TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
+                        HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
 
-                RPCHit hit(rpcchannel, timestamp, GIFInfra);
-                Uint T = hit.GetTrolley();
-                Uint S = hit.GetStation()-1;
-                Uint P = hit.GetPartition()-1;
+                        if(IsEfficiencyRun(RunType)){
+                            //First define the accepted peak time range for efficiency calculation
+                            float lowlimit_eff = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
+                            float highlimit_eff = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
 
-                //Fill the time and hit profiles
-                TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
-                HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                            bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
 
-                if(IsEfficiencyRun(RunType)){
-                    //First define the accepted peak time range for efficiency calculation
-                    float lowlimit_eff = PeakTime.rpc[T][S][P] - PeakWidth.rpc[T][S][P];
-                    float highlimit_eff = PeakTime.rpc[T][S][P] + PeakWidth.rpc[T][S][P];
+                            //Then define the accepted time range for fake efficiency calculation
+                            //that should be probed in a window as wide as the peak window but
+                            //uncorrelated with the trigger to measure the coincidence of noise
+                            //with the muon hits. The window stops at the end of the total time
+                            //window.
+                            float highlimit_fake = BMTDCWINDOW;
+                            float lowlimit_fake = highlimit_fake - (highlimit_eff-lowlimit_eff);
 
-                    bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
+                            bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
 
-                    //Then define the accepted time range for fake efficiency calculation
-                    //that should be probed in a window as wide as the peak window but
-                    //uncorrelated with the trigger to measure the coincidence of noise
-                    //with the muon hits. The window stops at the end of the total time
-                    //window.
-                    float highlimit_fake = BMTDCWINDOW;
-                    float lowlimit_fake = highlimit_fake - (highlimit_eff-lowlimit_eff);
-
-                    bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
-
-                    //Fill the hits inside of the defined peak and noise range
-                    if(peakrange){
-                        BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        PeakHitList.rpc[T][S][P].push_back(hit);
-                    }
-                    //Reject the 100 first ns due to inhomogeneity of data
-                    else if(hit.GetTime() >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        NoiseHitList.rpc[T][S][P].push_back(hit);
-                    }
-                    //Fill the hits inside of the fake window
-                    if(fakerange){
-                        FakeHitList.rpc[T][S][P].push_back(hit);
-                    }
-                } else {
-                    //Fill the hits inside of the defined noise range and
-                    //reject the 100 first ns due to inhomogeneity of data
-                    if(hit.GetTime() >= TIMEREJECT){
-                        StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                        NoiseHitList.rpc[T][S][P].push_back(hit);
-                    }
-                }
-            }
-
-            //********** MULTIPLICITY AND CLUSTERS ***********************
-
-            for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
-                Uint T = GIFInfra->GetTrolleyID(tr);
-
-                for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
-                    Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
-                    string rpcID = GIFInfra->GetName(tr,sl);
-
-                    for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
-                        //In case the value of the multiplicity is beyond the actual
-                        //range, create a new histo with a wider range to store the data.
-                        //Do this work for all 3 multiplicity histograms. To make sure to
-                        //avoid repeating this operation too often, the range is chosen to
-                        //be the value that exceeds the range + 10.
-                        if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
-                            nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 10;
-
-                            //Hit multiplicity
-                            TList *listHM = new TList;
-                            listHM->Add(HitMultiplicity_H.rpc[T][S][p]);
-
-                            TH1* newHitMultiplicity_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newHitMultiplicity_H->Merge(listHM);
-
-                            delete HitMultiplicity_H.rpc[T][S][p];
-                            delete listHM;
-                            HitMultiplicity_H.rpc[T][S][p] = newHitMultiplicity_H;
-
-                            SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit Multiplicity");
-                            HitMultiplicity_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
-
-                            //Noise/gamma cluster multiplicity
-                            TList *listNCM = new TList;
-                            listNCM->Add(NoiseCMult_H.rpc[T][S][p]);
-
-                            TH1* newNoiseCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                            newNoiseCMult_H->Merge(listNCM);
-
-                            delete NoiseCMult_H.rpc[T][S][p];
-                            delete listNCM;
-                            NoiseCMult_H.rpc[T][S][p] = newNoiseCMult_H;
-
-                            SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
-                            NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                            SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
-
-                            //Muon cluster multiplicity if effiency run
-                            if(IsEfficiencyRun(RunType)){
-                                TList *listMCM = new TList;
-                                listMCM->Add(MuonCMult_H.rpc[T][S][p]);
-
-                                TH1* newPeakCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
-                                newPeakCMult_H->Merge(listMCM);
-                                delete PeakCMult_H.rpc[T][S][p];
-                                delete listMCM;
-                                PeakCMult_H.rpc[T][S][p] = newPeakCMult_H;
-
-                                SetTitleName(rpcID,p,hisname,histitle,"PeakCMult_H","Peak cluster multiplicity");
-                                PeakCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
-                                SetTH1(PeakCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                            //Fill the hits inside of the defined peak and noise range
+                            if(peakrange){
+                                BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                PeakHitList.rpc[T][S][P].push_back(hit);
+                            }
+                            //Reject the 100 first ns due to inhomogeneity of data
+                            else if(hit.GetTime() >= TIMEREJECT){
+                                StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                NoiseHitList.rpc[T][S][P].push_back(hit);
+                            }
+                            //Fill the hits inside of the fake window
+                            if(fakerange){
+                                FakeHitList.rpc[T][S][P].push_back(hit);
+                            }
+                        } else {
+                            //Fill the hits inside of the defined noise range and
+                            //reject the 100 first ns due to inhomogeneity of data
+                            if(hit.GetTime() >= TIMEREJECT){
+                                StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                NoiseHitList.rpc[T][S][P].push_back(hit);
                             }
                         }
+                    }
+                }
 
-                        //Clusterize noise/gamma data
-                        sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
-                        Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
+                //********** MULTIPLICITY AND CLUSTERS ***********************
 
-                        //Clusterize muon data and fill efficiency histograms based on
-                        //the content of peak and fake hit vectors if efficiency run
-                        if(IsEfficiencyRun(RunType)){
-                            //Peak data
-                            sort(PeakHitList.rpc[T][S][p].begin(),PeakHitList.rpc[T][S][p].end(),SortHitbyTime);
-                            Clusterization(PeakHitList.rpc[T][S][p],PeakCSize_H.rpc[T][S][p],PeakCMult_H.rpc[T][S][p]);
+                for(Uint tr = 0; tr < GIFInfra->GetNTrolleys(); tr++){
+                    Uint T = GIFInfra->GetTrolleyID(tr);
 
-                            if(PeakHitList.rpc[T][S][p].size() > 0)
-                                EfficiencyPeak_H.rpc[T][S][p]->Fill(DETECTED);
-                            else
-                                EfficiencyPeak_H.rpc[T][S][p]->Fill(MISSED);
+                    for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
+                        Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
+                        string rpcID = GIFInfra->GetName(tr,sl);
 
-                            //Fake data
-                            if(FakeHitList.rpc[T][S][p].size() > 0)
-                                EfficiencyFake_H.rpc[T][S][p]->Fill(DETECTED);
-                            else
-                                EfficiencyFake_H.rpc[T][S][p]->Fill(MISSED);
+                        for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
+                            //In case the value of the multiplicity is beyond the actual
+                            //range, create a new histo with a wider range to store the data.
+                            //Do this work for all 3 multiplicity histograms. To make sure to
+                            //avoid repeating this operation too often, the range is chosen to
+                            //be the value that exceeds the range + 10.
+                            if(Multiplicity.rpc[T][S][p] > nBinsMult.rpc[T][S][p]){
+                                nBinsMult.rpc[T][S][p] = Multiplicity.rpc[T][S][p] + 10;
+
+                                //Hit multiplicity
+                                TList *listHM = new TList;
+                                listHM->Add(HitMultiplicity_H.rpc[T][S][p]);
+
+                                TH1* newHitMultiplicity_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                newHitMultiplicity_H->Merge(listHM);
+
+                                delete HitMultiplicity_H.rpc[T][S][p];
+                                delete listHM;
+                                HitMultiplicity_H.rpc[T][S][p] = newHitMultiplicity_H;
+
+                                SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit Multiplicity");
+                                HitMultiplicity_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
+
+                                //Noise/gamma cluster multiplicity
+                                TList *listNCM = new TList;
+                                listNCM->Add(NoiseCMult_H.rpc[T][S][p]);
+
+                                TH1* newNoiseCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                newNoiseCMult_H->Merge(listNCM);
+
+                                delete NoiseCMult_H.rpc[T][S][p];
+                                delete listNCM;
+                                NoiseCMult_H.rpc[T][S][p] = newNoiseCMult_H;
+
+                                SetTitleName(rpcID,p,hisname,histitle,"NoiseCMult_H","Noise/gamma cluster multiplicity");
+                                NoiseCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                SetTH1(NoiseCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+
+                                //Muon cluster multiplicity if effiency run
+                                if(IsEfficiencyRun(RunType)){
+                                    TList *listMCM = new TList;
+                                    listMCM->Add(MuonCMult_H.rpc[T][S][p]);
+
+                                    TH1* newPeakCMult_H = new TH1I("", "", nBinsMult.rpc[T][S][p], -0.5, nBinsMult.rpc[T][S][p]-0.5);
+                                    newPeakCMult_H->Merge(listMCM);
+                                    delete PeakCMult_H.rpc[T][S][p];
+                                    delete listMCM;
+                                    PeakCMult_H.rpc[T][S][p] = newPeakCMult_H;
+
+                                    SetTitleName(rpcID,p,hisname,histitle,"PeakCMult_H","Peak cluster multiplicity");
+                                    PeakCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
+                                    SetTH1(PeakCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
+                                }
+                            }
+
+                            //Clusterize noise/gamma data
+                            sort(NoiseHitList.rpc[T][S][p].begin(),NoiseHitList.rpc[T][S][p].end(),SortHitbyTime);
+                            Clusterization(NoiseHitList.rpc[T][S][p],NoiseCSize_H.rpc[T][S][p],NoiseCMult_H.rpc[T][S][p]);
+
+                            //Clusterize muon data and fill efficiency histograms based on
+                            //the content of peak and fake hit vectors if efficiency run
+                            if(IsEfficiencyRun(RunType)){
+                                //Peak data
+                                sort(PeakHitList.rpc[T][S][p].begin(),PeakHitList.rpc[T][S][p].end(),SortHitbyTime);
+                                Clusterization(PeakHitList.rpc[T][S][p],PeakCSize_H.rpc[T][S][p],PeakCMult_H.rpc[T][S][p]);
+
+                                if(PeakHitList.rpc[T][S][p].size() > 0)
+                                    EfficiencyPeak_H.rpc[T][S][p]->Fill(DETECTED);
+                                else
+                                    EfficiencyPeak_H.rpc[T][S][p]->Fill(MISSED);
+
+                                //Fake data
+                                if(FakeHitList.rpc[T][S][p].size() > 0)
+                                    EfficiencyFake_H.rpc[T][S][p]->Fill(DETECTED);
+                                else
+                                    EfficiencyFake_H.rpc[T][S][p]->Fill(MISSED);
+                            }
+
+                            //Save and reinitialise the hit multiplicity
+                            HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
+                            Multiplicity.rpc[T][S][p] = 0;
                         }
-
-                        //Save and reinitialise the hit multiplicity
-                        HitMultiplicity_H.rpc[T][S][p]->Fill(Multiplicity.rpc[T][S][p]);
-                        Multiplicity.rpc[T][S][p] = 0;
                     }
                 }
             }
@@ -571,17 +570,8 @@ void OfflineAnalysis(string baseName){
                     int nEmptyEvent = 0;
                     int nPhysics = 0;
 
-                    //Write the rate header file as well as the corrupted header file
-                    //This file will still be writen even after the new file format
-                    //has been used.
-                    headRateCSV <<   "Rate-" << partName << "\t"
-                                <<    "ClS-" << partName << "\t"
-                                <<    "ClS-" << partName << "_Err\t"
-                                <<    "ClM-" << partName << "\t"
-                                <<    "ClM-" << partName << "_Err\t"
-                                << "ClRate-" << partName << "\t"
-                                << "ClRate-" << partName << "_Err\t";
-
+                    //Write the corrupted header file. This file will still be writen
+                    //even after the new file format has been used.
                     headCorrCSV << "Corr-" << partName << "\t";
 
                     if(!isNewFormat){
@@ -646,6 +636,15 @@ void OfflineAnalysis(string baseName){
                     outputCorrCSV << corrupt_ratio << '\t';
 
                     //**************** RATE CALCULATION / NOISE HISTO RESCALING *******************
+
+                    //Write the rate header file
+                    headRateCSV <<   "Rate-" << partName << "\t"
+                                <<    "ClS-" << partName << "\t"
+                                <<    "ClS-" << partName << "_Err\t"
+                                <<    "ClM-" << partName << "\t"
+                                <<    "ClM-" << partName << "_Err\t"
+                                << "ClRate-" << partName << "\t"
+                                << "ClRate-" << partName << "_Err\t";
 
                     //Get the mean noise on the strips and chips using the noise hit
                     //profile. Normalise the number of hits in each bin by the integrated
@@ -763,20 +762,6 @@ void OfflineAnalysis(string baseName){
                     ClusterSDev   += (cSizePart==0)
                             ? 0.
                             : ClusterRate*cSizePartErr/cSizePart;
-
-                    //Finalise the calculation of the chamber rate
-                    MeanNoiseRate /= RPCarea;
-                    ClusterRate   /= RPCarea;
-                    ClusterSDev   /= RPCarea;
-
-                    //Write the header file
-                    headRateCSV << "Rate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
-                                << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
-                                << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT_Err\t";
-
-                    //Write the output file
-                    outputRateCSV << MeanNoiseRate << '\t'
-                                  << ClusterRate << '\t' << ClusterSDev << '\t';
 
                     //******************************* Print the peak gaussian fit
                     if(IsEfficiencyRun(RunType)){
@@ -942,6 +927,20 @@ void OfflineAnalysis(string baseName){
                         PeakCMult_H.rpc[T][S][p]->Write();
                     }
                 }
+
+                //Finalise the calculation of the chamber rate
+                MeanNoiseRate /= RPCarea;
+                ClusterRate   /= RPCarea;
+                ClusterSDev   /= RPCarea;
+
+                //Write the header file
+                headRateCSV << "Rate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
+                            << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT\t"
+                            << "ClRate-" << GIFInfra->GetName(tr,sl) << "-TOT_Err\t";
+
+                //Write the output file
+                outputRateCSV << MeanNoiseRate << '\t'
+                              << ClusterRate << '\t' << ClusterSDev << '\t';
             }
         }
         //Close output files

@@ -62,6 +62,10 @@ typedef enum _Mask {
     MASKED = 0
 } Mask;
 
+typedef enum _ChannelStatus {
+    NOCHANNELLINK = 0
+} ChannelStatus;
+
 //****************************************************************************
 
 //Path to file where is saved the current data
