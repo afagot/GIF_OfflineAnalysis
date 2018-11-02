@@ -356,7 +356,7 @@ void OfflineAnalysis(string baseName){
 
                         //Reject the 100 first ns due to inhomogeneity of data
                         if(hit.GetTime() >= TIMEREJECT){
-                            Multiplicity.rpc[S][P]++;
+                            Multiplicity.rpc[T][S][P]++;
 
                             if(IsEfficiencyRun(RunType)){
                                 //First define the accepted peak time range for efficiency calculation
