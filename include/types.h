@@ -74,7 +74,7 @@ typedef enum _ChannelStatus {
 //file path. Saving this path into the file allows
 //to write all the logs in the log.txt file that
 //is inside the scan directory.
-const string __rundir = "/var/operation/RUN/";
+const string __rundir = "/var/webdcs/RUN/";
 const string __logpath = __rundir + "log-offline";
 const string __dimension = "/Dimensions.ini";
 const string __mapping = "/Mapping.csv";
