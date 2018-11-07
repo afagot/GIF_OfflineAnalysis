@@ -16,6 +16,7 @@
 //***************************************************************
 
 #include "TH1.h"
+#include "TH2.h"
 
 using namespace std;
 
@@ -45,6 +46,7 @@ const Uint NSTRIPSCHIP = 8;
 
 typedef struct GIFnBinsMult { Uint rpc[NSLOTS][NPARTITIONS]; } GIFnBinsMult;
 typedef struct GIFH1Array { TH1* rpc[NSLOTS][NPARTITIONS]; } GIFH1Array;
+typedef struct GIFH2Array { TH2* rpc[NSLOTS][NPARTITIONS]; } GIFH2Array;
 typedef struct GIFintArray { int rpc[NSLOTS][NPARTITIONS]; } GIFintArray;
 typedef struct GIFfloatArray { float rpc[NSLOTS][NPARTITIONS]; } GIFfloatArray;
 typedef GIFfloatArray muonPeak;
