@@ -209,11 +209,13 @@ void OfflineAnalysis(string baseName){
                     //2D Time vs hit profile
                     SetTitleName(rpcID,p,hisname,histitle,"Time_vs_Strip_Profile","Time vs Strip 2D profile");
                     TimeVSChanProfile_H.rpc[T][S][p] = new TH2F(hisname, histitle, nStrips, low_s, high_s, (int)timeWidth/TIMEBIN, 0., timeWidth);
+                    TimeVSChanProfile_H.rpc[T][S][p]->SetOption("COLZ");
                     SetTH2(TimeVSChanProfile_H.rpc[T][S][p],"Strip","Time (ns)","Number of hits");
 
                     //2D Multiplicity vs hit profile
                     SetTitleName(rpcID,p,hisname,histitle,"Multiplicity_vs_Strip_Profile","Multiplicity vs Strip 2D profile");
                     MultVSChanProfile_H.rpc[T][S][p] = new TH2F(hisname, histitle, nStrips, low_s, high_s, nBinsMult.rpc[T][S][p], lowBin, highBin);
+                    MultVSChanProfile_H.rpc[T][S][p]->SetOption("COLZ");
                     SetTH2(MultVSChanProfile_H.rpc[T][S][p],"Strip","Multiplicity","Number of hits");
 
                     //****************************************** Strip granularuty level histograms

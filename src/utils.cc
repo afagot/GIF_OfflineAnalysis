@@ -283,5 +283,5 @@ void SetTH1(TH1* H, string xtitle, string ytitle){
 void SetTH2(TH2* H, string xtitle, string ytitle, string ztitle){
     H->SetXTitle(xtitle.c_str());
     H->SetYTitle(ytitle.c_str());
-    H->SetXTitle(ztitle.c_str());
+    H->SetZTitle(ztitle.c_str());
 }
