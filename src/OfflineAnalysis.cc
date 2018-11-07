@@ -122,6 +122,7 @@ void OfflineAnalysis(string baseName){
         GIFH1Array TimeProfile_H;
         GIFH1Array HitProfile_H;
         GIFH1Array HitMultiplicity_H;
+        GIFH2Array TimeVSChanProfile_H;
 
         GIFH1Array StripNoiseProfile_H;
         GIFH1Array StripActivity_H;
@@ -197,6 +198,12 @@ void OfflineAnalysis(string baseName){
                 SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
                 HitMultiplicity_H.rpc[S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[S][p], lowBin, highBin);
                 SetTH1(HitMultiplicity_H.rpc[S][p],"Multiplicity","Number of events");
+
+                //2D Time vs hit profile
+                SetTitleName(rpcID,p,hisname,histitle,"Time_vs_Strip_Profile","Time vs Strip 2D profile");
+                TimeVSChanProfile_H.rpc[S][p] = new TH2F(hisname, histitle, nStrips, low_s, high_s, (int)timeWidth/TIMEBIN, 0., timeWidth);
+                TimeVSChanProfile_H.rpc[S][p]->SetOption("COLZ");
+                SetTH2(TimeVSChanProfile_H.rpc[S][p],"Strip","Time (ns)","Number of hits");
 
                 //****************************************** Strip granularuty level histograms
 
@@ -343,6 +350,7 @@ void OfflineAnalysis(string baseName){
                         //Fill the profiles
                         TimeProfile_H.rpc[S][P]->Fill(hit.GetTime());
                         HitProfile_H.rpc[S][P]->Fill(hit.GetStrip());
+                        TimeVSChanProfile_H.rpc[S][P]->Fill(hit.GetStrip(),hit.GetTime());
 
                         //Reject the 100 first ns due to inhomogeneity of data
                         if(hit.GetTime() >= TIMEREJECT){
@@ -686,6 +694,7 @@ void OfflineAnalysis(string baseName){
                 TimeProfile_H.rpc[S][p]->Write();
                 HitProfile_H.rpc[S][p]->Write();
                 HitMultiplicity_H.rpc[S][p]->Write();
+                TimeVSChanProfile_H.rpc[S][p]->Write();
 
                 //******************************* Strip granularity histograms
 
