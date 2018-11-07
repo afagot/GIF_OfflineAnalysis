@@ -125,6 +125,8 @@ void OfflineAnalysis(string baseName){
         GIFH1Array TimeProfile_H;
         GIFH1Array HitProfile_H;
         GIFH1Array HitMultiplicity_H;
+        GIFH2Array TimeVSChanProfile_H;
+        GIFH2Array MultVSChanProfile_H;
 
         GIFH1Array StripNoiseProfile_H;
         GIFH1Array StripActivity_H;
@@ -203,6 +205,16 @@ void OfflineAnalysis(string baseName){
                     SetTitleName(rpcID,p,hisname,histitle,"Hit_Multiplicity","Hit multiplicity");
                     HitMultiplicity_H.rpc[T][S][p] = new TH1I(hisname, histitle, nBinsMult.rpc[T][S][p], lowBin, highBin);
                     SetTH1(HitMultiplicity_H.rpc[T][S][p],"Multiplicity","Number of events");
+
+                    //2D Time vs hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Time_vs_Strip_Profile","Time vs Strip 2D profile");
+                    TimeVSChanProfile_H.rpc[T][S][p] = new TH2F(hisname, histitle, nStrips, low_s, high_s, (int)timeWidth/TIMEBIN, 0., timeWidth);
+                    SetTH2(TimeVSChanProfile_H.rpc[T][S][p],"Strip","Time (ns)","Number of hits");
+
+                    //2D Multiplicity vs hit profile
+                    SetTitleName(rpcID,p,hisname,histitle,"Multiplicity_vs_Strip_Profile","Multiplicity vs Strip 2D profile");
+                    MultVSChanProfile_H.rpc[T][S][p] = new TH2F(hisname, histitle, nStrips, low_s, high_s, nBinsMult.rpc[T][S][p], lowBin, highBin);
+                    SetTH2(MultVSChanProfile_H.rpc[T][S][p],"Strip","Multiplicity","Number of hits");
 
                     //****************************************** Strip granularuty level histograms
 
@@ -313,6 +325,7 @@ void OfflineAnalysis(string baseName){
         //Tabel to count the hits in every chamber partitions - used to
         //compute the noise rate
         GIFintArray Multiplicity = {{{0}}};
+        GIFStripMult StripMults = {{{{0}}}};
 
         Uint nEntries = dataTree->GetEntries();
 
@@ -349,14 +362,17 @@ void OfflineAnalysis(string baseName){
                         Uint T = hit.GetTrolley();
                         Uint S = hit.GetStation()-1;
                         Uint P = hit.GetPartition()-1;
+                        Uint St = hit.GetStrip()-1;
 
                         //Fill the time and hit profiles
                         TimeProfile_H.rpc[T][S][P]->Fill(hit.GetTime());
                         HitProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                        TimeVSChanProfile_H.rpc[T][S][P]->Fill(hit.GetStrip(),hit.GetTime());
 
                         //Reject the 100 first ns due to inhomogeneity of data
                         if(hit.GetTime() >= TIMEREJECT){
                             Multiplicity.rpc[T][S][P]++;
+                            StripMults.strip[T][S][P][St]++;
 
                             if(IsEfficiencyRun(RunType)){
                                 //First define the accepted peak time range for efficiency calculation
@@ -408,6 +424,7 @@ void OfflineAnalysis(string baseName){
 
                     for(Uint sl = 0; sl < GIFInfra->GetNSlots(tr); sl++){
                         Uint S = GIFInfra->GetSlotID(tr,sl) - 1;
+                        Uint  nStripsPart   = GIFInfra->GetNStrips(tr,sl);
                         string rpcID = GIFInfra->GetName(tr,sl);
 
                         for (Uint p = 0; p < GIFInfra->GetNPartitions(tr,sl); p++){
@@ -464,6 +481,11 @@ void OfflineAnalysis(string baseName){
                                     PeakCMult_H.rpc[T][S][p]->SetNameTitle(hisname,histitle);
                                     SetTH1(PeakCMult_H.rpc[T][S][p],"Cluster multiplicity","Number of events");
                                 }
+                            }
+
+                            //Fill multiplicity vs strip histogram
+                            for(Uint st = 0; st <= nStripsPart-1; st++){
+                                MultVSChanProfile_H.rpc[T][S][p]->Fill(st+1,StripMults.strip[T][S][p][st]);
                             }
 
                             //Clusterize noise/gamma data
@@ -791,6 +813,8 @@ void OfflineAnalysis(string baseName){
                     TimeProfile_H.rpc[T][S][p]->Write();
                     HitProfile_H.rpc[T][S][p]->Write();
                     HitMultiplicity_H.rpc[T][S][p]->Write();
+                    TimeVSChanProfile_H.rpc[T][S][p]->Write();
+                    MultVSChanProfile_H.rpc[T][S][p]->Write();
 
                     //******************************* Strip granularity histograms
 
