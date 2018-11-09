@@ -387,9 +387,7 @@ void OfflineAnalysis(string baseName){
                                 if(peakrange){
                                     BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                                     PeakHitList.rpc[T][S][P].push_back(hit);
-                                }
-                                //Reject the 100 first ns due to inhomogeneity of data
-                                else if(hit.GetTime() >= TIMEREJECT){
+                                } else {
                                     StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
                                     NoiseHitList.rpc[T][S][P].push_back(hit);
                                 }
@@ -398,12 +396,9 @@ void OfflineAnalysis(string baseName){
                                     FakeHitList.rpc[T][S][P].push_back(hit);
                                 }
                             } else {
-                                //Fill the hits inside of the defined noise range and
-                                //reject the 100 first ns due to inhomogeneity of data
-                                if(hit.GetTime() >= TIMEREJECT){
-                                    StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                    NoiseHitList.rpc[T][S][P].push_back(hit);
-                                }
+                                //Fill the hits inside of the defined noise range
+                                StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                NoiseHitList.rpc[T][S][P].push_back(hit);
                             }
                         }
                     }
