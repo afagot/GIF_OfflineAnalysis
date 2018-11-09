@@ -373,6 +373,15 @@ void OfflineAnalysis(string baseName){
 
                                 bool peakrange = (hit.GetTime() >= lowlimit_eff && hit.GetTime() < highlimit_eff);
 
+                                //Fill the hits inside of the defined peak and noise range
+                                if(peakrange){
+                                    BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                    PeakHitList.rpc[T][S][P].push_back(hit);
+                                } else {
+                                    StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
+                                    NoiseHitList.rpc[T][S][P].push_back(hit);
+                                }
+
                                 //Then define the accepted time range for fake efficiency calculation
                                 //that should be probed in a window as wide as the peak window but
                                 //uncorrelated with the trigger to measure the coincidence of noise
@@ -383,14 +392,6 @@ void OfflineAnalysis(string baseName){
 
                                 bool fakerange = (hit.GetTime() >= lowlimit_fake && hit.GetTime() < highlimit_fake);
 
-                                //Fill the hits inside of the defined peak and noise range
-                                if(peakrange){
-                                    BeamProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                    PeakHitList.rpc[T][S][P].push_back(hit);
-                                } else {
-                                    StripNoiseProfile_H.rpc[T][S][P]->Fill(hit.GetStrip());
-                                    NoiseHitList.rpc[T][S][P].push_back(hit);
-                                }
                                 //Fill the hits inside of the fake window
                                 if(fakerange){
                                     FakeHitList.rpc[T][S][P].push_back(hit);
